@@ -5,6 +5,7 @@ use crate::auth::AuthStore;
 use crate::mods::{ModDbCache, ModsManager};
 use crate::paths::Layout;
 use crate::settings::Settings;
+use crate::stratum::StratumCache;
 use crate::supervisor::Supervisor;
 use crate::versions::{InstallStatus, VersionCache};
 
@@ -16,6 +17,7 @@ pub struct AppState {
     pub versions: VersionCache,
     pub moddb: ModDbCache,
     pub mods: Arc<ModsManager>,
+    pub stratum: StratumCache,
     pub install: Mutex<Option<InstallStatus>>,
     pub started: Instant,
 }

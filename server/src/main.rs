@@ -7,6 +7,7 @@ mod paths;
 mod serverconfig;
 mod settings;
 mod state;
+mod stratum;
 mod supervisor;
 mod versions;
 
@@ -68,8 +69,9 @@ async fn main() -> anyhow::Result<()> {
         auth,
         supervisor,
         versions: versions::VersionCache::new(http_client.clone()),
-        moddb: mods::ModDbCache::new(http_client),
+        moddb: mods::ModDbCache::new(http_client.clone()),
         mods: Arc::new(mods::ModsManager::new()),
+        stratum: stratum::StratumCache::new(http_client),
         install: Mutex::new(None),
         started: std::time::Instant::now(),
     });

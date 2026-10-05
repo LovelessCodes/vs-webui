@@ -18,6 +18,9 @@ pub struct Settings {
     /// `vanilla` or `stratum` (Stratum lands in phase 4).
     #[serde(default = "default_flavor")]
     pub flavor: String,
+    /// Installed Stratum release tag, e.g. `v1.22.7-stratum.2`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stratum_tag: Option<String>,
     #[serde(default, skip_serializing_if = "is_false")]
     pub auto_start: bool,
     #[serde(default, skip_serializing_if = "is_false")]
@@ -35,6 +38,7 @@ impl Default for Settings {
         Self {
             version: None,
             flavor: default_flavor(),
+            stratum_tag: None,
             auto_start: false,
             auto_restart: false,
             start_params: String::new(),

@@ -218,11 +218,21 @@ Design vocabulary from `storyforge/PORTING.md`: sharp corners, right-side Sheets
 - Verified locally: JSON5 files list/save, invalid content rejected (400), path traversal
       rejected, missing serverconfig handled ("generated on first start")
 
-### Phase 4 — Stratum
+### Phase 4 — Stratum ✅ implemented
 
-- Flavor switch, GitHub release listing (tag ↔ base VS version), install/update
-- Stratum config editors (`stratum.json`, `stratum-commands.json`,
-  `stratum-performance.json`) + `/stratum reload`
+- [x] GitHub release listing (linux-x64 asset), tag → base VS version parsing, cached
+- [x] One-click install: download + extract (executable bit set), activates flavor
+- [x] Flavor switch (vanilla/stratum) with install validation and restart notice
+- [x] Supervisor starts `StratumServer` from its own directory with `--dataPath`;
+      status label is the release tag
+- [x] Stratum config editor tab (`stratum*.json` in the data path) with a
+      `/stratum reload` button
+- [x] UI: flavor switch + Stratum release list on Versions, dashboard shows the active tag
+- Verified: release parsing, install (10.2 MB, executable), flavor switch, config
+      list/save/reject locally; in-container: install → start bootstrapped vanilla 1.22.7
+      (9637 files) and applied 10 patched files → `running`, all three config files created,
+      `/stratum reload` applied ("config reloaded; preflight passed"), graceful stop saved
+      the world
 
 ### Phase 5 — parity & polish
 

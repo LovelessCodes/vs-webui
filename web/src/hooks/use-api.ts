@@ -245,3 +245,57 @@ export function useSaveServerConfig() {
     },
   });
 }
+
+// ── stratum ─────────────────────────────────────────────────────────────────
+
+export function useStratumReleases(enabled = true) {
+  return useQuery({
+    queryKey: ["stratum", "releases"],
+    queryFn: api.stratumReleases,
+    staleTime: 5 * 60_000,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useInstallStratum() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (tag: string) => api.installStratum(tag),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["status"] });
+    },
+  });
+}
+
+export function useStratumConfigs(enabled = true) {
+  return useQuery({
+    queryKey: ["stratum", "configs"],
+    queryFn: api.stratumConfigs,
+    staleTime: 5_000,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useSaveStratumConfig() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ file, newCode }: { file: string; newCode: string }) =>
+      api.saveStratumConfig(file, newCode),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["stratum", "configs"] });
+    },
+  });
+}
+
+export function useSetFlavor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (flavor: "vanilla" | "stratum") => api.setFlavor(flavor),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["status"] });
+      void queryClient.invalidateQueries({ queryKey: ["settings"] });
+    },
+  });
+}

@@ -62,6 +62,11 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/mods/pin", post(mods_pin))
         .route("/api/configs", get(list_configs))
         .route("/api/configs/{filename}", put(save_config))
+        .route("/api/stratum/releases", get(stratum_releases))
+        .route("/api/stratum/install", post(stratum_install))
+        .route("/api/stratum/configs", get(stratum_configs))
+        .route("/api/stratum/configs/{filename}", put(save_stratum_config))
+        .route("/api/server/flavor", post(set_flavor))
         .fallback_service(ServeDir::new(&dist).fallback(ServeFile::new(&index)))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
@@ -293,9 +298,16 @@ async fn status(State(state): State<SharedState>) -> Json<Value> {
     let mut supervisor = state.supervisor.status();
     let settings = state.settings.lock().unwrap().clone();
     // The supervisor computes `not_installed` once at boot; refresh it once the
-    // selected version has been installed (or removed).
+    // selected build has been installed (or removed).
     if supervisor.status == "not_installed" {
-        if let Some(version) = settings.version.as_deref() {
+        if settings.flavor == "stratum" {
+            if let Some(tag) = settings.stratum_tag.as_deref() {
+                if state.layout.stratum_exe(tag).exists() {
+                    supervisor.status = "stopped".into();
+                    supervisor.version = Some(tag.to_string());
+                }
+            }
+        } else if let Some(version) = settings.version.as_deref() {
             if state.layout.server_exe(version).exists() {
                 supervisor.status = "stopped".into();
                 supervisor.version = Some(version.to_string());
@@ -886,6 +898,139 @@ async fn save_config(
     .map_err(ApiError::bad_request)?;
     Ok(Json(json!({
         "ok": true,
+        "restart_required": state.supervisor.is_running(),
+    })))
+}
+
+// ── stratum ─────────────────────────────────────────────────────────────────
+
+#[derive(Deserialize)]
+struct StratumInstallReq {
+    tag: String,
+}
+
+#[derive(Deserialize)]
+struct FlavorReq {
+    flavor: String,
+}
+
+async fn stratum_releases(
+    State(state): State<SharedState>,
+    _authed: Authed,
+) -> Result<Json<Value>, ApiError> {
+    state
+        .stratum
+        .releases()
+        .await
+        .map(|releases| Json(json!({ "releases": releases })))
+        .map_err(|message| ApiError::new(StatusCode::BAD_GATEWAY, message))
+}
+
+async fn stratum_install(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Json(req): Json<StratumInstallReq>,
+) -> Result<Json<Value>, ApiError> {
+    let tag = req.tag.trim().to_string();
+    if tag.is_empty() {
+        return Err(ApiError::bad_request("missing Stratum release tag"));
+    }
+    {
+        let guard = state.install.lock().unwrap();
+        if let Some(install) = guard.as_ref() {
+            if install.phase != "done" && install.phase != "error" {
+                return Err(ApiError::new(
+                    StatusCode::CONFLICT,
+                    "an install is already running",
+                ));
+            }
+        }
+    }
+    state
+        .stratum
+        .release(&tag)
+        .await
+        .map_err(|message| ApiError::new(StatusCode::BAD_GATEWAY, message))?;
+
+    {
+        let mut guard = state.install.lock().unwrap();
+        *guard = Some(InstallStatus {
+            version: tag.clone(),
+            phase: "starting".into(),
+            downloaded: 0,
+            total: 0,
+            message: None,
+            success: None,
+        });
+    }
+    let shared: SharedState = Arc::clone(&state);
+    tokio::spawn(crate::stratum::run_install(shared, tag.clone()));
+    Ok(Json(json!({ "ok": true, "tag": tag })))
+}
+
+async fn stratum_configs(
+    State(state): State<SharedState>,
+    _authed: Authed,
+) -> Result<Json<Value>, ApiError> {
+    let server_dir = state.layout.server_dir();
+    let list =
+        tokio::task::spawn_blocking(move || crate::stratum::list_stratum_configs(&server_dir))
+            .await
+            .map_err(|e| ApiError::internal(format!("config scan failed: {e}")))?;
+    Ok(Json(json!(list)))
+}
+
+async fn save_stratum_config(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(filename): UrlPath<String>,
+    Json(req): Json<ConfigReq>,
+) -> Result<Json<Value>, ApiError> {
+    let server_dir = state.layout.server_dir();
+    let content = req.content;
+    tokio::task::spawn_blocking(move || {
+        crate::stratum::write_stratum_config(&server_dir, &filename, &content)
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("config save failed: {e}")))?
+    .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({
+        "ok": true,
+        "restart_required": false,
+        "reload_command": "/stratum reload",
+    })))
+}
+
+async fn set_flavor(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Json(req): Json<FlavorReq>,
+) -> Result<Json<Value>, ApiError> {
+    let flavor = req.flavor.trim().to_string();
+    if flavor != "vanilla" && flavor != "stratum" {
+        return Err(ApiError::bad_request("flavor must be vanilla or stratum"));
+    }
+    if flavor == "stratum" {
+        let tag = state.settings.lock().unwrap().stratum_tag.clone();
+        let installed = tag
+            .as_deref()
+            .map(|tag| state.layout.stratum_exe(tag).exists())
+            .unwrap_or(false);
+        if !installed {
+            return Err(ApiError::bad_request("install a Stratum release first"));
+        }
+    }
+    let settings = {
+        let mut guard = state.settings.lock().unwrap();
+        guard.flavor = flavor;
+        guard
+            .save(&state.layout.settings_path())
+            .map_err(|e| ApiError::internal(format!("cannot save settings: {e}")))?;
+        guard.clone()
+    };
+    Ok(Json(json!({
+        "ok": true,
+        "settings": settings,
         "restart_required": state.supervisor.is_running(),
     })))
 }

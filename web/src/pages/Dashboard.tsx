@@ -178,11 +178,21 @@ export default function Dashboard() {
             ) : install?.phase === "error" ? (
               <p className="text-error text-xs">{install.message ?? "Install failed"}</p>
             ) : (
-              <p className="text-text-secondary text-xs">
-                {data.settings.version
-                  ? "Ready."
-                  : "Nothing installed yet."}
-              </p>
+              <div className="grid gap-1">
+                <p className="text-text-secondary text-xs">
+                  {data.settings.version || data.settings.stratum_tag
+                    ? "Ready."
+                    : "Nothing installed yet."}
+                </p>
+                {data.settings.flavor === "stratum" && data.settings.stratum_tag && (
+                  <p className="text-xs text-text-secondary">
+                    Stratum{" "}
+                    <span className="font-mono text-accent-amber">
+                      {data.settings.stratum_tag}
+                    </span>
+                  </p>
+                )}
+              </div>
             )}
             <div>
               <Link

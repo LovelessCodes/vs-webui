@@ -189,6 +189,10 @@ fn set_install(state: &SharedState, f: impl FnOnce(&mut InstallStatus)) {
     }
 }
 
+pub(crate) fn set_install_status(state: &SharedState, f: impl FnOnce(&mut InstallStatus)) {
+    set_install(state, f);
+}
+
 /// Download, verify and extract a server build. Runs in a background task.
 pub async fn run_install(state: SharedState, version: String, channel: String) {
     state.supervisor.console.push(format!(

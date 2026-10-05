@@ -63,6 +63,7 @@ export interface InstallStatus {
 export interface Settings {
   version?: string | null;
   flavor?: string;
+  stratum_tag?: string | null;
   auto_start?: boolean;
   auto_restart?: boolean;
   start_params?: string;
@@ -233,6 +234,18 @@ export interface ModConfigList {
   errors: ModScanError[];
 }
 
+export interface StratumRelease {
+  tag: string;
+  name: string;
+  vs_version: string;
+  stratum_version: string;
+  asset_name: string;
+  asset_url: string;
+  size: number;
+  published_at: string;
+  prerelease: boolean;
+}
+
 export const api = {
   me: () => request<Me>("/api/me"),
   login: (password: string) =>
@@ -339,6 +352,30 @@ export const api = {
       method: "PUT",
       body: JSON.stringify({ content }),
     }),
+
+  stratumReleases: () => request<{ releases: StratumRelease[] }>("/api/stratum/releases"),
+  installStratum: (tag: string) =>
+    request<{ ok: boolean; tag: string }>("/api/stratum/install", {
+      method: "POST",
+      body: JSON.stringify({ tag }),
+    }),
+  stratumConfigs: () => request<ModConfigList>("/api/stratum/configs"),
+  saveStratumConfig: (filename: string, content: string) =>
+    request<{ ok: boolean; restart_required: boolean; reload_command: string }>(
+      `/api/stratum/configs/${encodeURIComponent(filename)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ content }),
+      },
+    ),
+  setFlavor: (flavor: "vanilla" | "stratum") =>
+    request<{ ok: boolean; settings: Settings; restart_required: boolean }>(
+      "/api/server/flavor",
+      {
+        method: "POST",
+        body: JSON.stringify({ flavor }),
+      },
+    ),
 };
 
 export function consoleStream(): EventSource {

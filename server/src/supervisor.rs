@@ -108,10 +108,23 @@ impl Supervisor {
 }
 
 fn initial_status(layout: &Layout, settings: &Arc<Mutex<Settings>>) -> Status {
-    let selected = settings.lock().unwrap().version.clone();
-    let installed = match selected {
-        Some(version) => layout.server_exe(&version).exists(),
-        None => any_installed(layout).is_some(),
+    let (flavor, version, tag) = {
+        let guard = settings.lock().unwrap();
+        (
+            guard.flavor.clone(),
+            guard.version.clone(),
+            guard.stratum_tag.clone(),
+        )
+    };
+    let installed = if flavor == "stratum" {
+        tag.as_deref()
+            .map(|tag| layout.stratum_exe(tag).exists())
+            .unwrap_or(false)
+    } else {
+        match version {
+            Some(version) => layout.server_exe(&version).exists(),
+            None => any_installed(layout).is_some(),
+        }
     };
     Status {
         status: if installed {
@@ -289,27 +302,47 @@ async fn start_server(
     layout: &Layout,
     settings: &Arc<Mutex<Settings>>,
 ) -> Result<(), String> {
-    let (version, params) = {
+    let (flavor, version, tag, params) = {
         let guard = settings.lock().unwrap();
-        (guard.version.clone(), guard.start_params.clone())
+        (
+            guard.flavor.clone(),
+            guard.version.clone(),
+            guard.stratum_tag.clone(),
+            guard.start_params.clone(),
+        )
     };
-    let version = version
-        .or_else(|| any_installed(layout))
-        .ok_or("no version installed")?;
 
-    let exe = layout.server_exe(&version);
-    if !exe.exists() {
-        return Err(format!("version {version} is not installed"));
-    }
+    let (exe, label, work_dir) = if flavor == "stratum" {
+        let tag = tag.ok_or("no Stratum release installed")?;
+        let dir = layout.stratum_version_dir(&tag);
+        let exe = dir.join("StratumServer");
+        if !exe.exists() {
+            return Err(format!("Stratum {tag} is not installed"));
+        }
+        (exe, tag, Some(dir))
+    } else {
+        let version = version
+            .or_else(|| any_installed(layout))
+            .ok_or("no version installed")?;
+        let exe = layout.server_exe(&version);
+        if !exe.exists() {
+            return Err(format!("version {version} is not installed"));
+        }
+        (exe, version, None)
+    };
 
     set_status(status, |s| {
         s.status = "starting".into();
         s.pid = None;
         s.started_at = Some(now_unix());
         s.exit_code = None;
-        s.version = Some(version.clone());
+        s.version = Some(label.clone());
     });
-    console.push(format!("[manager] starting Vintage Story {version}"));
+    console.push(if flavor == "stratum" {
+        format!("[manager] starting Stratum {label}")
+    } else {
+        format!("[manager] starting Vintage Story {label}")
+    });
 
     let mut cmd = Command::new(&exe);
     cmd.env("DOTNET_ROLL_FORWARD", "LatestMinor")
@@ -321,6 +354,9 @@ async fn start_server(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
+    if let Some(dir) = work_dir {
+        cmd.current_dir(dir);
+    }
     if std::env::var_os("DOTNET_ROOT").is_none() {
         // The apphost needs the runtime root; probe the standard install
         // locations (Linux container, macOS dev machines).

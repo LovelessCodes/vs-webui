@@ -54,6 +54,26 @@ impl Layout {
     pub fn server_exe(&self, version: &str) -> PathBuf {
         self.vanilla_version_dir(version).join("VintagestoryServer")
     }
+
+    pub fn stratum_dir(&self) -> PathBuf {
+        self.root.join("runtime").join("stratum")
+    }
+
+    pub fn stratum_version_dir(&self, tag: &str) -> PathBuf {
+        self.stratum_dir().join(safe_component(tag))
+    }
+
+    pub fn stratum_exe(&self, tag: &str) -> PathBuf {
+        self.stratum_version_dir(tag).join("StratumServer")
+    }
+}
+
+/// Reduce a release tag to a single safe path component.
+pub fn safe_component(value: &str) -> String {
+    value
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
+        .collect()
 }
 
 /// A directory looks like a usable server build when the apphost (or its dll) is present.
