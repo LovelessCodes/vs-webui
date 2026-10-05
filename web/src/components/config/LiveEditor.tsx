@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ export default function LiveEditor({
   file: string;
   onSave: (params: SaveParams) => void;
 }) {
+  const { t } = useTranslation();
   const [parseError, setParseError] = useState<string | null>(null);
   const [data, setData] = useState<JSONValue>(() => safeInitialParse(code, setParseError));
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -33,7 +35,6 @@ export default function LiveEditor({
     onSaveRef.current = onSave;
   });
 
-  // Debounced auto-save of user edits.
   useEffect(() => {
     if (!dirty || parseError) return;
     const timer = setTimeout(() => {
@@ -116,7 +117,7 @@ export default function LiveEditor({
               variant="outline"
             >
               <Plus />
-              Add
+              {t("common.add")}
             </Button>
           </div>
           {!isCollapsed && (
@@ -125,7 +126,6 @@ export default function LiveEditor({
                 <div className="flex items-start gap-2" key={`${key}:${index}`}>
                   <div className="min-w-0 flex-1">{renderValue(item, [...path, index], index)}</div>
                   <Button
-                    aria-label={`Remove item ${index}`}
                     onClick={() => removeArrayItem(path, index)}
                     size="icon-xs"
                     variant="destructive"
@@ -135,7 +135,7 @@ export default function LiveEditor({
                 </div>
               ))}
               {value.length === 0 && (
-                <p className="text-[11px] text-text-muted">Empty array</p>
+                <p className="text-[11px] text-text-muted">{t("configs.emptyArray")}</p>
               )}
             </div>
           )}
@@ -173,7 +173,10 @@ export default function LiveEditor({
     if (typeof value === "boolean") {
       return (
         <div className="flex items-center gap-3" key={key}>
-          <label className="min-w-0 flex-1 truncate font-mono text-xs text-text-secondary" htmlFor={`bool-${key}`}>
+          <label
+            className="min-w-0 flex-1 truncate font-mono text-xs text-text-secondary"
+            htmlFor={`bool-${key}`}
+          >
             {keyLabel}
           </label>
           <Switch
@@ -188,7 +191,10 @@ export default function LiveEditor({
     if (typeof value === "number") {
       return (
         <div className="flex items-center gap-3" key={key}>
-          <label className="min-w-0 flex-1 truncate font-mono text-xs text-text-secondary" htmlFor={`num-${key}`}>
+          <label
+            className="min-w-0 flex-1 truncate font-mono text-xs text-text-secondary"
+            htmlFor={`num-${key}`}
+          >
             {keyLabel}
           </label>
           <Input
@@ -204,7 +210,10 @@ export default function LiveEditor({
 
     return (
       <div className="flex items-center gap-3" key={key}>
-        <label className="min-w-0 flex-1 truncate font-mono text-xs text-text-secondary" htmlFor={`str-${key}`}>
+        <label
+          className="min-w-0 flex-1 truncate font-mono text-xs text-text-secondary"
+          htmlFor={`str-${key}`}
+        >
           {keyLabel}
         </label>
         <Input
@@ -221,12 +230,12 @@ export default function LiveEditor({
     <div className="grid gap-4 p-4">
       {parseError && (
         <div className="border border-error/40 bg-error/10 p-2 text-[11px] text-error">
-          Parse error: {parseError}
+          {t("configs.parseError", { message: parseError })}
         </div>
       )}
 
       <p className="text-[10px] font-medium tracking-widest text-text-muted uppercase">
-        Live editor · {file}
+        {t("configs.liveEditor")} · {file}
       </p>
 
       {isObject(data) ? (
@@ -240,10 +249,10 @@ export default function LiveEditor({
           {data.map((value, index) => renderValue(value, [index], index))}
         </div>
       ) : (
-        <p className="text-xs text-text-muted">The root value is a primitive.</p>
+        <p className="text-xs text-text-muted">{t("configs.rootPrimitive")}</p>
       )}
 
-      <p className="text-right text-[11px] text-text-muted">Changes auto-save</p>
+      <p className="text-right text-[11px] text-text-muted">{t("configs.autoSave")}</p>
     </div>
   );
 }

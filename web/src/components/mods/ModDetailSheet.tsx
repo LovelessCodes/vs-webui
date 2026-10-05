@@ -1,4 +1,5 @@
 import { Download, Loader2, Package } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { useInstallMod, useModDetail, useModJobs } from "@/hooks/use-api";
 import { errorMessage, formatCount } from "@/lib/format";
 import { sortReleasesDesc } from "@/lib/version";
 
-import { plainText, sideLabel, sideVariant } from "./utils";
+import { plainText, sideKey, sideVariant } from "./utils";
 
 interface ModDetailSheetProps {
   modid: string | null;
@@ -16,6 +17,7 @@ interface ModDetailSheetProps {
 }
 
 export default function ModDetailSheet({ modid, onClose, installedVersion }: ModDetailSheetProps) {
+  const { t } = useTranslation();
   const detail = useModDetail(modid);
   const jobs = useModJobs();
   const install = useInstallMod();
@@ -41,9 +43,14 @@ export default function ModDetailSheet({ modid, onClose, installedVersion }: Mod
             )}
           </div>
           <div className="min-w-0">
-            <SheetTitle>{mod?.name ?? "Loading…"}</SheetTitle>
+            <SheetTitle>{mod?.name ?? t("common.loading")}</SheetTitle>
             <SheetDescription>
-              {mod ? `by ${mod.author} · ${formatCount(mod.downloads)} downloads` : ""}
+              {mod
+                ? t("mods.byAuthor", {
+                    author: mod.author,
+                    downloads: formatCount(mod.downloads),
+                  })
+                : ""}
             </SheetDescription>
           </div>
         </div>
@@ -53,17 +60,15 @@ export default function ModDetailSheet({ modid, onClose, installedVersion }: Mod
         {detail.isLoading && (
           <div className="flex items-center gap-2 p-4 text-xs text-text-muted">
             <Loader2 className="size-4 animate-spin" />
-            Loading mod details…
+            {t("mods.loadingDetails")}
           </div>
         )}
-        {detail.isError && (
-          <p className="p-4 text-error text-xs">{errorMessage(detail.error)}</p>
-        )}
+        {detail.isError && <p className="p-4 text-error text-xs">{errorMessage(detail.error)}</p>}
 
         {mod && (
           <div className="grid gap-4 p-4">
             <div className="flex flex-wrap items-center gap-1.5">
-              <Badge variant={sideVariant(mod.side)}>{sideLabel(mod.side)}</Badge>
+              <Badge variant={sideVariant(mod.side)}>{t(sideKey(mod.side))}</Badge>
               <Badge variant="outline">{mod.type}</Badge>
               {mod.tags.map((tag) => (
                 <Badge key={tag} variant="outline">
@@ -78,13 +83,11 @@ export default function ModDetailSheet({ modid, onClose, installedVersion }: Mod
               </p>
             )}
 
-            {install.isError && (
-              <p className="text-error text-xs">{errorMessage(install.error)}</p>
-            )}
+            {install.isError && <p className="text-error text-xs">{errorMessage(install.error)}</p>}
 
             <div className="border border-border-default">
               <div className="border-b border-border-default bg-bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
-                Releases ({releases.length})
+                {t("mods.releases", { count: releases.length })}
               </div>
               <div className="max-h-96 divide-y divide-border-subtle overflow-y-auto">
                 {releases.slice(0, 40).map((release) => {
@@ -94,12 +97,12 @@ export default function ModDetailSheet({ modid, onClose, installedVersion }: Mod
                       <div className="min-w-0 flex-1">
                         <p className="font-mono text-xs">{release.modversion}</p>
                         <p className="text-[10px] text-text-muted">
-                          {release.created?.slice(0, 10)} · {formatCount(release.downloads)}{" "}
-                          downloads
+                          {release.created?.slice(0, 10)} ·{" "}
+                          {t("mods.downloads", { count: formatCount(release.downloads) })}
                         </p>
                       </div>
                       {isInstalled ? (
-                        <Badge variant="success">Installed</Badge>
+                        <Badge variant="success">{t("mods.installedBadge")}</Badge>
                       ) : (
                         <Button
                           disabled={pending}
@@ -117,7 +120,7 @@ export default function ModDetailSheet({ modid, onClose, installedVersion }: Mod
                           variant="outline"
                         >
                           <Download />
-                          Install
+                          {t("common.install")}
                         </Button>
                       )}
                     </div>

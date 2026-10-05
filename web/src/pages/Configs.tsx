@@ -1,5 +1,6 @@
 import { FileJson2, Loader2, RefreshCw } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import CodeEditor from "@/components/config/CodeEditor";
 import LiveEditor from "@/components/config/LiveEditor";
@@ -19,6 +20,7 @@ type Mode = "live" | "code";
 type Source = "mods" | "stratum";
 
 export default function Configs() {
+  const { t } = useTranslation();
   const status = useStatus();
   const flavor = status.data?.settings.flavor ?? "vanilla";
   const serverRunning = status.data?.status.status === "running";
@@ -68,7 +70,7 @@ export default function Configs() {
             onClick={() => switchSource("mods")}
             type="button"
           >
-            ModConfig
+            {t("configs.modConfig")}
           </button>
           {flavor === "stratum" && (
             <button
@@ -81,36 +83,23 @@ export default function Configs() {
               onClick={() => switchSource("stratum")}
               type="button"
             >
-              Stratum
+              {t("configs.stratum")}
             </button>
           )}
         </div>
         <p className="text-xs text-text-muted">
-          {source === "mods" ? (
-            <>
-              Configs in <span className="font-mono">ModConfig/</span> — written by mods on
-              first run.
-            </>
-          ) : (
-            <>
-              <span className="font-mono">stratum*.json</span> in the data path — apply with{" "}
-              <span className="font-mono">/stratum reload</span> or a restart.
-            </>
-          )}
+          {source === "mods" ? t("configs.modConfigHint") : t("configs.stratumHint")}
         </p>
         <div className="flex-1" />
-        {save.isError && (
-          <span className="text-error text-xs">{errorMessage(save.error)}</span>
-        )}
+        {save.isError && <span className="text-error text-xs">{errorMessage(save.error)}</span>}
         {save.isPending && <Loader2 className="size-3.5 animate-spin text-text-muted" />}
         {!save.isPending && save.isSuccess && (
           <span className="text-success text-xs">
-            Saved
             {save.data?.restart_required
-              ? " — restart to apply"
+              ? t("configs.savedRestart")
               : source === "stratum"
-                ? " — run /stratum reload to apply"
-                : ""}
+                ? t("configs.savedReload")
+                : t("common.saved")}
           </span>
         )}
         {source === "stratum" && (
@@ -121,7 +110,7 @@ export default function Configs() {
             variant="outline"
           >
             <RefreshCw className={command.isPending ? "animate-spin" : undefined} />
-            Reload configs
+            {t("configs.reloadConfigs")}
           </Button>
         )}
         <div className="flex border border-border-default">
@@ -137,27 +126,27 @@ export default function Configs() {
               onClick={() => setMode(option)}
               type="button"
             >
-              {option === "live" ? "Live editor" : "Code editor"}
+              {option === "live" ? t("configs.liveEditor") : t("configs.codeEditor")}
             </button>
           ))}
         </div>
       </div>
 
-      {command.isError && (
-        <p className="text-error text-xs">{errorMessage(command.error)}</p>
-      )}
+      {command.isError && <p className="text-error text-xs">{errorMessage(command.error)}</p>}
 
       {(configs.data?.errors.length ?? 0) > 0 && (
         <p className="border border-warning/40 bg-warning/5 px-3 py-2 text-[11px] text-warning">
-          {configs.data?.errors.length} config file(s) could not be read:{" "}
-          {configs.data?.errors.map((error) => error.file).join(", ")}
+          {t("configs.errorsRead", {
+            count: configs.data?.errors.length,
+            files: configs.data?.errors.map((error) => error.file).join(", "),
+          })}
         </p>
       )}
 
       {configs.isLoading && !configs.data && (
         <div className="flex items-center gap-2 text-xs text-text-muted">
           <Loader2 className="size-4 animate-spin" />
-          Scanning configs…
+          {t("configs.scanning")}
         </div>
       )}
 
@@ -171,11 +160,9 @@ export default function Configs() {
         <div className="flex flex-1 flex-col items-center justify-center gap-3 border border-dashed p-10 text-center">
           <FileJson2 className="size-6 text-text-muted" />
           <div>
-            <p className="text-sm font-medium">No config files yet</p>
+            <p className="text-sm font-medium">{t("configs.noFiles")}</p>
             <p className="text-xs text-text-muted">
-              {source === "mods"
-                ? "Mods create their config files here on first server start."
-                : "Stratum writes its config files here on its first run."}
+              {source === "mods" ? t("configs.noFilesMods") : t("configs.noFilesStratum")}
             </p>
           </div>
         </div>
@@ -185,7 +172,7 @@ export default function Configs() {
         <div className="flex min-h-0 flex-1 border border-border-default">
           <div className="flex w-56 shrink-0 flex-col border-r border-border-default">
             <div className="border-b border-border-subtle px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
-              Files
+              {t("configs.files")}
             </div>
             <div className="min-h-0 flex-1 divide-y divide-border-subtle overflow-y-auto">
               {files.map((file) => {

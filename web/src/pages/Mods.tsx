@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, RefreshCw, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { BrokenModsBanner, MissingDepsBanner } from "@/components/mods/banners";
 import InstalledModRow from "@/components/mods/InstalledModRow";
@@ -74,6 +75,7 @@ function installedVersionOf(
 }
 
 export default function Mods() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const status = useStatus();
   const activeVersion = status.data?.settings.version ?? undefined;
@@ -120,7 +122,6 @@ export default function Mods() {
     (job) => job.status === "queued" || job.status === "running",
   );
 
-  // When the last active job finishes, refresh installed mods and updates.
   const previousActive = useRef(0);
   useEffect(() => {
     if (previousActive.current > 0 && activeJobs.length === 0) {
@@ -149,7 +150,8 @@ export default function Mods() {
     [tags.data],
   );
 
-  const mutationError = install.error ?? update.error ?? remove.error ?? updateAll.error ?? pin.error;
+  const mutationError =
+    install.error ?? update.error ?? remove.error ?? updateAll.error ?? pin.error;
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -167,7 +169,9 @@ export default function Mods() {
               onClick={() => setTab(option)}
               type="button"
             >
-              {option === "browse" ? "Browse ModDB" : `Installed (${installed.data?.mods.length ?? 0})`}
+              {option === "browse"
+                ? t("mods.browse")
+                : t("mods.installed", { count: installed.data?.mods.length ?? 0 })}
             </button>
           ))}
         </div>
@@ -181,7 +185,8 @@ export default function Mods() {
               variant={updateCount > 0 ? "accent-primary" : "outline"}
             >
               {updateAll.isPending ? <Loader2 className="animate-spin" /> : null}
-              Update all{updateCount > 0 ? ` (${updateCount})` : ""}
+              {t("mods.updateAll")}
+              {updateCount > 0 ? ` (${updateCount})` : ""}
             </Button>
             <Button
               disabled={installed.isFetching || updates.isFetching}
@@ -193,7 +198,7 @@ export default function Mods() {
               variant="outline"
             >
               <RefreshCw className={installed.isFetching ? "animate-spin" : undefined} />
-              Refresh
+              {t("common.refresh")}
             </Button>
           </>
         )}
@@ -215,7 +220,7 @@ export default function Mods() {
               <Input
                 className="pl-7"
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search mods…"
+                placeholder={t("mods.searchPlaceholder")}
                 value={search}
               />
             </div>
@@ -227,23 +232,25 @@ export default function Mods() {
                 onChange={(event) => setCompatibleOnly(event.target.checked)}
                 type="checkbox"
               />
-              {activeVersion ? `Compatible with ${activeVersion}` : "No version selected"}
+              {activeVersion
+                ? t("mods.compatibleWith", { version: activeVersion })
+                : t("mods.noVersionSelected")}
             </label>
             <select
               className="h-8 border border-border-default bg-bg-input px-2 text-xs text-text-secondary focus:outline-none"
               onChange={(event) => setSide(event.target.value as Side)}
               value={side}
             >
-              <option value="any">Any side</option>
-              <option value="server">Server</option>
-              <option value="client">Client</option>
+              <option value="any">{t("mods.anySide")}</option>
+              <option value="server">{t("mods.server")}</option>
+              <option value="client">{t("mods.client")}</option>
             </select>
             <select
               className="h-8 max-w-40 border border-border-default bg-bg-input px-2 text-xs text-text-secondary focus:outline-none"
               onChange={(event) => setTag(event.target.value)}
               value={tag}
             >
-              <option value="">All tags</option>
+              <option value="">{t("mods.allTags")}</option>
               {tagNames.map((name) => (
                 <option key={name} value={name}>
                   {name}
@@ -255,17 +262,17 @@ export default function Mods() {
               onChange={(event) => setSort(event.target.value as SortBy)}
               value={sort}
             >
-              <option value="downloads">Most downloads</option>
-              <option value="trending">Trending</option>
-              <option value="name">Name</option>
-              <option value="recent">Recently released</option>
+              <option value="downloads">{t("mods.sortDownloads")}</option>
+              <option value="trending">{t("mods.sortTrending")}</option>
+              <option value="name">{t("mods.sortName")}</option>
+              <option value="recent">{t("mods.sortRecent")}</option>
             </select>
           </div>
 
           {modb.isLoading && !modb.data && (
             <div className="flex items-center gap-2 text-xs text-text-muted">
               <Loader2 className="size-4 animate-spin" />
-              Fetching mod database…
+              {t("mods.fetching")}
             </div>
           )}
           {modb.isError && (
@@ -277,7 +284,8 @@ export default function Mods() {
           {modb.data && (
             <>
               <p className="text-text-muted text-[11px]">
-                {filtered.length} mods{modb.isFetching ? " · updating…" : ""}
+                {t("mods.count", { count: filtered.length })}
+                {modb.isFetching ? ` · ${t("mods.updating")}` : ""}
               </p>
               <div className="min-h-0 flex-1 overflow-y-auto border border-border-default">
                 {filtered.slice(0, visibleCount).map((mod) => (
@@ -290,7 +298,7 @@ export default function Mods() {
                 ))}
                 {filtered.length === 0 && (
                   <p className="p-6 text-center text-xs text-text-muted">
-                    No mods match these filters.
+                    {t("mods.noMatch")}
                   </p>
                 )}
               </div>
@@ -301,7 +309,7 @@ export default function Mods() {
                     size="sm"
                     variant="outline"
                   >
-                    Show more ({filtered.length - visibleCount} remaining)
+                    {t("mods.showMore", { count: filtered.length - visibleCount })}
                   </Button>
                 </div>
               )}
@@ -316,7 +324,7 @@ export default function Mods() {
           {installed.isLoading && !installed.data && (
             <div className="flex items-center gap-2 text-xs text-text-muted">
               <Loader2 className="size-4 animate-spin" />
-              Scanning installed mods…
+              {t("mods.scanning")}
             </div>
           )}
           {installed.isError && (
@@ -327,13 +335,10 @@ export default function Mods() {
 
           {installed.data && installed.data.mods.length === 0 && (
             <div className="flex flex-col items-center justify-center gap-3 border border-dashed p-10 text-center">
-              <p className="text-sm font-medium">No mods installed</p>
-              <p className="text-text-muted text-xs">
-                Browse the mod database and install server-side mods — dependencies are fetched
-                automatically.
-              </p>
+              <p className="text-sm font-medium">{t("mods.noMods")}</p>
+              <p className="text-text-muted text-xs">{t("mods.noModsHint")}</p>
               <Button onClick={() => setTab("browse")} size="sm" variant="accent-primary">
-                Browse ModDB
+                {t("mods.browse")}
               </Button>
             </div>
           )}
@@ -341,26 +346,20 @@ export default function Mods() {
           {installed.data && installed.data.mods.length > 0 && (
             <div className="border border-border-default">
               <div className="flex items-center gap-2 border-b border-border-default bg-bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
-                <span className="flex-1">Installed mods</span>
+                <span className="flex-1">{t("mods.installedHeader")}</span>
                 {updateCount > 0 && (
-                  <Badge variant="accent">
-                    {updateCount} update{updateCount > 1 ? "s" : ""}
-                  </Badge>
+                  <Badge variant="accent">{t("mods.updates", { count: updateCount })}</Badge>
                 )}
               </div>
               <div className="divide-y divide-border-subtle">
                 {installed.data.mods.map((mod) => {
                   const key = mod.modid.toLowerCase();
-                  const pending = activeJobs.some(
-                    (job) => job.modid.toLowerCase() === key,
-                  );
+                  const pending = activeJobs.some((job) => job.modid.toLowerCase() === key);
                   return (
                     <InstalledModRow
                       key={mod.file}
                       mod={mod}
-                      onPin={() =>
-                        pin.mutate({ modid: mod.modid, pinned: !pinned.has(key) })
-                      }
+                      onPin={() => pin.mutate({ modid: mod.modid, pinned: !pinned.has(key) })}
                       onPickVersion={() => setVersionPicker(mod)}
                       onRemove={() => remove.mutate(mod.file)}
                       onUpdate={(version) =>

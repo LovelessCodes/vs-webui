@@ -1,5 +1,6 @@
 import { Boxes, Check, Download, Loader2, Zap } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,12 +29,13 @@ function InstallProgress({
   downloaded: number;
   total: number;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="border border-accent-primary/40 bg-accent-primary/5 p-3">
       <div className="flex items-center justify-between text-xs">
         <span className="flex items-center gap-2">
           <Loader2 className="size-3.5 animate-spin text-accent-primary" />
-          Installing <span className="font-mono">{version}</span>
+          {t("versions.installing")} <span className="font-mono">{version}</span>
         </span>
         <span className="text-text-secondary capitalize">{phase}</span>
       </div>
@@ -54,6 +56,7 @@ function InstallProgress({
 }
 
 export default function Versions() {
+  const { t } = useTranslation();
   const [channel, setChannel] = useState<Channel>("stable");
   const status = useStatus();
   const versions = useVersions(channel);
@@ -79,7 +82,7 @@ export default function Versions() {
     <div className="flex h-full flex-col gap-4 overflow-y-auto pb-4">
       <div className="flex flex-wrap items-center gap-3 border border-border-default bg-bg-card px-3 py-2.5">
         <span className="text-[10px] font-medium tracking-widest text-text-muted uppercase">
-          Server flavor
+          {t("versions.flavor")}
         </span>
         <div className="flex border border-border-default">
           {(["vanilla", "stratum"] as const).map((option) => (
@@ -95,16 +98,14 @@ export default function Versions() {
               onClick={() => setFlavor.mutate(option)}
               type="button"
             >
-              {option === "vanilla" ? "Vanilla" : "Stratum"}
+              {option === "vanilla" ? t("versions.vanilla") : t("versions.stratum")}
             </button>
           ))}
         </div>
         {flavor === "stratum" && stratumTag && (
           <span className="font-mono text-xs text-accent-amber">{stratumTag}</span>
         )}
-        <span className="text-[11px] text-text-muted">
-          Switching takes effect on the next server start.
-        </span>
+        <span className="text-[11px] text-text-muted">{t("versions.switchNote")}</span>
       </div>
 
       {installing && (
@@ -118,7 +119,7 @@ export default function Versions() {
 
       {installState?.phase === "error" && (
         <p className="border border-error/40 bg-error/5 p-3 text-xs text-error">
-          {installState.message ?? "Install failed"}
+          {installState.message ?? t("versions.installFailed")}
         </p>
       )}
 
@@ -127,17 +128,14 @@ export default function Versions() {
       <section className="grid gap-2">
         <div className="flex items-center gap-2">
           <Zap className="size-3.5 text-accent-amber" />
-          <h3 className="text-xs font-semibold">Stratum runtime</h3>
-          <p className="text-[11px] text-text-muted">
-            Patched high-performance server — players connect with the normal client. First
-            start downloads and patches the matching vanilla build.
-          </p>
+          <h3 className="text-xs font-semibold">{t("versions.stratumRuntime")}</h3>
+          <p className="text-[11px] text-text-muted">{t("versions.stratumDescription")}</p>
         </div>
 
         {stratum.isLoading && !stratum.data && (
           <div className="flex items-center gap-2 text-xs text-text-muted">
             <Loader2 className="size-4 animate-spin" />
-            Fetching Stratum releases…
+            {t("versions.fetchingStratum")}
           </div>
         )}
         {stratum.isError && (
@@ -149,10 +147,10 @@ export default function Versions() {
         {stratum.data && (
           <div className="border border-border-default">
             <div className="flex items-center gap-3 border-b border-border-default bg-bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
-              <span className="flex-1">Release</span>
-              <span className="hidden w-28 sm:block">Base VS</span>
-              <span className="hidden w-24 sm:block">Published</span>
-              <span className="w-32 text-right">Action</span>
+              <span className="flex-1">{t("versions.release")}</span>
+              <span className="hidden w-28 sm:block">{t("versions.baseVs")}</span>
+              <span className="hidden w-24 sm:block">{t("versions.published")}</span>
+              <span className="w-32 text-right">{t("versions.action")}</span>
             </div>
             <div className="divide-y divide-border-subtle">
               {stratum.data.releases.slice(0, 12).map((release) => {
@@ -166,14 +164,18 @@ export default function Versions() {
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       <span className="truncate font-mono text-xs">{release.tag}</span>
-                      {release.prerelease && <Badge variant="warning">Pre</Badge>}
+                      {release.prerelease && (
+                        <Badge variant="warning">{t("versions.pre")}</Badge>
+                      )}
                       {isActive && (
                         <Badge variant="accent">
                           <Check className="size-3" />
-                          In use
+                          {t("versions.inUse")}
                         </Badge>
                       )}
-                      {isInstalled && !isActive && <Badge variant="success">Installed</Badge>}
+                      {isInstalled && !isActive && (
+                        <Badge variant="success">{t("versions.installed")}</Badge>
+                      )}
                     </div>
                     <span className="hidden w-28 font-mono text-[11px] text-text-muted sm:block">
                       {release.vs_version}
@@ -188,10 +190,10 @@ export default function Versions() {
                       {isInstalling ? (
                         <span className="flex items-center gap-1.5 text-xs text-text-secondary">
                           <Loader2 className="size-3.5 animate-spin" />
-                          Installing…
+                          {t("versions.installing")}
                         </span>
                       ) : isActive ? (
-                        <span className="text-xs text-text-muted">In use</span>
+                        <span className="text-xs text-text-muted">{t("versions.inUse")}</span>
                       ) : (
                         <Button
                           disabled={installStratum.isPending || Boolean(installing)}
@@ -204,11 +206,11 @@ export default function Versions() {
                           variant={isInstalled ? "outline" : "accent-primary"}
                         >
                           {isInstalled ? (
-                            "Use"
+                            t("versions.use")
                           ) : (
                             <>
                               <Download />
-                              Install
+                              {t("common.install")}
                             </>
                           )}
                         </Button>
@@ -225,7 +227,7 @@ export default function Versions() {
       <section className="grid gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Boxes className="size-3.5 text-text-secondary" />
-          <h3 className="text-xs font-semibold">Vanilla builds</h3>
+          <h3 className="text-xs font-semibold">{t("versions.vanillaBuilds")}</h3>
           <div className="flex border border-border-default">
             {(["stable", "unstable"] as const).map((option) => (
               <button
@@ -243,15 +245,13 @@ export default function Versions() {
               </button>
             ))}
           </div>
-          <p className="text-[11px] text-text-muted">
-            Server builds from api.vintagestory.at — checksum-verified on install.
-          </p>
+          <p className="text-[11px] text-text-muted">{t("versions.vanillaNote")}</p>
         </div>
 
         {versions.isLoading && !versions.data && (
           <div className="flex items-center gap-2 text-xs text-text-muted">
             <Loader2 className="size-4 animate-spin" />
-            Fetching version list…
+            {t("versions.fetching")}
           </div>
         )}
 
@@ -264,9 +264,9 @@ export default function Versions() {
         {versions.data && (
           <div className="border border-border-default">
             <div className="flex items-center gap-3 border-b border-border-default bg-bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
-              <span className="flex-1">Version</span>
-              <span className="hidden w-24 text-right sm:block">Size</span>
-              <span className="w-40 text-right">Action</span>
+              <span className="flex-1">{t("dashboard.version")}</span>
+              <span className="hidden w-24 text-right sm:block">{t("versions.size")}</span>
+              <span className="w-40 text-right">{t("versions.action")}</span>
             </div>
             <div className="divide-y divide-border-subtle">
               {versions.data.versions.map((entry) => {
@@ -280,15 +280,15 @@ export default function Versions() {
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       <Boxes className="size-3.5 shrink-0 text-text-muted" />
                       <span className="font-mono text-xs">{entry.version}</span>
-                      {entry.latest && <Badge variant="amber">Latest</Badge>}
+                      {entry.latest && <Badge variant="amber">{t("versions.latest")}</Badge>}
                       {isActive && (
                         <Badge variant="accent">
                           <Check className="size-3" />
-                          Active
+                          {t("versions.active")}
                         </Badge>
                       )}
                       {entry.installed && !isActive && (
-                        <Badge variant="success">Installed</Badge>
+                        <Badge variant="success">{t("versions.installed")}</Badge>
                       )}
                     </div>
                     <span className="hidden w-24 text-right font-mono text-[11px] text-text-muted sm:block">
@@ -298,10 +298,10 @@ export default function Versions() {
                       {isInstalling ? (
                         <span className="flex items-center gap-1.5 text-xs text-text-secondary">
                           <Loader2 className="size-3.5 animate-spin" />
-                          Installing…
+                          {t("versions.installing")}
                         </span>
                       ) : entry.active ? (
-                        <span className="text-xs text-text-muted">In use</span>
+                        <span className="text-xs text-text-muted">{t("versions.inUse")}</span>
                       ) : entry.installed ? (
                         <Button
                           disabled={setActive.isPending}
@@ -309,7 +309,7 @@ export default function Versions() {
                           size="sm"
                           variant="outline"
                         >
-                          Set active
+                          {t("versions.setActive")}
                         </Button>
                       ) : (
                         <Button
@@ -319,7 +319,7 @@ export default function Versions() {
                           variant="accent-primary"
                         >
                           <Download />
-                          Install
+                          {t("common.install")}
                         </Button>
                       )}
                     </div>
@@ -331,10 +331,7 @@ export default function Versions() {
         )}
       </section>
 
-      <p className="text-[11px] text-text-muted">
-        Switching versions takes effect the next time the server starts. World data stays in
-        the same data directory.
-      </p>
+      <p className="text-[11px] text-text-muted">{t("versions.footer")}</p>
     </div>
   );
 }

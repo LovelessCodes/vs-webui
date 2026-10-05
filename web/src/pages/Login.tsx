@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Lock } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { api, setCsrf } from "@/lib/api";
 import { errorMessage } from "@/lib/format";
 
 export default function Login() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [password, setPassword] = useState("");
 
@@ -33,26 +35,24 @@ export default function Login() {
           <div className="flex size-10 items-center justify-center border border-accent-primary/40 bg-accent-primary/10">
             <Lock className="size-5 text-accent-primary" />
           </div>
-          <h1 className="text-base font-bold tracking-wide">VS WEBUI</h1>
-          <p className="text-text-secondary text-xs">Vintage Story server manager</p>
+          <h1 className="text-base font-bold tracking-wide">{t("brand.name")}</h1>
+          <p className="text-text-secondary text-xs">{t("login.subtitle")}</p>
         </div>
 
         <form className="grid gap-4 p-6" onSubmit={onSubmit}>
           <div className="grid gap-1.5">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t("login.password")}</Label>
             <Input
               autoFocus
               id="password"
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Web UI password"
+              placeholder={t("login.placeholder")}
               type="password"
               value={password}
             />
           </div>
 
-          {login.isError && (
-            <p className="text-error text-xs">{errorMessage(login.error)}</p>
-          )}
+          {login.isError && <p className="text-error text-xs">{errorMessage(login.error)}</p>}
 
           <Button
             className="w-full"
@@ -61,13 +61,10 @@ export default function Login() {
             variant="accent-primary"
           >
             {login.isPending && <Loader2 className="animate-spin" />}
-            Sign in
+            {t("login.signIn")}
           </Button>
 
-          <p className="text-text-muted text-[11px] leading-relaxed">
-            The password is set with the <span className="font-mono">VS_WEB_PASSWORD</span>{" "}
-            environment variable, or generated on first boot and printed to the container logs.
-          </p>
+          <p className="text-text-muted text-[11px] leading-relaxed">{t("login.hint")}</p>
         </form>
       </div>
     </div>

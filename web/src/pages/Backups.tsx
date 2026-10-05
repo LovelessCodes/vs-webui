@@ -1,5 +1,6 @@
 import { Archive, Download, Loader2, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { errorMessage, formatBytes } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export default function Backups() {
+  const { t } = useTranslation();
   const backups = useBackups();
   const status = useStatus();
   const create = useCreateBackup();
@@ -35,7 +37,7 @@ export default function Backups() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="flex items-center gap-2">
               <Archive className="size-4 text-text-secondary" />
-              Backups
+              {t("backups.title")}
             </CardTitle>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -45,7 +47,7 @@ export default function Backups() {
                 variant="accent-primary"
               >
                 {create.isPending ? <Loader2 className="animate-spin" /> : <Plus />}
-                Backup server data
+                {t("backups.backupServer")}
               </Button>
               <Button
                 disabled={create.isPending}
@@ -54,43 +56,39 @@ export default function Backups() {
                 variant="outline"
               >
                 <Plus />
-                Backup mods only
+                {t("backups.backupMods")}
               </Button>
             </div>
           </div>
-          <CardDescription>
-            Server backups include the world, mods, configs and player data (logs and caches
-            are skipped). Mods backups store just the <span className="font-mono">Mods/</span>{" "}
-            folder. Mod changes also create automatic backups.
-          </CardDescription>
+          <CardDescription>{t("backups.description")}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
           {create.isSuccess && (
-            <p className="text-success text-xs">Created {create.data.name}</p>
+            <p className="text-success text-xs">
+              {t("backups.created", { name: create.data.name })}
+            </p>
           )}
           {mutationError && <p className="text-error text-xs">{errorMessage(mutationError)}</p>}
 
           {backups.isLoading && !backups.data && (
             <div className="flex items-center gap-2 text-xs text-text-muted">
               <Loader2 className="size-4 animate-spin" />
-              Loading backups…
+              {t("backups.loading")}
             </div>
           )}
-          {backups.isError && (
-            <p className="text-error text-xs">{errorMessage(backups.error)}</p>
-          )}
+          {backups.isError && <p className="text-error text-xs">{errorMessage(backups.error)}</p>}
 
           {backups.data && backups.data.backups.length === 0 && (
-            <p className="text-xs text-text-muted">No backups yet.</p>
+            <p className="text-xs text-text-muted">{t("backups.noBackups")}</p>
           )}
 
           {backups.data && backups.data.backups.length > 0 && (
             <div className="border border-border-default">
               <div className="flex items-center gap-3 border-b border-border-default bg-bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
-                <span className="flex-1">Backup</span>
-                <span className="hidden w-20 text-right sm:block">Size</span>
-                <span className="hidden w-40 sm:block">Created</span>
-                <span className="w-56 text-right">Actions</span>
+                <span className="flex-1">{t("backups.backup")}</span>
+                <span className="hidden w-20 text-right sm:block">{t("backups.size")}</span>
+                <span className="hidden w-40 sm:block">{t("backups.createdAt")}</span>
+                <span className="w-56 text-right">{t("backups.actions")}</span>
               </div>
               <div className="divide-y divide-border-subtle">
                 {backups.data.backups.map((backup) => {
@@ -104,7 +102,7 @@ export default function Backups() {
                       <div className="flex min-w-0 flex-1 items-center gap-2">
                         <span className="truncate font-mono text-[11px]">{backup.name}</span>
                         <Badge variant={isMods ? "info" : "default"}>
-                          {isMods ? "Mods" : "Server"}
+                          {isMods ? t("backups.modsBadge") : t("backups.serverBadge")}
                         </Badge>
                       </div>
                       <span className="hidden w-20 text-right font-mono text-[11px] text-text-muted sm:block">
@@ -117,7 +115,9 @@ export default function Backups() {
                         {confirming ? (
                           <>
                             <span className="text-[11px] text-text-secondary">
-                              {confirm?.action === "restore" ? "Restore?" : "Delete?"}
+                              {confirm?.action === "restore"
+                                ? t("backups.restoreQuestion")
+                                : t("backups.deleteQuestion")}
                             </span>
                             <Button
                               disabled={restore.isPending || remove.isPending}
@@ -137,14 +137,10 @@ export default function Backups() {
                                 confirm?.action === "restore" ? "outline-warning" : "destructive"
                               }
                             >
-                              Yes
+                              {t("common.yes")}
                             </Button>
-                            <Button
-                              onClick={() => setConfirm(null)}
-                              size="sm"
-                              variant="ghost"
-                            >
-                              Cancel
+                            <Button onClick={() => setConfirm(null)} size="sm" variant="ghost">
+                              {t("common.cancel")}
                             </Button>
                           </>
                         ) : (
@@ -152,7 +148,7 @@ export default function Backups() {
                             <a
                               className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
                               href={`/api/backups/${encodeURIComponent(backup.name)}/download`}
-                              title="Download"
+                              title={t("common.download")}
                             >
                               <Download />
                             </a>
@@ -161,7 +157,7 @@ export default function Backups() {
                               onClick={() => setConfirm({ name: backup.name, action: "restore" })}
                               size="icon-sm"
                               title={
-                                running ? "Stop the server to restore" : "Restore this backup"
+                                running ? t("backups.stopToRestore") : t("backups.restoreTitle")
                               }
                               variant="ghost"
                             >
@@ -170,7 +166,7 @@ export default function Backups() {
                             <Button
                               onClick={() => setConfirm({ name: backup.name, action: "delete" })}
                               size="icon-sm"
-                              title="Delete"
+                              title={t("backups.deleteTitle")}
                               variant="ghost"
                             >
                               <Trash2 />
@@ -185,11 +181,7 @@ export default function Backups() {
             </div>
           )}
 
-          <p className="text-[11px] text-text-muted">
-            Restoring requires the server to be stopped. Server backups overwrite world, mods,
-            configs and player data; mods backups only replace{" "}
-            <span className="font-mono">Mods/</span>.
-          </p>
+          <p className="text-[11px] text-text-muted">{t("backups.footer")}</p>
         </CardContent>
       </Card>
     </div>

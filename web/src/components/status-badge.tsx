@@ -2,25 +2,29 @@ import { cn } from "@/lib/utils";
 import type { ServerStatus } from "@/lib/api";
 
 export function statusMeta(status: ServerStatus["status"] | undefined): {
-  label: string;
+  labelKey: string;
   dot: string;
   text: string;
 } {
   switch (status) {
     case "running":
-      return { label: "Running", dot: "bg-success", text: "text-success" };
+      return { labelKey: "status.running", dot: "bg-success", text: "text-success" };
     case "starting":
-      return { label: "Starting", dot: "bg-warning", text: "text-warning" };
+      return { labelKey: "status.starting", dot: "bg-warning", text: "text-warning" };
     case "stopping":
-      return { label: "Stopping", dot: "bg-warning", text: "text-warning" };
+      return { labelKey: "status.stopping", dot: "bg-warning", text: "text-warning" };
     case "crashed":
-      return { label: "Crashed", dot: "bg-error", text: "text-error" };
+      return { labelKey: "status.crashed", dot: "bg-error", text: "text-error" };
     case "not_installed":
-      return { label: "Not installed", dot: "bg-text-muted", text: "text-text-muted" };
+      return {
+        labelKey: "status.notInstalled",
+        dot: "bg-text-muted",
+        text: "text-text-muted",
+      };
     case "stopped":
-      return { label: "Stopped", dot: "bg-text-muted", text: "text-text-secondary" };
+      return { labelKey: "status.stopped", dot: "bg-text-muted", text: "text-text-secondary" };
     default:
-      return { label: "Unknown", dot: "bg-text-muted", text: "text-text-muted" };
+      return { labelKey: "status.unknown", dot: "bg-text-muted", text: "text-text-muted" };
   }
 }
 

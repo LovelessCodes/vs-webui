@@ -1,5 +1,6 @@
 import { AlertTriangle, Download, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { useInstallMod, useModJobs, useRemoveMod } from "@/hooks/use-api";
@@ -8,6 +9,7 @@ import { errorMessage } from "@/lib/format";
 import type { MissingDependency } from "@/lib/version";
 
 export function BrokenModsBanner({ errors }: { errors: ModScanError[] }) {
+  const { t } = useTranslation();
   const remove = useRemoveMod();
   const [confirmFile, setConfirmFile] = useState<string | null>(null);
 
@@ -18,9 +20,9 @@ export function BrokenModsBanner({ errors }: { errors: ModScanError[] }) {
       <div className="flex items-center gap-2 border-b border-warning/30 px-3 py-2 text-xs">
         <AlertTriangle className="size-3.5 text-warning" />
         <span className="font-medium text-warning">
-          {errors.length} broken mod{errors.length > 1 ? "s" : ""}
+          {t("mods.brokenMods", { count: errors.length })}
         </span>
-        <span className="text-text-secondary">— unreadable zip or missing modinfo.json</span>
+        <span className="text-text-secondary">— {t("mods.brokenHint")}</span>
       </div>
       <div className="divide-y divide-border-subtle">
         {errors.map((error) => (
@@ -40,17 +42,17 @@ export function BrokenModsBanner({ errors }: { errors: ModScanError[] }) {
                   size="sm"
                   variant="destructive"
                 >
-                  Really remove?
+                  {t("common.reallyRemove")}
                 </Button>
                 <Button onClick={() => setConfirmFile(null)} size="sm" variant="ghost">
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </>
             ) : (
               <Button
                 onClick={() => setConfirmFile(error.file)}
                 size="icon-sm"
-                title="Remove file"
+                title={t("mods.brokenRemove")}
                 variant="ghost"
               >
                 <Trash2 />
@@ -67,6 +69,7 @@ export function BrokenModsBanner({ errors }: { errors: ModScanError[] }) {
 }
 
 export function MissingDepsBanner({ missing }: { missing: MissingDependency[] }) {
+  const { t } = useTranslation();
   const install = useInstallMod();
   const jobs = useModJobs();
 
@@ -84,7 +87,7 @@ export function MissingDepsBanner({ missing }: { missing: MissingDependency[] })
       <div className="flex flex-wrap items-center gap-2 border-b border-info/30 px-3 py-2 text-xs">
         <AlertTriangle className="size-3.5 text-info" />
         <span className="font-medium text-info">
-          {missing.length} missing dependenc{missing.length > 1 ? "ies" : "y"}
+          {t("mods.missingDeps", { count: missing.length })}
         </span>
         <div className="flex-1" />
         <Button
@@ -98,7 +101,7 @@ export function MissingDepsBanner({ missing }: { missing: MissingDependency[] })
           variant="outline-info"
         >
           <Download />
-          Install all
+          {t("mods.installAll")}
         </Button>
       </div>
       <div className="divide-y divide-border-subtle">
@@ -112,7 +115,7 @@ export function MissingDepsBanner({ missing }: { missing: MissingDependency[] })
                 )}
               </p>
               <p className="truncate text-[10px] text-text-muted">
-                required by {dep.requiredBy.join(", ")}
+                {t("mods.requiredBy", { names: dep.requiredBy.join(", ") })}
               </p>
             </div>
             <Button
@@ -121,7 +124,7 @@ export function MissingDepsBanner({ missing }: { missing: MissingDependency[] })
               size="sm"
               variant="outline"
             >
-              {pending(dep.modid) ? "Queued…" : "Install"}
+              {pending(dep.modid) ? t("mods.queuedEllipsis") : t("common.install")}
             </Button>
           </div>
         ))}

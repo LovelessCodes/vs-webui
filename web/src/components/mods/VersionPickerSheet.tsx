@@ -1,4 +1,5 @@
 import { Loader2, Package } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ interface VersionPickerSheetProps {
 }
 
 export default function VersionPickerSheet({ mod, onClose }: VersionPickerSheetProps) {
+  const { t } = useTranslation();
   const detail = useModDetail(mod?.modid ?? null);
   const jobs = useModJobs();
   const update = useUpdateMod();
@@ -33,9 +35,9 @@ export default function VersionPickerSheet({ mod, onClose }: VersionPickerSheetP
             <Package className="size-4 text-text-muted" />
           </div>
           <div className="min-w-0">
-            <SheetTitle>{mod?.name ?? "Versions"}</SheetTitle>
+            <SheetTitle>{mod?.name ?? t("mods.versions")}</SheetTitle>
             <SheetDescription>
-              Installed {mod?.version} — pick a version to switch to
+              {mod ? t("mods.installedVersion", { version: mod.version }) : ""}
             </SheetDescription>
           </div>
         </div>
@@ -45,7 +47,7 @@ export default function VersionPickerSheet({ mod, onClose }: VersionPickerSheetP
         {detail.isLoading && (
           <div className="flex items-center gap-2 p-4 text-xs text-text-muted">
             <Loader2 className="size-4 animate-spin" />
-            Loading releases…
+            {t("mods.loadingReleases")}
           </div>
         )}
         {detail.isError && <p className="p-4 text-error text-xs">{errorMessage(detail.error)}</p>}
@@ -60,11 +62,12 @@ export default function VersionPickerSheet({ mod, onClose }: VersionPickerSheetP
                   <div className="min-w-0 flex-1">
                     <p className="font-mono text-xs">{release.modversion}</p>
                     <p className="text-[10px] text-text-muted">
-                      {release.created?.slice(0, 10)} · {formatCount(release.downloads)} downloads
+                      {release.created?.slice(0, 10)} ·{" "}
+                      {t("mods.downloads", { count: formatCount(release.downloads) })}
                     </p>
                   </div>
                   {current ? (
-                    <Badge variant="success">Current</Badge>
+                    <Badge variant="success">{t("mods.current")}</Badge>
                   ) : (
                     <Button
                       disabled={pending}
@@ -82,7 +85,7 @@ export default function VersionPickerSheet({ mod, onClose }: VersionPickerSheetP
                       size="sm"
                       variant="outline"
                     >
-                      Switch
+                      {t("common.switch")}
                     </Button>
                   )}
                 </div>

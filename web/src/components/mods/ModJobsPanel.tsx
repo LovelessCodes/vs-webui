@@ -1,4 +1,5 @@
 import { Check, Download, Loader2, PackagePlus, Trash2, TriangleAlert } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
 import { useModJobs } from "@/hooks/use-api";
@@ -14,9 +15,14 @@ function actionIcon(job: ModJob) {
 }
 
 function JobRow({ job }: { job: ModJob }) {
+  const { t } = useTranslation();
   const active = job.status === "queued" || job.status === "running";
   const percent =
-    job.total > 0 ? Math.min(100, Math.round((job.progress / job.total) * 100)) : active ? 5 : 100;
+    job.total > 0
+      ? Math.min(100, Math.round((job.progress / job.total) * 100))
+      : active
+        ? 5
+        : 100;
 
   return (
     <div className="grid gap-1.5 px-3 py-2">
@@ -28,16 +34,26 @@ function JobRow({ job }: { job: ModJob }) {
         )}
         <span className="min-w-0 flex-1 truncate">
           <span className="font-medium">{job.name}</span>
-          <span className="text-text-muted"> · {job.action}</span>
+          <span className="text-text-muted">
+            {" "}
+            ·{" "}
+            {t(
+              job.action === "install"
+                ? "mods.jobInstall"
+                : job.action === "update"
+                  ? "mods.jobUpdate"
+                  : "mods.jobRemove",
+            )}
+          </span>
           {job.version && <span className="text-text-muted"> {job.version}</span>}
         </span>
-        {job.dependency && <Badge variant="outline">Dependency</Badge>}
+        {job.dependency && <Badge variant="outline">{t("mods.dependency")}</Badge>}
         <span className="text-text-muted">
           {job.status === "running"
             ? job.total > 0
               ? `${percent}%`
-              : "working…"
-            : job.status}
+              : t("common.working")
+            : t(`mods.${job.status === "queued" ? "queued" : job.status === "done" ? "done" : "error"}`)}
         </span>
       </div>
       {job.status === "running" && job.total > 0 && (
@@ -50,7 +66,10 @@ function JobRow({ job }: { job: ModJob }) {
       )}
       {job.status === "running" && job.total > 0 && (
         <p className="text-text-muted text-[10px]">
-          {formatBytes(job.progress)} / {formatBytes(job.total)}
+          {t("mods.downloaded", {
+            done: formatBytes(job.progress),
+            total: formatBytes(job.total),
+          })}
         </p>
       )}
     </div>
@@ -59,6 +78,7 @@ function JobRow({ job }: { job: ModJob }) {
 
 /** Active jobs plus jobs that finished in the last minute. */
 export default function ModJobsPanel() {
+  const { t } = useTranslation();
   const jobs = useModJobs();
   const now = Date.now() / 1000;
   const visible = (jobs.data?.jobs ?? []).filter(
@@ -73,7 +93,7 @@ export default function ModJobsPanel() {
   return (
     <div className="border border-border-default bg-bg-card">
       <div className="border-b border-border-subtle px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
-        Mod jobs
+        {t("mods.modJobs")}
       </div>
       <div className="divide-y divide-border-subtle">
         {visible.map((job) => (

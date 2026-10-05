@@ -244,10 +244,14 @@ Design vocabulary from `storyforge/PORTING.md`: sharp corners, right-side Sheets
 - [x] Backups page: create (server data / mods), list, download, restore (stopped server
       only; mods archives restore into `Mods/`), delete; automatic mod backups retained
 - [x] Sidebar/header wiring; settings schedule field
-- Deferred: i18n catalog port and screenshot pipeline — the UI is English-only for now.
+- [x] i18n: i18next with 7 locales (English, German, Spanish, French, Brazilian
+      Portuguese, Russian, Simplified Chinese), browser detection + switcher in the
+      sidebar, catalogs at exact key parity
+- [x] Screenshot pipeline: Playwright captures every page at 1200×800 in English and
+      German into `web/screenshots/` (`bun run screenshots`)
 - Verified locally: whitelist shapes, mode flip (modern + legacy), backup zip contents
       (Logs excluded), restore, download, delete, schedule validation; in-container smoke
-      test of players/backups endpoints
+      test of players/backups endpoints; screenshot pipeline run end-to-end
 
 ## Verification
 

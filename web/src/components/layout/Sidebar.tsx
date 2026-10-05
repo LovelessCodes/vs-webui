@@ -10,30 +10,33 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { StatusDot, statusMeta } from "@/components/status-badge";
 import { useStatus } from "@/hooks/use-api";
+import { LANGUAGES, setLanguage } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
   to: string;
-  label: string;
+  labelKey: string;
   icon: LucideIcon;
   exact?: boolean;
 }
 
 const navItems: NavItem[] = [
-  { to: "/", label: "Dashboard", icon: Gauge, exact: true },
-  { to: "/console", label: "Console", icon: Terminal },
-  { to: "/mods", label: "Mods", icon: Package },
-  { to: "/config", label: "Mod Configs", icon: FileJson2 },
-  { to: "/players", label: "Players", icon: Users },
-  { to: "/backups", label: "Backups", icon: Archive },
-  { to: "/versions", label: "Versions", icon: Boxes },
-  { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/", labelKey: "nav.dashboard", icon: Gauge, exact: true },
+  { to: "/console", labelKey: "nav.console", icon: Terminal },
+  { to: "/mods", labelKey: "nav.mods", icon: Package },
+  { to: "/config", labelKey: "nav.configs", icon: FileJson2 },
+  { to: "/players", labelKey: "nav.players", icon: Users },
+  { to: "/backups", labelKey: "nav.backups", icon: Archive },
+  { to: "/versions", labelKey: "nav.versions", icon: Boxes },
+  { to: "/settings", labelKey: "nav.settings", icon: Settings },
 ];
 
 export default function Sidebar() {
+  const { t, i18n } = useTranslation();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { data } = useStatus();
   const status = data?.status.status;
@@ -46,16 +49,16 @@ export default function Sidebar() {
           <span className="text-sm font-bold text-accent-primary">VS</span>
         </div>
         <div className="grid min-w-0 leading-tight">
-          <span className="truncate text-sm font-bold tracking-wide">VS WEBUI</span>
+          <span className="truncate text-sm font-bold tracking-wide">{t("brand.name")}</span>
           <span className="truncate text-[10px] font-medium tracking-widest uppercase text-accent-amber">
-            Server Manager
+            {t("brand.tagline")}
           </span>
         </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto p-2">
         <p className="px-2 pt-2 pb-1 text-[10px] font-medium tracking-widest uppercase text-text-muted">
-          Navigation
+          {t("nav.navigation")}
         </p>
         <ul className="grid gap-0.5">
           {navItems.map((item) => {
@@ -73,7 +76,7 @@ export default function Sidebar() {
                   to={item.to}
                 >
                   <Icon className="size-4 shrink-0" />
-                  <span>{item.label}</span>
+                  <span>{t(item.labelKey)}</span>
                 </Link>
               </li>
             );
@@ -81,14 +84,28 @@ export default function Sidebar() {
         </ul>
       </nav>
 
-      <div className="border-t border-border-subtle px-4 py-3">
+      <div className="grid gap-2 border-t border-border-subtle px-4 py-3">
         <div className="flex items-center gap-2">
           <StatusDot status={status} />
-          <span className={cn("text-xs font-medium", meta.text)}>{meta.label}</span>
+          <span className={cn("text-xs font-medium", meta.text)}>{t(meta.labelKey)}</span>
         </div>
-        <p className="mt-1 truncate font-mono text-[10px] text-text-muted">
-          {data?.status.version ?? data?.settings.version ?? "no version selected"}
+        <p className="truncate font-mono text-[10px] text-text-muted">
+          {data?.status.version ?? data?.settings.version ?? t("status.noVersion")}
         </p>
+        <label className="flex items-center gap-2">
+          <span className="sr-only">{t("language.label")}</span>
+          <select
+            className="h-7 w-full border border-border-default bg-bg-input px-2 text-[11px] text-text-secondary focus:outline-none"
+            onChange={(event) => setLanguage(event.target.value)}
+            value={i18n.language}
+          >
+            {LANGUAGES.map((language) => (
+              <option key={language} value={language}>
+                {t(`language.${language}`)}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
     </aside>
   );

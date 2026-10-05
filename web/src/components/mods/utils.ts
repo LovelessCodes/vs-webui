@@ -1,11 +1,11 @@
-export function sideLabel(side: string): string {
+export function sideKey(side: string): string {
   switch (side) {
     case "server":
-      return "Server";
+      return "mods.server";
     case "client":
-      return "Client";
+      return "mods.client";
     default:
-      return "Client & Server";
+      return "mods.both";
   }
 }
 

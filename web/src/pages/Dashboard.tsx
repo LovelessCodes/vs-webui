@@ -10,6 +10,7 @@ import {
   Square,
   Terminal,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { StatusDot, statusMeta } from "@/components/status-badge";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,7 @@ import { errorMessage, formatBytes, formatDuration } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { data, isLoading, error } = useStatus();
   const preview = useConsolePreview();
   const start = useServerStart();
@@ -36,7 +38,7 @@ export default function Dashboard() {
     return (
       <div className="flex h-full items-center justify-center gap-2 text-xs text-text-muted">
         <Loader2 className="size-4 animate-spin" />
-        Loading…
+        {t("common.loading")}
       </div>
     );
   }
@@ -56,9 +58,10 @@ export default function Dashboard() {
   const busy = start.isPending || stop.isPending || restart.isPending;
   const canStart = (status === "stopped" || status === "crashed") && Boolean(data.settings.version);
   const canStop = status === "running" || status === "starting";
-  const uptime = status === "running" && data.status.started_at
-    ? Math.max(0, Math.floor(Date.now() / 1000) - data.status.started_at)
-    : null;
+  const uptime =
+    status === "running" && data.status.started_at
+      ? Math.max(0, Math.floor(Date.now() / 1000) - data.status.started_at)
+      : null;
   const install = data.install;
   const installing = install && install.phase !== "done" && install.phase !== "error";
   const actionError = start.error ?? stop.error ?? restart.error;
@@ -71,40 +74,40 @@ export default function Dashboard() {
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="flex items-center gap-2">
                 <Server className="size-4 text-text-secondary" />
-                Server
+                {t("dashboard.server")}
               </CardTitle>
               <span className="flex items-center gap-2">
                 <StatusDot status={status} />
-                <span className={`text-xs font-medium ${meta.text}`}>{meta.label}</span>
+                <span className={`text-xs font-medium ${meta.text}`}>{t(meta.labelKey)}</span>
               </span>
             </div>
-            <CardDescription>Dedicated Vintage Story process inside this container.</CardDescription>
+            <CardDescription>{t("dashboard.serverDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
               <div>
-                <dt className="text-text-muted">Version</dt>
-                <dd className="font-mono">{data.status.version ?? data.settings.version ?? "—"}</dd>
+                <dt className="text-text-muted">{t("dashboard.version")}</dt>
+                <dd className="font-mono">
+                  {data.status.version ?? data.settings.version ?? "—"}
+                </dd>
               </div>
               <div>
-                <dt className="text-text-muted">PID</dt>
+                <dt className="text-text-muted">{t("dashboard.pid")}</dt>
                 <dd className="font-mono">{data.status.pid ?? "—"}</dd>
               </div>
               <div>
-                <dt className="text-text-muted">Uptime</dt>
+                <dt className="text-text-muted">{t("dashboard.uptime")}</dt>
                 <dd className="font-mono">{uptime !== null ? formatDuration(uptime) : "—"}</dd>
               </div>
               <div>
-                <dt className="text-text-muted">Last exit</dt>
+                <dt className="text-text-muted">{t("dashboard.lastExit")}</dt>
                 <dd className="font-mono">
                   {data.status.exit_code === null ? "—" : `code ${data.status.exit_code}`}
                 </dd>
               </div>
             </dl>
 
-            {actionError && (
-              <p className="text-error text-xs">{errorMessage(actionError)}</p>
-            )}
+            {actionError && <p className="text-error text-xs">{errorMessage(actionError)}</p>}
 
             <div className="flex flex-wrap gap-2">
               <Button
@@ -113,11 +116,11 @@ export default function Dashboard() {
                 variant="success"
               >
                 <Play />
-                Start
+                {t("dashboard.start")}
               </Button>
               <Button disabled={!canStop || busy} onClick={() => stop.mutate()} variant="outline">
                 <Square />
-                Stop
+                {t("dashboard.stop")}
               </Button>
               <Button
                 disabled={!canStop || busy}
@@ -125,14 +128,14 @@ export default function Dashboard() {
                 variant="outline"
               >
                 <RotateCw className={restart.isPending ? "animate-spin" : undefined} />
-                Restart
+                {t("dashboard.restart")}
               </Button>
             </div>
             {!data.settings.version && (
               <p className="text-warning text-xs">
-                No game version selected — install one under{" "}
+                {t("dashboard.noVersion")}{" "}
                 <Link className="underline" to="/versions">
-                  Versions
+                  {t("dashboard.versionsLink")}
                 </Link>
                 .
               </p>
@@ -145,13 +148,15 @@ export default function Dashboard() {
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="flex items-center gap-2">
                 <Boxes className="size-4 text-text-secondary" />
-                Game build
+                {t("dashboard.gameBuild")}
               </CardTitle>
               <Badge variant={data.settings.flavor === "stratum" ? "accent" : "default"}>
-                {data.settings.flavor ?? "vanilla"}
+                {data.settings.flavor === "stratum"
+                  ? t("versions.stratum")
+                  : t("versions.vanilla")}
               </Badge>
             </div>
-            <CardDescription>Installed server runtime used by the process.</CardDescription>
+            <CardDescription>{t("dashboard.gameBuildDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
             {installing && install ? (
@@ -176,17 +181,17 @@ export default function Dashboard() {
                 </p>
               </div>
             ) : install?.phase === "error" ? (
-              <p className="text-error text-xs">{install.message ?? "Install failed"}</p>
+              <p className="text-error text-xs">{install.message ?? t("versions.installFailed")}</p>
             ) : (
               <div className="grid gap-1">
                 <p className="text-text-secondary text-xs">
                   {data.settings.version || data.settings.stratum_tag
-                    ? "Ready."
-                    : "Nothing installed yet."}
+                    ? t("dashboard.ready")
+                    : t("dashboard.nothingInstalled")}
                 </p>
                 {data.settings.flavor === "stratum" && data.settings.stratum_tag && (
                   <p className="text-xs text-text-secondary">
-                    Stratum{" "}
+                    {t("dashboard.stratum")}{" "}
                     <span className="font-mono text-accent-amber">
                       {data.settings.stratum_tag}
                     </span>
@@ -200,7 +205,7 @@ export default function Dashboard() {
                 to="/versions"
               >
                 <Boxes className="size-3.5" />
-                Manage versions
+                {t("dashboard.manageVersions")}
               </Link>
             </div>
           </CardContent>
@@ -211,33 +216,35 @@ export default function Dashboard() {
             <div className="flex items-center justify-between gap-2">
               <CardTitle className="flex items-center gap-2">
                 <Settings2 className="size-4 text-text-secondary" />
-                Server config
+                {t("dashboard.serverConfig")}
               </CardTitle>
             </div>
-            <CardDescription>From serverconfig.json in the data path.</CardDescription>
+            <CardDescription>{t("dashboard.serverConfigDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2 text-xs">
             <div className="flex justify-between gap-4">
-              <span className="text-text-muted">Name</span>
+              <span className="text-text-muted">{t("dashboard.name")}</span>
               <span className="truncate font-mono">{data.config?.server_name ?? "—"}</span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="text-text-muted">Port</span>
+              <span className="text-text-muted">{t("dashboard.port")}</span>
               <span className="font-mono">{data.config?.port ?? "—"}</span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="text-text-muted">Max clients</span>
+              <span className="text-text-muted">{t("dashboard.maxClients")}</span>
               <span className="font-mono">{data.config?.max_clients ?? "—"}</span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="text-text-muted">Password</span>
+              <span className="text-text-muted">{t("dashboard.password")}</span>
               <span className="font-mono">
-                {data.config?.password_protected ? "set" : "none"}
+                {data.config?.password_protected
+                  ? t("dashboard.passwordSet")
+                  : t("dashboard.passwordNone")}
               </span>
             </div>
             {!data.config && (
               <p className="text-text-muted text-[11px]">
-                Generated by the server on first start.
+                {t("dashboard.generatedOnFirstStart")}
               </p>
             )}
           </CardContent>
@@ -247,26 +254,30 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FolderCog className="size-4 text-text-secondary" />
-              Manager
+              {t("dashboard.manager")}
             </CardTitle>
-            <CardDescription>vs-webui daemon controlling the server.</CardDescription>
+            <CardDescription>{t("dashboard.managerDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2 text-xs">
             <div className="flex justify-between gap-4">
-              <span className="text-text-muted">Version</span>
+              <span className="text-text-muted">{t("dashboard.version")}</span>
               <span className="font-mono">{data.manager.version}</span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="text-text-muted">Uptime</span>
+              <span className="text-text-muted">{t("dashboard.uptime")}</span>
               <span className="font-mono">{formatDuration(data.manager.uptime)}</span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="text-text-muted">Data dir</span>
+              <span className="text-text-muted">{t("dashboard.dataDir")}</span>
               <span className="truncate font-mono">{data.manager.data_dir}</span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="text-text-muted">Auth</span>
-              <span className="font-mono">{data.manager.auth_enabled ? "password" : "off"}</span>
+              <span className="text-text-muted">{t("dashboard.auth")}</span>
+              <span className="font-mono">
+                {data.manager.auth_enabled
+                  ? t("dashboard.authPassword")
+                  : t("dashboard.authOff")}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -277,13 +288,13 @@ export default function Dashboard() {
           <div className="flex items-center justify-between gap-2">
             <CardTitle className="flex items-center gap-2">
               <Terminal className="size-4 text-text-secondary" />
-              Recent console
+              {t("dashboard.recentConsole")}
             </CardTitle>
             <Link
               className="text-accent-primary text-xs underline-offset-4 hover:underline"
               to="/console"
             >
-              Open console →
+              {t("dashboard.openConsole")}
             </Link>
           </div>
         </CardHeader>
@@ -298,7 +309,7 @@ export default function Dashboard() {
               ))}
             </pre>
           ) : (
-            <p className="text-text-muted text-xs">No console output yet.</p>
+            <p className="text-text-muted text-xs">{t("dashboard.noOutput")}</p>
           )}
         </CardContent>
       </Card>

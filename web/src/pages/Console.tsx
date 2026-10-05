@@ -1,11 +1,13 @@
 import { Eraser, Loader2, Play, Send, Square, Wifi, WifiOff } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useTranslation } from "react-i18next";
 
 import { StatusDot } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useServerCommand, useServerStart, useServerStop, useStatus } from "@/hooks/use-api";
 import { consoleStream, type ConsoleLine } from "@/lib/api";
+import { errorMessage } from "@/lib/format";
 
 const MAX_LINES = 2000;
 
@@ -23,6 +25,7 @@ function lineClass(line: string): string {
 }
 
 export default function Console() {
+  const { t } = useTranslation();
   const [lines, setLines] = useState<ConsoleLine[]>([]);
   const [connected, setConnected] = useState(false);
   const [follow, setFollow] = useState(true);
@@ -115,11 +118,11 @@ export default function Console() {
           <span className="text-text-secondary">
             {connected ? (
               <span className="flex items-center gap-1.5">
-                <Wifi className="size-3.5 text-success" /> live
+                <Wifi className="size-3.5 text-success" /> {t("console.live")}
               </span>
             ) : (
               <span className="flex items-center gap-1.5">
-                <WifiOff className="size-3.5 text-text-muted" /> reconnecting…
+                <WifiOff className="size-3.5 text-text-muted" /> {t("console.reconnecting")}
               </span>
             )}
           </span>
@@ -132,7 +135,7 @@ export default function Console() {
             onChange={(event) => setFollow(event.target.checked)}
             type="checkbox"
           />
-          Follow
+          {t("console.follow")}
         </label>
         <Button
           disabled={lines.length === 0}
@@ -141,7 +144,7 @@ export default function Console() {
           variant="ghost"
         >
           <Eraser />
-          Clear
+          {t("common.clear")}
         </Button>
         {canStart ? (
           <Button
@@ -151,7 +154,7 @@ export default function Console() {
             variant="success"
           >
             {start.isPending ? <Loader2 className="animate-spin" /> : <Play />}
-            Start
+            {t("dashboard.start")}
           </Button>
         ) : (
           <Button
@@ -161,15 +164,13 @@ export default function Console() {
             variant="outline"
           >
             {stop.isPending ? <Loader2 className="animate-spin" /> : <Square />}
-            Stop
+            {t("dashboard.stop")}
           </Button>
         )}
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto border border-border-default bg-bg-input p-3 font-mono text-[11px] leading-relaxed">
-        {lines.length === 0 && (
-          <p className="text-text-muted">No console output yet. Start the server to see logs.</p>
-        )}
+        {lines.length === 0 && <p className="text-text-muted">{t("console.empty")}</p>}
         {lines.map((line, index) => (
           <div className="whitespace-pre-wrap" key={`${line.ts}-${index}`}>
             <span className="text-text-muted">{line.ts}</span>{" "}
@@ -184,7 +185,9 @@ export default function Console() {
           disabled={!canStop}
           onChange={(event) => setInput(event.target.value)}
           onKeyDown={onKeyDown}
-          placeholder={canStop ? "Type a server command (e.g. /time set day)" : "Server is not running"}
+          placeholder={
+            canStop ? t("console.placeholderRunning") : t("console.placeholderStopped")
+          }
           value={input}
         />
         <Button
@@ -193,11 +196,13 @@ export default function Console() {
           variant="accent-primary"
         >
           <Send />
-          Send
+          {t("console.send")}
         </Button>
       </div>
       {send.isError && (
-        <p className="text-error text-xs">Command failed: {String(send.error)}</p>
+        <p className="text-error text-xs">
+          {t("console.commandFailed", { message: errorMessage(send.error) })}
+        </p>
       )}
     </div>
   );

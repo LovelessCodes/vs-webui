@@ -1,20 +1,17 @@
 import { Loader2, ShieldCheck, Users, Wrench } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  usePlayers,
-  useServerCommand,
-  useSetWhitelistMode,
-  useStatus,
-} from "@/hooks/use-api";
+import { usePlayers, useServerCommand, useSetWhitelistMode, useStatus } from "@/hooks/use-api";
 import { errorMessage, formatDuration } from "@/lib/format";
 
 export default function Players() {
+  const { t } = useTranslation();
   const players = usePlayers();
   const status = useStatus();
   const command = useServerCommand();
@@ -34,14 +31,12 @@ export default function Players() {
     <div className="flex h-full flex-col gap-4 overflow-y-auto pb-4">
       {!running && (
         <p className="border border-warning/40 bg-warning/5 px-3 py-2 text-[11px] text-warning">
-          The server is not running — whitelist and moderation commands need a running server.
+          {t("players.notRunning")}
         </p>
       )}
-      {command.isError && (
-        <p className="text-error text-xs">{errorMessage(command.error)}</p>
-      )}
+      {command.isError && <p className="text-error text-xs">{errorMessage(command.error)}</p>}
       {!command.isError && command.isSuccess && (
-        <p className="text-success text-xs">Command sent to the server console.</p>
+        <p className="text-success text-xs">{t("common.commandSent")}</p>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -49,20 +44,18 @@ export default function Players() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="size-4 text-text-secondary" />
-              Online players
+              {t("players.online")}
             </CardTitle>
-            <CardDescription>
-              Best-effort list from server join/leave events.
-            </CardDescription>
+            <CardDescription>{t("players.onlineDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             {players.isLoading && !players.data ? (
               <div className="flex items-center gap-2 text-xs text-text-muted">
                 <Loader2 className="size-4 animate-spin" />
-                Loading…
+                {t("common.loading")}
               </div>
             ) : (players.data?.online.length ?? 0) === 0 ? (
-              <p className="text-xs text-text-muted">No players detected.</p>
+              <p className="text-xs text-text-muted">{t("players.noPlayers")}</p>
             ) : (
               <ul className="divide-y divide-border-subtle">
                 {players.data?.online.map((player) => (
@@ -82,17 +75,17 @@ export default function Players() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Wrench className="size-4 text-text-secondary" />
-              Moderation
+              {t("players.moderation")}
             </CardTitle>
-            <CardDescription>Send admin commands for a player by name.</CardDescription>
+            <CardDescription>{t("players.moderationDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
             <div className="grid gap-1.5">
-              <Label htmlFor="mod-target">Player name</Label>
+              <Label htmlFor="mod-target">{t("players.playerName")}</Label>
               <Input
                 id="mod-target"
                 onChange={(event) => setTarget(event.target.value)}
-                placeholder="Player name"
+                placeholder={t("players.playerName")}
                 value={target}
               />
             </div>
@@ -103,7 +96,7 @@ export default function Players() {
                 size="sm"
                 variant="outline-warning"
               >
-                Kick
+                {t("players.kick")}
               </Button>
               <Button
                 disabled={!running || !target.trim()}
@@ -111,7 +104,7 @@ export default function Players() {
                 size="sm"
                 variant="destructive"
               >
-                Ban
+                {t("players.ban")}
               </Button>
               <Button
                 disabled={!running || !target.trim()}
@@ -119,7 +112,7 @@ export default function Players() {
                 size="sm"
                 variant="outline"
               >
-                Unban
+                {t("players.unban")}
               </Button>
               <Button
                 disabled={!running || !target.trim()}
@@ -127,7 +120,7 @@ export default function Players() {
                 size="sm"
                 variant="outline"
               >
-                Op
+                {t("players.op")}
               </Button>
               <Button
                 disabled={!running || !target.trim()}
@@ -135,7 +128,7 @@ export default function Players() {
                 size="sm"
                 variant="outline"
               >
-                Deop
+                {t("players.deop")}
               </Button>
             </div>
           </CardContent>
@@ -146,11 +139,11 @@ export default function Players() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle className="flex items-center gap-2">
                 <ShieldCheck className="size-4 text-text-secondary" />
-                Whitelist
+                {t("players.whitelist")}
               </CardTitle>
               {enabled !== null && (
                 <label className="flex items-center gap-2 text-xs text-text-secondary">
-                  {enabled ? "Whitelist only" : "Open server"}
+                  {enabled ? t("players.whitelistOnly") : t("players.openServer")}
                   <Switch
                     checked={enabled}
                     disabled={mode.isPending}
@@ -159,26 +152,19 @@ export default function Players() {
                 </label>
               )}
             </div>
-            <CardDescription>
-              Changes go through the server's own <span className="font-mono">/player</span>{" "}
-              commands and are persisted by the game in{" "}
-              <span className="font-mono">playerwhitelist.json</span>.
-            </CardDescription>
+            <CardDescription>{t("players.whitelistDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
             {enabled === null && (
-              <p className="text-xs text-text-muted">
-                Whitelist mode is set once <span className="font-mono">serverconfig.json</span>{" "}
-                exists (first server start).
-              </p>
+              <p className="text-xs text-text-muted">{t("players.whitelistModeNote")}</p>
             )}
             {mode.isSuccess && mode.data?.restart_required && (
-              <p className="text-warning text-xs">Saved — restart the server to apply.</p>
+              <p className="text-warning text-xs">{t("configs.savedRestart")}</p>
             )}
             {mode.isError && <p className="text-error text-xs">{errorMessage(mode.error)}</p>}
             {whitelist?.error && (
               <p className="border border-warning/40 bg-warning/5 px-3 py-2 text-[11px] text-warning">
-                {whitelist.error}
+                {t("players.whitelistError")}
               </p>
             )}
 
@@ -187,7 +173,7 @@ export default function Players() {
                 {whitelist?.entries.map((entry, index) => (
                   <div className="flex items-center gap-3 px-3 py-2" key={`${entry.uid}-${index}`}>
                     <span className="min-w-0 flex-1 truncate text-xs">
-                      {entry.name ?? "(unknown name)"}
+                      {entry.name ?? t("players.unknownName")}
                     </span>
                     <span className="hidden truncate font-mono text-[10px] text-text-muted sm:block">
                       {entry.uid ?? ""}
@@ -198,7 +184,7 @@ export default function Players() {
                       size="sm"
                       variant="ghost"
                     >
-                      Remove
+                      {t("common.remove")}
                     </Button>
                   </div>
                 ))}
@@ -207,11 +193,11 @@ export default function Players() {
 
             <div className="flex flex-wrap items-end gap-2">
               <div className="grid min-w-56 flex-1 gap-1.5">
-                <Label htmlFor="whitelist-name">Whitelist a player</Label>
+                <Label htmlFor="whitelist-name">{t("players.whitelistPlayer")}</Label>
                 <Input
                   id="whitelist-name"
                   onChange={(event) => setNewName(event.target.value)}
-                  placeholder="Player name"
+                  placeholder={t("players.playerName")}
                   value={newName}
                 />
               </div>
@@ -224,7 +210,7 @@ export default function Players() {
                 size="sm"
                 variant="accent-primary"
               >
-                Add to whitelist
+                {t("players.addToWhitelist")}
               </Button>
             </div>
           </CardContent>

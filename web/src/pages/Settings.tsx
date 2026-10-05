@@ -1,18 +1,20 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, KeyRound, Loader2, ServerCog } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 
+import ServerConfigForm from "@/components/config/ServerConfigForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import ServerConfigForm from "@/components/config/ServerConfigForm";
 import { useSettings, useStatus } from "@/hooks/use-api";
 import { api, setCsrf } from "@/lib/api";
 import { errorMessage } from "@/lib/format";
 
 export default function Settings() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const status = useStatus();
   const settings = useSettings();
@@ -65,8 +67,7 @@ export default function Settings() {
     },
   });
 
-  const passwordMismatch =
-    confirmPassword.length > 0 && newPassword !== confirmPassword;
+  const passwordMismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
   const passwordTooShort = newPassword.length > 0 && newPassword.length < 8;
   const canChangePassword =
     newPassword.length >= 8 &&
@@ -84,12 +85,9 @@ export default function Settings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ServerCog className="size-4 text-text-secondary" />
-            Server configuration
+            {t("settings.serverConfigTitle")}
           </CardTitle>
-          <CardDescription>
-            serverconfig.json — name, ports, limits, PvP and whitelist. The raw JSON tab covers
-            roles, world config and everything else.
-          </CardDescription>
+          <CardDescription>{t("settings.serverConfigDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <ServerConfigForm />
@@ -100,46 +98,40 @@ export default function Settings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ServerCog className="size-4 text-text-secondary" />
-            Server behavior
+            {t("settings.behaviorTitle")}
           </CardTitle>
-          <CardDescription>How the manager runs the game server.</CardDescription>
+          <CardDescription>{t("settings.behaviorDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <Label htmlFor="auto-start">Start automatically on container boot</Label>
-              <p className="text-text-muted text-[11px]">
-                The manager starts the server as soon as it is up.
-              </p>
+              <Label htmlFor="auto-start">{t("settings.autoStart")}</Label>
+              <p className="text-text-muted text-[11px]">{t("settings.autoStartHint")}</p>
             </div>
             <Switch checked={autoStart} id="auto-start" onCheckedChange={setAutoStart} />
           </div>
 
           <div className="flex items-center justify-between gap-4">
             <div>
-              <Label htmlFor="auto-restart">Restart after a crash</Label>
-              <p className="text-text-muted text-[11px]">
-                Up to five attempts with a 5 second delay, then it stays down.
-              </p>
+              <Label htmlFor="auto-restart">{t("settings.autoRestart")}</Label>
+              <p className="text-text-muted text-[11px]">{t("settings.autoRestartHint")}</p>
             </div>
             <Switch checked={autoRestart} id="auto-restart" onCheckedChange={setAutoRestart} />
           </div>
 
           <div className="grid gap-1.5">
-            <Label htmlFor="start-params">Extra start arguments</Label>
+            <Label htmlFor="start-params">{t("settings.startParams")}</Label>
             <Input
               id="start-params"
               onChange={(event) => setStartParams(event.target.value)}
-              placeholder="e.g. --port 42421 --ip 0.0.0.0"
+              placeholder={t("settings.startParamsPlaceholder")}
               value={startParams}
             />
-            <p className="text-text-muted text-[11px]">
-              Appended to the server command line; supports quoted values.
-            </p>
+            <p className="text-text-muted text-[11px]">{t("settings.startParamsHint")}</p>
           </div>
 
           <div className="grid gap-1.5">
-            <Label htmlFor="restart-schedule">Daily restart</Label>
+            <Label htmlFor="restart-schedule">{t("settings.dailyRestart")}</Label>
             <div className="flex items-center gap-2">
               <Input
                 className="w-32"
@@ -149,19 +141,12 @@ export default function Settings() {
                 value={restartSchedule}
               />
               {restartSchedule && (
-                <Button
-                  onClick={() => setRestartSchedule("")}
-                  size="sm"
-                  variant="ghost"
-                >
-                  Clear
+                <Button onClick={() => setRestartSchedule("")} size="sm" variant="ghost">
+                  {t("common.clear")}
                 </Button>
               )}
             </div>
-            <p className="text-text-muted text-[11px]">
-              Restarts the server daily at this local time with 5- and 1-minute announcements.
-              Leave empty to disable.
-            </p>
+            <p className="text-text-muted text-[11px]">{t("settings.dailyRestartHint")}</p>
           </div>
 
           {saveSettings.isError && (
@@ -175,9 +160,9 @@ export default function Settings() {
               variant="accent-primary"
             >
               {saveSettings.isPending ? <Loader2 className="animate-spin" /> : <Check />}
-              Save
+              {t("common.save")}
             </Button>
-            {saved && <span className="text-success text-xs">Saved</span>}
+            {saved && <span className="text-success text-xs">{t("common.saved")}</span>}
           </div>
         </CardContent>
       </Card>
@@ -186,24 +171,22 @@ export default function Settings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <KeyRound className="size-4 text-text-secondary" />
-            Web access
+            {t("settings.accessTitle")}
           </CardTitle>
           <CardDescription>
             {status.data?.manager.auth_enabled
-              ? "Password protecting this web UI. Changing it signs out all sessions."
-              : "Authentication is disabled (VS_WEB_AUTH=off)."}
+              ? t("settings.accessEnabled")
+              : t("settings.accessDisabled")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {passwordChanged ? (
-            <p className="text-success text-xs">
-              Password changed. Sign in again with the new password.
-            </p>
+            <p className="text-success text-xs">{t("settings.passwordChanged")}</p>
           ) : (
             <form className="grid gap-4" onSubmit={onSubmitPassword}>
               {status.data?.manager.auth_enabled && (
                 <div className="grid gap-1.5">
-                  <Label htmlFor="current-password">Current password</Label>
+                  <Label htmlFor="current-password">{t("settings.currentPassword")}</Label>
                   <Input
                     autoComplete="current-password"
                     id="current-password"
@@ -214,7 +197,7 @@ export default function Settings() {
                 </div>
               )}
               <div className="grid gap-1.5">
-                <Label htmlFor="new-password">New password</Label>
+                <Label htmlFor="new-password">{t("settings.newPassword")}</Label>
                 <Input
                   autoComplete="new-password"
                   id="new-password"
@@ -223,13 +206,11 @@ export default function Settings() {
                   value={newPassword}
                 />
                 {passwordTooShort && (
-                  <p className="text-[11px] text-error">
-                    At least 8 characters.
-                  </p>
+                  <p className="text-[11px] text-error">{t("settings.tooShort")}</p>
                 )}
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="confirm-password">Confirm new password</Label>
+                <Label htmlFor="confirm-password">{t("settings.confirmPassword")}</Label>
                 <Input
                   autoComplete="new-password"
                   id="confirm-password"
@@ -238,7 +219,7 @@ export default function Settings() {
                   value={confirmPassword}
                 />
                 {passwordMismatch && (
-                  <p className="text-[11px] text-error">Passwords do not match.</p>
+                  <p className="text-[11px] text-error">{t("settings.mismatch")}</p>
                 )}
               </div>
 
@@ -252,7 +233,7 @@ export default function Settings() {
                 variant="accent-primary"
               >
                 {changePassword.isPending && <Loader2 className="animate-spin" />}
-                Change password
+                {t("settings.changePassword")}
               </Button>
             </form>
           )}
@@ -261,27 +242,25 @@ export default function Settings() {
 
       <Card className="self-start lg:col-span-2">
         <CardHeader>
-          <CardTitle>About</CardTitle>
+          <CardTitle>{t("settings.about")}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-2 text-xs sm:grid-cols-2">
           <div className="flex justify-between gap-4 sm:col-span-2">
-            <span className="text-text-muted">Manager</span>
-            <span className="font-mono">
-              vs-webui {status.data?.manager.version ?? "?"}
-            </span>
+            <span className="text-text-muted">{t("settings.manager")}</span>
+            <span className="font-mono">vs-webui {status.data?.manager.version ?? "?"}</span>
           </div>
           <div className="flex justify-between gap-4 sm:col-span-2">
-            <span className="text-text-muted">Data directory</span>
+            <span className="text-text-muted">{t("settings.dataDir")}</span>
             <span className="truncate font-mono">{status.data?.manager.data_dir ?? "—"}</span>
           </div>
           <div className="flex justify-between gap-4 sm:col-span-2">
-            <span className="text-text-muted">Game data path</span>
+            <span className="text-text-muted">{t("settings.gameDataPath")}</span>
             <span className="truncate font-mono">
               {status.data?.manager.data_dir ?? "/data"}/server
             </span>
           </div>
           <div className="flex justify-between gap-4 sm:col-span-2">
-            <span className="text-text-muted">Game port</span>
+            <span className="text-text-muted">{t("settings.gamePort")}</span>
             <span className="font-mono">{status.data?.config?.port ?? 42420}</span>
           </div>
         </CardContent>

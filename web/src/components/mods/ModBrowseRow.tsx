@@ -1,10 +1,11 @@
 import { Package } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
 import type { ModSummary } from "@/lib/api";
 import { formatCount } from "@/lib/format";
 
-import { sideLabel, sideVariant } from "./utils";
+import { sideKey, sideVariant } from "./utils";
 
 interface ModBrowseRowProps {
   mod: ModSummary;
@@ -13,6 +14,7 @@ interface ModBrowseRowProps {
 }
 
 export default function ModBrowseRow({ mod, installed, onOpen }: ModBrowseRowProps) {
+  const { t } = useTranslation();
   return (
     <button
       className="flex w-full items-start gap-3 border-b border-border-subtle px-3 py-2.5 text-left transition-colors last:border-b-0 hover:bg-bg-card-hover"
@@ -29,8 +31,8 @@ export default function ModBrowseRow({ mod, installed, onOpen }: ModBrowseRowPro
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="truncate text-xs font-medium">{mod.name}</span>
-          {installed && <Badge variant="success">Installed</Badge>}
-          <Badge variant={sideVariant(mod.side)}>{sideLabel(mod.side)}</Badge>
+          {installed && <Badge variant="success">{t("mods.installedBadge")}</Badge>}
+          <Badge variant={sideVariant(mod.side)}>{t(sideKey(mod.side))}</Badge>
         </div>
         <p className="truncate text-[11px] text-text-secondary">
           {mod.author} — {mod.summary}
@@ -46,10 +48,9 @@ export default function ModBrowseRow({ mod, installed, onOpen }: ModBrowseRowPro
         )}
       </div>
       <div className="shrink-0 text-right">
-        <p className="font-mono text-[11px] text-text-secondary">
-          {formatCount(mod.downloads)}
+        <p className="text-[10px] text-text-muted">
+          {t("mods.downloads", { count: formatCount(mod.downloads) })}
         </p>
-        <p className="text-[10px] text-text-muted">downloads</p>
       </div>
     </button>
   );

@@ -1,5 +1,6 @@
 import { History, Loader2, Star, StarOff, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,22 +27,24 @@ export default function InstalledModRow({
   onUpdate,
   onPickVersion,
 }: InstalledModRowProps) {
+  const { t } = useTranslation();
   const [confirming, setConfirming] = useState(false);
+  const dependencyCount = Object.keys(mod.dependencies).length;
 
   return (
     <div className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-bg-card-hover">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="truncate text-xs font-medium">{mod.name}</span>
-          {pinned && <Badge variant="amber">Pinned</Badge>}
+          {pinned && <Badge variant="amber">{t("mods.pinned")}</Badge>}
           {update && !pinned && (
-            <Badge variant="accent">→ {update.modversion}</Badge>
+            <Badge variant="accent">{t("mods.updateBadge", { version: update.modversion })}</Badge>
           )}
         </div>
         <p className="truncate text-[11px] text-text-muted">
           {mod.authors.join(", ")} · <span className="font-mono">{mod.version}</span>
-          {Object.keys(mod.dependencies).length > 0 && (
-            <span> · {Object.keys(mod.dependencies).length} dependencies</span>
+          {dependencyCount > 0 && (
+            <span> · {t("mods.dependencyCount", { count: dependencyCount })}</span>
           )}
         </p>
       </div>
@@ -50,7 +53,7 @@ export default function InstalledModRow({
         {pending ? (
           <span className="flex items-center gap-1.5 text-xs text-text-secondary">
             <Loader2 className="size-3.5 animate-spin" />
-            Working…
+            {t("common.working")}
           </span>
         ) : (
           update &&
@@ -60,7 +63,7 @@ export default function InstalledModRow({
               size="sm"
               variant="accent-primary"
             >
-              Update
+              {t("common.update")}
             </Button>
           )
         )}
@@ -68,10 +71,10 @@ export default function InstalledModRow({
         {confirming ? (
           <>
             <Button onClick={onRemove} size="sm" variant="destructive">
-              Really remove?
+              {t("common.reallyRemove")}
             </Button>
             <Button onClick={() => setConfirming(false)} size="sm" variant="ghost">
-              Cancel
+              {t("common.cancel")}
             </Button>
           </>
         ) : (
@@ -79,7 +82,7 @@ export default function InstalledModRow({
             <Button
               onClick={onPin}
               size="icon-sm"
-              title={pinned ? "Unpin (include in updates)" : "Pin (skip updates)"}
+              title={pinned ? t("mods.unpin") : t("mods.pin")}
               variant="ghost"
             >
               {pinned ? <StarOff /> : <Star />}
@@ -87,7 +90,7 @@ export default function InstalledModRow({
             <Button
               onClick={onPickVersion}
               size="icon-sm"
-              title="Versions"
+              title={t("mods.versions")}
               variant="ghost"
             >
               <History />
@@ -95,7 +98,7 @@ export default function InstalledModRow({
             <Button
               onClick={() => setConfirming(true)}
               size="icon-sm"
-              title="Remove"
+              title={t("common.remove")}
               variant="ghost"
             >
               <Trash2 />

@@ -1,40 +1,51 @@
 import { Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import CodeEditor from "@/components/config/CodeEditor";
+import type { JSONValue } from "@/components/config/json-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useSaveServerConfig, useServerConfig } from "@/hooks/use-api";
-import type { JSONValue } from "@/components/config/json-utils";
 import { errorMessage } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface Field {
   key: string;
-  label: string;
+  labelKey: string;
   kind: "string" | "number" | "boolean";
-  hint?: string;
+  hintKey?: string;
 }
 
 const FIELDS: Field[] = [
-  { key: "ServerName", label: "Server name", kind: "string" },
-  { key: "ServerDescription", label: "Description", kind: "string" },
-  { key: "WelcomeMessage", label: "Welcome message", kind: "string", hint: "{0} is the player name" },
-  { key: "Port", label: "Game port", kind: "number" },
-  { key: "MaxClients", label: "Max clients", kind: "number" },
-  { key: "MaxClientsInQueue", label: "Max clients in queue", kind: "number" },
-  { key: "Password", label: "Server password", kind: "string", hint: "Empty = no password" },
-  { key: "MaxChunkRadius", label: "Max chunk radius", kind: "number" },
-  { key: "ServerLanguage", label: "Server language", kind: "string" },
-  { key: "OnlyWhitelisted", label: "Whitelist only", kind: "boolean" },
-  { key: "VerifyPlayerAuth", label: "Verify player auth", kind: "boolean" },
-  { key: "AllowPvP", label: "Allow PvP", kind: "boolean" },
-  { key: "AllowFireSpread", label: "Allow fire spread", kind: "boolean" },
-  { key: "AdvertiseServer", label: "Advertise on public server list", kind: "boolean" },
-  { key: "Upnp", label: "UPnP port forwarding", kind: "boolean" },
-  { key: "PassTimeWhenEmpty", label: "Pass time when empty", kind: "boolean" },
+  { key: "ServerName", labelKey: "settings.fieldName", kind: "string" },
+  { key: "ServerDescription", labelKey: "settings.fieldDescription", kind: "string" },
+  {
+    key: "WelcomeMessage",
+    labelKey: "settings.fieldWelcome",
+    kind: "string",
+    hintKey: "settings.fieldWelcomeHint",
+  },
+  { key: "Port", labelKey: "settings.fieldPort", kind: "number" },
+  { key: "MaxClients", labelKey: "settings.fieldMaxClients", kind: "number" },
+  { key: "MaxClientsInQueue", labelKey: "settings.fieldMaxQueue", kind: "number" },
+  {
+    key: "Password",
+    labelKey: "settings.fieldPassword",
+    kind: "string",
+    hintKey: "settings.fieldPasswordHint",
+  },
+  { key: "MaxChunkRadius", labelKey: "settings.fieldChunkRadius", kind: "number" },
+  { key: "ServerLanguage", labelKey: "settings.fieldLanguage", kind: "string" },
+  { key: "OnlyWhitelisted", labelKey: "settings.fieldWhitelistOnly", kind: "boolean" },
+  { key: "VerifyPlayerAuth", labelKey: "settings.fieldVerifyAuth", kind: "boolean" },
+  { key: "AllowPvP", labelKey: "settings.fieldPvp", kind: "boolean" },
+  { key: "AllowFireSpread", labelKey: "settings.fieldFire", kind: "boolean" },
+  { key: "AdvertiseServer", labelKey: "settings.fieldAdvertise", kind: "boolean" },
+  { key: "Upnp", labelKey: "settings.fieldUpnp", kind: "boolean" },
+  { key: "PassTimeWhenEmpty", labelKey: "settings.fieldPassTime", kind: "boolean" },
 ];
 
 type Mode = "form" | "json";
@@ -44,6 +55,7 @@ type Mode = "form" | "json";
  * plus the full raw JSON. The game owns this file — we only merge edits back.
  */
 export default function ServerConfigForm() {
+  const { t } = useTranslation();
   const config = useServerConfig();
   const save = useSaveServerConfig();
   const [mode, setMode] = useState<Mode>("form");
@@ -61,7 +73,9 @@ export default function ServerConfigForm() {
 
   function valueOf(field: Field): JSONValue {
     if (field.key in overrides) return overrides[field.key];
-    return original?.[field.key] ?? (field.kind === "boolean" ? false : field.kind === "number" ? 0 : "");
+    return (
+      original?.[field.key] ?? (field.kind === "boolean" ? false : field.kind === "number" ? 0 : "")
+    );
   }
 
   function setField(field: Field, value: JSONValue) {
@@ -83,19 +97,14 @@ export default function ServerConfigForm() {
     return (
       <div className="flex items-center gap-2 p-4 text-xs text-text-muted">
         <Loader2 className="size-4 animate-spin" />
-        Loading server config…
+        {t("settings.loadingConfig")}
       </div>
     );
   }
 
   const data = config.data;
   if (!data || data.missing || !original) {
-    return (
-      <p className="p-4 text-xs text-text-secondary">
-        The server writes <span className="font-mono">serverconfig.json</span> on its first
-        start. Start the server once, then edit it here.
-      </p>
-    );
+    return <p className="p-4 text-xs text-text-secondary">{t("settings.missingConfig")}</p>;
   }
 
   return (
@@ -114,7 +123,7 @@ export default function ServerConfigForm() {
               onClick={() => setMode(option)}
               type="button"
             >
-              {option === "form" ? "Form" : "Raw JSON"}
+              {option === "form" ? t("settings.form") : t("settings.rawJson")}
             </button>
           ))}
         </div>
@@ -122,7 +131,7 @@ export default function ServerConfigForm() {
         {save.isError && <p className="text-error text-xs">{errorMessage(save.error)}</p>}
         {savedAt && !dirty && !save.isPending && (
           <span className="text-success text-xs">
-            Saved{save.data?.restart_required ? " — restart to apply" : ""}
+            {save.data?.restart_required ? t("configs.savedRestart") : t("common.saved")}
           </span>
         )}
         {mode === "form" && (
@@ -133,7 +142,7 @@ export default function ServerConfigForm() {
               size="sm"
               variant="outline"
             >
-              Reset
+              {t("common.reset")}
             </Button>
             <Button
               disabled={!dirty || save.isPending}
@@ -142,7 +151,7 @@ export default function ServerConfigForm() {
               variant="accent-primary"
             >
               {save.isPending ? <Loader2 className="animate-spin" /> : null}
-              Save changes
+              {t("settings.saveChanges")}
             </Button>
           </>
         )}
@@ -156,9 +165,9 @@ export default function ServerConfigForm() {
               return (
                 <div className="flex items-center justify-between gap-4" key={field.key}>
                   <div>
-                    <Label htmlFor={`field-${field.key}`}>{field.label}</Label>
-                    {field.hint && (
-                      <p className="text-[11px] text-text-muted">{field.hint}</p>
+                    <Label htmlFor={`field-${field.key}`}>{t(field.labelKey)}</Label>
+                    {field.hintKey && (
+                      <p className="text-[11px] text-text-muted">{t(field.hintKey)}</p>
                     )}
                   </div>
                   <Switch
@@ -171,7 +180,7 @@ export default function ServerConfigForm() {
             }
             return (
               <div className="grid gap-1.5" key={field.key}>
-                <Label htmlFor={`field-${field.key}`}>{field.label}</Label>
+                <Label htmlFor={`field-${field.key}`}>{t(field.labelKey)}</Label>
                 <Input
                   id={`field-${field.key}`}
                   onChange={(event) =>
@@ -185,14 +194,13 @@ export default function ServerConfigForm() {
                   type={field.kind === "number" ? "number" : "text"}
                   value={value === null ? "" : String(value)}
                 />
-                {field.hint && <p className="text-[11px] text-text-muted">{field.hint}</p>}
+                {field.hintKey && (
+                  <p className="text-[11px] text-text-muted">{t(field.hintKey)}</p>
+                )}
               </div>
             );
           })}
-          <p className="text-[11px] text-text-muted lg:col-span-2">
-            Only the fields you changed are merged into the file — the rest of the config is
-            left untouched. Use Raw JSON for roles, world config and the remaining keys.
-          </p>
+          <p className="text-[11px] text-text-muted lg:col-span-2">{t("settings.formNote")}</p>
         </div>
       ) : (
         <div className="h-[480px] border border-border-default">
