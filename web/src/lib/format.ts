@@ -6,6 +6,13 @@ export function formatBytes(bytes: number): string {
   return `${value.toFixed(value >= 100 || exponent === 0 ? 0 : 1)} ${units[exponent]}`;
 }
 
+export function formatCount(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return "0";
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1).replace(/\.0$/, "")}k`;
+  return String(value);
+}
+
 export function formatDuration(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return "—";
   const days = Math.floor(seconds / 86400);

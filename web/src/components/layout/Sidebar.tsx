@@ -16,12 +16,12 @@ interface NavItem {
 const navItems: NavItem[] = [
   { to: "/", label: "Dashboard", icon: Gauge, exact: true },
   { to: "/console", label: "Console", icon: Terminal },
+  { to: "/mods", label: "Mods", icon: Package },
   { to: "/versions", label: "Versions", icon: Boxes },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
 const soonItems: { label: string; icon: LucideIcon }[] = [
-  { label: "Mods", icon: Package },
   { label: "Mod Configs", icon: FileJson2 },
 ];
 

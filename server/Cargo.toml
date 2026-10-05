@@ -16,6 +16,7 @@ axum = "0.8"
 base64 = "0.22"
 flate2 = "1"
 futures-util = "0.3"
+json5 = "1"
 libc = "0.2"
 md-5 = "0.10"
 rand = "0.8"
@@ -27,3 +28,4 @@ tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0.6", features = ["fs", "trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+zip = { version = "8", default-features = false, features = ["deflate"] }

@@ -25,6 +25,9 @@ pub struct Settings {
     /// Extra CLI arguments appended to the server command line.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub start_params: String,
+    /// Mods excluded from update checks and "Update All" (lowercased modids).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub pinned_mods: Vec<String>,
 }
 
 impl Default for Settings {
@@ -35,6 +38,7 @@ impl Default for Settings {
             auto_start: false,
             auto_restart: false,
             start_params: String::new(),
+            pinned_mods: Vec::new(),
         }
     }
 }

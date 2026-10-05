@@ -1,6 +1,7 @@
 mod api;
 mod auth;
 mod console;
+mod mods;
 mod paths;
 mod serverconfig;
 mod settings;
@@ -65,10 +66,14 @@ async fn main() -> anyhow::Result<()> {
         settings: settings.clone(),
         auth,
         supervisor,
-        versions: versions::VersionCache::new(http_client),
+        versions: versions::VersionCache::new(http_client.clone()),
+        moddb: mods::ModDbCache::new(http_client),
+        mods: Arc::new(mods::ModsManager::new()),
         install: Mutex::new(None),
         started: std::time::Instant::now(),
     });
+
+    tokio::spawn(state.mods.clone().run_worker(state.clone()));
 
     if let Some(version) = state.settings.lock().unwrap().version.clone() {
         if !state.layout.server_exe(&version).exists() {

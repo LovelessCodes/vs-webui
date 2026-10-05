@@ -1,9 +1,9 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::convert::Infallible;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use axum::extract::{ConnectInfo, FromRequestParts, Query, State};
+use axum::extract::{ConnectInfo, FromRequestParts, Path as UrlPath, Query, State};
 use axum::http::request::Parts;
 use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::sse::{Event, KeepAlive, Sse};
@@ -17,6 +17,7 @@ use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 
 use crate::console::LogLine;
+use crate::mods::{self, InstalledMod, NewJob};
 use crate::state::SharedState;
 use crate::versions::{InstallStatus, CHANNELS};
 
@@ -48,6 +49,17 @@ pub fn router(state: SharedState) -> Router {
             "/api/serverconfig",
             get(get_serverconfig).put(put_serverconfig),
         )
+        .route("/api/modb/mods", get(modb_mods))
+        .route("/api/modb/tags", get(modb_tags))
+        .route("/api/modb/mod/{modid}", get(modb_detail))
+        .route("/api/mods/installed", get(mods_installed))
+        .route("/api/mods/updates", get(mods_updates))
+        .route("/api/mods/jobs", get(mods_jobs))
+        .route("/api/mods/install", post(mods_install))
+        .route("/api/mods/remove", post(mods_remove))
+        .route("/api/mods/update", post(mods_update))
+        .route("/api/mods/update-all", post(mods_update_all))
+        .route("/api/mods/pin", post(mods_pin))
         .fallback_service(ServeDir::new(&dist).fallback(ServeFile::new(&index)))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
@@ -542,4 +554,303 @@ async fn put_serverconfig(
         "ok": true,
         "restart_required": state.supervisor.is_running(),
     })))
+}
+
+// ── mods ────────────────────────────────────────────────────────────────────
+
+#[derive(Deserialize)]
+struct ModbModsQuery {
+    version: Option<String>,
+    text: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct ModInstallReq {
+    modid: String,
+    version: Option<String>,
+    constraint: Option<String>,
+    name: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct ModRemoveReq {
+    file: String,
+}
+
+#[derive(Deserialize)]
+struct ModUpdateReq {
+    modid: String,
+    version: String,
+    file: String,
+    name: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct ModPinReq {
+    modid: String,
+    pinned: bool,
+}
+
+async fn modb_mods(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Query(query): Query<ModbModsQuery>,
+) -> Result<Json<Value>, ApiError> {
+    let text = query.text.unwrap_or_default();
+    state
+        .moddb
+        .mods(query.version.as_deref(), &text)
+        .await
+        .map(Json)
+        .map_err(|message| ApiError::new(StatusCode::BAD_GATEWAY, message))
+}
+
+async fn modb_tags(
+    State(state): State<SharedState>,
+    _authed: Authed,
+) -> Result<Json<Value>, ApiError> {
+    state
+        .moddb
+        .tags()
+        .await
+        .map(Json)
+        .map_err(|message| ApiError::new(StatusCode::BAD_GATEWAY, message))
+}
+
+async fn modb_detail(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(modid): UrlPath<String>,
+) -> Result<Json<Value>, ApiError> {
+    state
+        .moddb
+        .detail(&modid)
+        .await
+        .map(Json)
+        .map_err(|message| ApiError::new(StatusCode::BAD_GATEWAY, message))
+}
+
+async fn scan_mods_blocking(state: &SharedState) -> Result<mods::ModScan, ApiError> {
+    let layout = state.layout.clone();
+    tokio::task::spawn_blocking(move || mods::scan_mods(&layout.server_dir().join(mods::MODS_DIR)))
+        .await
+        .map_err(|e| ApiError::internal(format!("mod scan failed: {e}")))
+}
+
+async fn mods_installed(
+    State(state): State<SharedState>,
+    _authed: Authed,
+) -> Result<Json<Value>, ApiError> {
+    let scan = scan_mods_blocking(&state).await?;
+    Ok(Json(json!(scan)))
+}
+
+async fn mods_updates(
+    State(state): State<SharedState>,
+    _authed: Authed,
+) -> Result<Json<Value>, ApiError> {
+    let scan = scan_mods_blocking(&state).await?;
+    let pinned = state.settings.lock().unwrap().pinned_mods.clone();
+    state
+        .moddb
+        .updates(&scan.mods, &pinned)
+        .await
+        .map(Json)
+        .map_err(|message| ApiError::new(StatusCode::BAD_GATEWAY, message))
+}
+
+async fn mods_jobs(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {
+    Json(json!({ "jobs": state.mods.jobs() }))
+}
+
+async fn create_backup_blocking(state: &SharedState) -> Result<String, ApiError> {
+    let layout = state.layout.clone();
+    tokio::task::spawn_blocking(move || mods::create_mods_backup(&layout))
+        .await
+        .map_err(|e| ApiError::internal(format!("backup task failed: {e}")))?
+        .map_err(ApiError::internal)
+}
+
+async fn mods_install(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Json(req): Json<ModInstallReq>,
+) -> Result<Json<Value>, ApiError> {
+    let modid = req.modid.trim().to_string();
+    if modid.is_empty() {
+        return Err(ApiError::bad_request("missing mod id"));
+    }
+    if state.mods.has_pending(&modid) {
+        return Err(ApiError::new(
+            StatusCode::CONFLICT,
+            "a job for this mod is already queued",
+        ));
+    }
+    let backup = create_backup_blocking(&state).await?;
+    let job_id = state.mods.enqueue(NewJob {
+        action: "install".into(),
+        modid: modid.clone(),
+        name: req.name.unwrap_or_else(|| modid.clone()),
+        version: req.version,
+        file: None,
+        constraint: req.constraint,
+        dependency: false,
+    });
+    Ok(Json(json!({ "job_id": job_id, "backup": backup })))
+}
+
+async fn mods_remove(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Json(req): Json<ModRemoveReq>,
+) -> Result<Json<Value>, ApiError> {
+    let file = req.file.trim().to_string();
+    if file.is_empty()
+        || file.contains('/')
+        || file.contains('\\')
+        || !file.to_lowercase().ends_with(".zip")
+    {
+        return Err(ApiError::bad_request("invalid mod file name"));
+    }
+    let path = state.layout.server_dir().join(mods::MODS_DIR).join(&file);
+    if !path.is_file() {
+        return Err(ApiError::bad_request(format!("{file} is not installed")));
+    }
+    let backup = create_backup_blocking(&state).await?;
+    let job_id = state.mods.enqueue(NewJob {
+        action: "remove".into(),
+        modid: file.clone(),
+        name: file.clone(),
+        version: None,
+        file: Some(file),
+        constraint: None,
+        dependency: false,
+    });
+    Ok(Json(json!({ "job_id": job_id, "backup": backup })))
+}
+
+async fn mods_update(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Json(req): Json<ModUpdateReq>,
+) -> Result<Json<Value>, ApiError> {
+    let modid = req.modid.trim().to_string();
+    if modid.is_empty() || req.version.trim().is_empty() {
+        return Err(ApiError::bad_request("missing mod id or version"));
+    }
+    if state.mods.has_pending(&modid) {
+        return Err(ApiError::new(
+            StatusCode::CONFLICT,
+            "a job for this mod is already queued",
+        ));
+    }
+    let backup = create_backup_blocking(&state).await?;
+    let job_id = state.mods.enqueue(NewJob {
+        action: "update".into(),
+        modid: modid.clone(),
+        name: req.name.unwrap_or_else(|| modid.clone()),
+        version: Some(req.version),
+        file: Some(req.file),
+        constraint: None,
+        dependency: false,
+    });
+    Ok(Json(json!({ "job_id": job_id, "backup": backup })))
+}
+
+async fn mods_update_all(
+    State(state): State<SharedState>,
+    _authed: Authed,
+) -> Result<Json<Value>, ApiError> {
+    let scan = scan_mods_blocking(&state).await?;
+    let pinned: HashSet<String> = state
+        .settings
+        .lock()
+        .unwrap()
+        .pinned_mods
+        .iter()
+        .map(|id| id.to_lowercase())
+        .collect();
+    let pinned_list = state.settings.lock().unwrap().pinned_mods.clone();
+    let updates_value = state
+        .moddb
+        .updates(&scan.mods, &pinned_list)
+        .await
+        .map_err(|message| ApiError::new(StatusCode::BAD_GATEWAY, message))?;
+    let updates = updates_value
+        .get("updates")
+        .and_then(Value::as_object)
+        .cloned()
+        .unwrap_or_default();
+
+    let installed_by_id: HashMap<String, &InstalledMod> = scan
+        .mods
+        .iter()
+        .map(|module| (module.modid.to_lowercase(), module))
+        .collect();
+
+    let mut targets: Vec<(InstalledMod, String)> = Vec::new();
+    for (key, value) in &updates {
+        if pinned.contains(key) {
+            continue;
+        }
+        let Some(installed) = installed_by_id.get(key) else {
+            continue;
+        };
+        if state.mods.has_pending(&installed.modid) {
+            continue;
+        }
+        let version = value
+            .get("modversion")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        if version.is_empty() {
+            continue;
+        }
+        targets.push(((*installed).clone(), version));
+    }
+
+    if targets.is_empty() {
+        return Ok(Json(json!({ "job_ids": [], "backup": null })));
+    }
+    let backup = create_backup_blocking(&state).await?;
+    let mut job_ids = Vec::new();
+    for (installed, version) in targets {
+        job_ids.push(state.mods.enqueue(NewJob {
+            action: "update".into(),
+            modid: installed.modid.clone(),
+            name: installed.name.clone(),
+            version: Some(version),
+            file: Some(installed.file.clone()),
+            constraint: None,
+            dependency: false,
+        }));
+    }
+    Ok(Json(json!({ "job_ids": job_ids, "backup": backup })))
+}
+
+async fn mods_pin(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Json(req): Json<ModPinReq>,
+) -> Result<Json<Value>, ApiError> {
+    let id = req.modid.trim().to_lowercase();
+    if id.is_empty() {
+        return Err(ApiError::bad_request("missing mod id"));
+    }
+    let settings = {
+        let mut guard = state.settings.lock().unwrap();
+        if req.pinned {
+            if !guard.pinned_mods.contains(&id) {
+                guard.pinned_mods.push(id);
+            }
+        } else {
+            guard.pinned_mods.retain(|pinned| pinned != &id);
+        }
+        guard
+            .save(&state.layout.settings_path())
+            .map_err(|e| ApiError::internal(format!("cannot save settings: {e}")))?;
+        guard.clone()
+    };
+    Ok(Json(json!(settings)))
 }

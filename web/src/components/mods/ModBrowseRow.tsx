@@ -1,0 +1,56 @@
+import { Package } from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import type { ModSummary } from "@/lib/api";
+import { formatCount } from "@/lib/format";
+
+import { sideLabel, sideVariant } from "./utils";
+
+interface ModBrowseRowProps {
+  mod: ModSummary;
+  installed: boolean;
+  onOpen: () => void;
+}
+
+export default function ModBrowseRow({ mod, installed, onOpen }: ModBrowseRowProps) {
+  return (
+    <button
+      className="flex w-full items-start gap-3 border-b border-border-subtle px-3 py-2.5 text-left transition-colors last:border-b-0 hover:bg-bg-card-hover"
+      onClick={onOpen}
+      type="button"
+    >
+      <div className="flex size-10 shrink-0 items-center justify-center border border-border-default bg-bg-input">
+        {mod.logo ? (
+          <img alt="" className="size-full object-cover" loading="lazy" src={mod.logo} />
+        ) : (
+          <Package className="size-4 text-text-muted" />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="truncate text-xs font-medium">{mod.name}</span>
+          {installed && <Badge variant="success">Installed</Badge>}
+          <Badge variant={sideVariant(mod.side)}>{sideLabel(mod.side)}</Badge>
+        </div>
+        <p className="truncate text-[11px] text-text-secondary">
+          {mod.author} — {mod.summary}
+        </p>
+        {mod.tags.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {mod.tags.slice(0, 3).map((tag) => (
+              <Badge key={tag} variant="outline">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="shrink-0 text-right">
+        <p className="font-mono text-[11px] text-text-secondary">
+          {formatCount(mod.downloads)}
+        </p>
+        <p className="text-[10px] text-text-muted">downloads</p>
+      </div>
+    </button>
+  );
+}

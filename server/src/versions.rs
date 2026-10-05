@@ -126,32 +126,59 @@ impl VersionCache {
     }
 }
 
-/// Numeric comparison of `major.minor.patch` style versions; prerelease
-/// suffixes (`-rc.1`, `-pre`) sort below the matching release.
+/// Numeric comparison of `major.minor.patch` style versions. Prerelease
+/// suffixes (`-dev.26`, `-rc.1`) sort below the matching release and among
+/// themselves by their numeric parts (dev.26 > dev.1).
 pub fn compare_versions(a: &str, b: &str) -> Ordering {
-    let key = |v: &str| -> Vec<u64> {
-        v.split(['-', '+'])
-            .next()
-            .unwrap_or(v)
+    fn split(v: &str) -> (Vec<u64>, Option<String>) {
+        let (base, pre) = match v.split_once(['-', '+']) {
+            Some((base, pre)) => (base, Some(pre.to_string())),
+            None => (v, None),
+        };
+        let key = base
             .split(|c: char| !c.is_ascii_digit())
             .filter(|part| !part.is_empty())
             .filter_map(|part| part.parse::<u64>().ok())
-            .collect()
-    };
-    let (ka, kb) = (key(a), key(b));
-    for i in 0..ka.len().max(kb.len()) {
-        let x = ka.get(i).copied().unwrap_or(0);
-        let y = kb.get(i).copied().unwrap_or(0);
-        match x.cmp(&y) {
-            Ordering::Equal => {}
-            other => return other,
-        }
+            .collect();
+        (key, pre)
     }
-    let pre = |v: &str| v.contains("-rc") || v.contains("-pre") || v.contains("-dev");
-    match (pre(a), pre(b)) {
-        (true, false) => Ordering::Less,
-        (false, true) => Ordering::Greater,
-        _ => Ordering::Equal,
+    fn compare_keys(a: &[u64], b: &[u64]) -> Ordering {
+        for i in 0..a.len().max(b.len()) {
+            match a
+                .get(i)
+                .copied()
+                .unwrap_or(0)
+                .cmp(&b.get(i).copied().unwrap_or(0))
+            {
+                Ordering::Equal => {}
+                other => return other,
+            }
+        }
+        Ordering::Equal
+    }
+
+    let (ka, pre_a) = split(a);
+    let (kb, pre_b) = split(b);
+    match compare_keys(&ka, &kb) {
+        Ordering::Equal => {}
+        other => return other,
+    }
+    match (pre_a, pre_b) {
+        (None, None) => Ordering::Equal,
+        (None, Some(_)) => Ordering::Greater,
+        (Some(_), None) => Ordering::Less,
+        (Some(pre_a), Some(pre_b)) => {
+            let key = |pre: &str| -> Vec<u64> {
+                pre.split(|c: char| !c.is_ascii_digit())
+                    .filter(|part| !part.is_empty())
+                    .filter_map(|part| part.parse::<u64>().ok())
+                    .collect()
+            };
+            match compare_keys(&key(&pre_a), &key(&pre_b)) {
+                Ordering::Equal => pre_a.cmp(&pre_b),
+                other => other,
+            }
+        }
     }
 }
 
@@ -372,6 +399,26 @@ mod tests {
     fn prerelease_sorts_below_release() {
         assert_eq!(compare_versions("1.23.0-rc.1", "1.23.0"), Ordering::Less);
         assert_eq!(compare_versions("1.23.0", "1.23.0-rc.1"), Ordering::Greater);
+    }
+
+    #[test]
+    fn prerelease_numbers_compare() {
+        assert_eq!(
+            compare_versions("2.0.0-dev.1", "2.0.0-dev.26"),
+            Ordering::Less
+        );
+        assert_eq!(
+            compare_versions("2.0.0-dev.26", "2.0.0-dev.1"),
+            Ordering::Greater
+        );
+        assert_eq!(
+            compare_versions("2.0.0-dev.26", "2.0.0-dev.26"),
+            Ordering::Equal
+        );
+        assert_eq!(
+            compare_versions("2.0.0-dev.9", "2.0.0-dev.15"),
+            Ordering::Less
+        );
     }
 
     #[test]

@@ -90,3 +90,114 @@ export function useInstallVersion() {
 export function useSetActiveVersion() {
   return useServerAction<string>((version) => api.setActiveVersion(version));
 }
+
+// ── mods ────────────────────────────────────────────────────────────────────
+
+export function useModDb(version: string | undefined, text: string, enabled = true) {
+  return useQuery({
+    queryKey: ["modb", version ?? "", text],
+    queryFn: () => api.modbMods(version, text),
+    staleTime: 5 * 60_000,
+    placeholderData: (previous) => previous,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useModTags(enabled = true) {
+  return useQuery({
+    queryKey: ["modb", "tags"],
+    queryFn: api.modbTags,
+    staleTime: 60 * 60_000,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useModDetail(modid: string | null) {
+  return useQuery({
+    queryKey: ["modb", "detail", modid],
+    queryFn: () => api.modbDetail(modid as string),
+    staleTime: 5 * 60_000,
+    retry: false,
+    enabled: Boolean(modid),
+  });
+}
+
+export function useInstalledMods(enabled = true) {
+  return useQuery({
+    queryKey: ["mods", "installed"],
+    queryFn: api.installedMods,
+    staleTime: 5_000,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useModUpdates(enabled = true) {
+  return useQuery({
+    queryKey: ["mods", "updates"],
+    queryFn: api.modUpdates,
+    staleTime: Infinity,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useModJobs(enabled = true) {
+  return useQuery({
+    queryKey: ["mods", "jobs"],
+    queryFn: api.modJobs,
+    retry: false,
+    enabled,
+    refetchInterval: (query) => {
+      const jobs = query.state.data?.jobs ?? [];
+      const active = jobs.some((job) => job.status === "queued" || job.status === "running");
+      return active ? 1_000 : 5_000;
+    },
+  });
+}
+
+/** Mod mutations refresh the job list; the page invalidates the rest on completion. */
+function useModMutation<TArgs>(mutationFn: (args: TArgs) => Promise<unknown>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["mods", "jobs"] });
+    },
+  });
+}
+
+export function useInstallMod() {
+  return useModMutation<{ modid: string; version?: string; constraint?: string; name?: string }>(
+    (body) => api.installMod(body),
+  );
+}
+
+export function useRemoveMod() {
+  return useModMutation<string>((file) => api.removeMod(file));
+}
+
+export function useUpdateMod() {
+  return useModMutation<{ modid: string; version: string; file: string; name?: string }>((body) =>
+    api.updateMod(body),
+  );
+}
+
+export function useUpdateAllMods() {
+  return useModMutation<void>(() => api.updateAllMods());
+}
+
+export function usePinMod() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ modid, pinned }: { modid: string; pinned: boolean }) =>
+      api.pinMod(modid, pinned),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["mods"] });
+      void queryClient.invalidateQueries({ queryKey: ["settings"] });
+      void queryClient.invalidateQueries({ queryKey: ["status"] });
+    },
+  });
+}

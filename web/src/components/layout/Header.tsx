@@ -13,6 +13,10 @@ const pageMeta: Record<string, { title: string; description?: string }> = {
     title: "Console",
     description: "Live server output and commands",
   },
+  "/mods": {
+    title: "Mods",
+    description: "Browse the mod database and manage installed mods",
+  },
   "/versions": {
     title: "Versions",
     description: "Install and switch Vintage Story builds",

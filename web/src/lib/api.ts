@@ -66,6 +66,7 @@ export interface Settings {
   auto_start?: boolean;
   auto_restart?: boolean;
   start_params?: string;
+  pinned_mods?: string[];
 }
 
 export interface ConfigSummary {
@@ -110,6 +111,116 @@ export interface ServerConfigResponse {
   content: string;
   value: unknown;
   missing?: boolean;
+}
+
+// ── mods ────────────────────────────────────────────────────────────────────
+
+export interface ModSummary {
+  modid: number;
+  name: string;
+  summary: string;
+  author: string;
+  side: string;
+  type: string;
+  logo: string | null;
+  tags: string[];
+  downloads: number;
+  follows: number;
+  trendingpoints: number;
+  lastreleased: string;
+  modidstrs: string[];
+  urlalias: string | null;
+}
+
+export interface ModRelease {
+  releaseid: number;
+  mainfile: string;
+  filename: string;
+  fileid: number;
+  downloads: number;
+  tags: string[];
+  modidstr: string;
+  modversion: string;
+  created: string;
+  changelog: string | null;
+}
+
+export interface ModDetail {
+  modid: number;
+  name: string;
+  text: string;
+  author: string;
+  side: string;
+  type: string;
+  logo: string | null;
+  tags: string[];
+  downloads: number;
+  follows: number;
+  trendingpoints: number;
+  lastreleased: string;
+  releases: ModRelease[];
+}
+
+export interface ModTag {
+  tagid: number;
+  name: string;
+  color: string;
+}
+
+export interface InstalledMod {
+  modid: string;
+  name: string;
+  authors: string[];
+  version: string;
+  file: string;
+  dependencies: Record<string, string>;
+}
+
+export interface ModScanError {
+  file: string;
+  stage: string;
+  message: string;
+}
+
+export interface InstalledModsResponse {
+  mods: InstalledMod[];
+  errors: ModScanError[];
+}
+
+export interface ModUpdate {
+  releaseid: number;
+  mainfile: string;
+  filename: string;
+  fileid: number;
+  downloads: number;
+  tags: string[];
+  modidstr: string;
+  modversion: string;
+  created: string;
+}
+
+export interface ModUpdatesResponse {
+  updates: Record<string, ModUpdate>;
+}
+
+export interface ModJob {
+  id: number;
+  action: string;
+  modid: string;
+  name: string;
+  version: string | null;
+  file: string | null;
+  status: "queued" | "running" | "done" | "error";
+  progress: number;
+  total: number;
+  error: string | null;
+  dependency: boolean;
+  created_at: number;
+  finished_at: number | null;
+}
+
+export interface ModJobsResponse {
+  jobs: ModJob[];
 }
 
 export const api = {
@@ -164,6 +275,45 @@ export const api = {
     request<{ lines: ConsoleLine[] }>(`/api/console/history?limit=${limit}`),
 
   serverConfig: () => request<ServerConfigResponse>("/api/serverconfig"),
+
+  modbMods: (version: string | undefined, text: string) => {
+    const params = new URLSearchParams();
+    if (version) params.set("version", version);
+    if (text) params.set("text", text);
+    const query = params.toString();
+    return request<{ mods: ModSummary[] }>(`/api/modb/mods${query ? `?${query}` : ""}`);
+  },
+  modbTags: () => request<{ tags: ModTag[] }>("/api/modb/tags"),
+  modbDetail: (modid: string | number) =>
+    request<{ mod: ModDetail }>(`/api/modb/mod/${encodeURIComponent(String(modid))}`),
+
+  installedMods: () => request<InstalledModsResponse>("/api/mods/installed"),
+  modUpdates: () => request<ModUpdatesResponse>("/api/mods/updates"),
+  modJobs: () => request<ModJobsResponse>("/api/mods/jobs"),
+  installMod: (body: { modid: string; version?: string; constraint?: string; name?: string }) =>
+    request<{ job_id: number; backup: string }>("/api/mods/install", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  removeMod: (file: string) =>
+    request<{ job_id: number; backup: string }>("/api/mods/remove", {
+      method: "POST",
+      body: JSON.stringify({ file }),
+    }),
+  updateMod: (body: { modid: string; version: string; file: string; name?: string }) =>
+    request<{ job_id: number; backup: string }>("/api/mods/update", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateAllMods: () =>
+    request<{ job_ids: number[]; backup: string | null }>("/api/mods/update-all", {
+      method: "POST",
+    }),
+  pinMod: (modid: string, pinned: boolean) =>
+    request<Settings>("/api/mods/pin", {
+      method: "POST",
+      body: JSON.stringify({ modid, pinned }),
+    }),
 };
 
 export function consoleStream(): EventSource {

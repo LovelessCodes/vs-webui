@@ -190,12 +190,21 @@ Design vocabulary from `storyforge/PORTING.md`: sharp corners, right-side Sheets
       complete file (roles, world config) on first start, and a partial file makes it
       refuse to boot. The UI reads it back once it exists.
 
-### Phase 2 — mods
+### Phase 2 — mods ✅ implemented
 
-- Installed mod scan (zip `modinfo.json`), ModDB browse/search/filters
-- Install/update/downgrade/remove, recursive dependency queue, Update All, pins
-- Download manager UI via SSE, broken-mod and missing-dependency banners
-- Backup before mod changes
+- [x] Installed mod scan (zip `modinfo.json`, json5-tolerant, broken-zip errors)
+- [x] ModDB browse: search, game-version/side/tag filters, sorting, pagination, detail sheet
+      with release list
+- [x] Install / update / downgrade / remove; recursive dependency queue with
+      minimum-version release picking (fixed prerelease comparison, e.g. dev.26 > dev.1)
+- [x] Update All + per-mod pins (pinned mods excluded from update checks and Update All)
+- [x] Job queue with progress UI; broken-mod and missing-dependency banners
+- [x] Automatic `Mods` backups before every change (zip in `/data/backups`, newest 10 kept)
+- Notes: job progress is polled (`/api/mods/jobs`, 1s while active) — SSE upgrade only if
+      it becomes necessary. Modpacks/cloud accounts remain out of scope.
+- Verified live against ModDB: Expanded Foods install auto-queued A Culinary Artillery
+      (dependency), update-all moved both to the newest dev builds and removed old files,
+      remove + pin + CSRF checks pass.
 
 ### Phase 3 — configs
 
