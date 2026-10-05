@@ -1,9 +1,11 @@
 mod api;
 mod auth;
+mod backups;
 mod configs;
 mod console;
 mod mods;
 mod paths;
+mod players;
 mod serverconfig;
 mod settings;
 mod state;
@@ -77,6 +79,7 @@ async fn main() -> anyhow::Result<()> {
     });
 
     tokio::spawn(state.mods.clone().run_worker(state.clone()));
+    spawn_restart_scheduler(state.clone());
 
     if let Some(version) = state.settings.lock().unwrap().version.clone() {
         if !state.layout.server_exe(&version).exists() {
@@ -174,6 +177,70 @@ fn env_bool(name: &str) -> bool {
     std::env::var(name)
         .map(|value| value == "true" || value == "1" || value == "yes")
         .unwrap_or(false)
+}
+
+/// Daily restart at the configured local `HH:MM`, with 5-minute and 1-minute
+/// announcements through the server console.
+fn spawn_restart_scheduler(state: SharedState) {
+    use chrono::{Local, TimeZone};
+
+    tokio::spawn(async move {
+        let mut fired: Option<String> = None;
+        let mut warned5: Option<String> = None;
+        let mut warned1: Option<String> = None;
+
+        loop {
+            tokio::time::sleep(Duration::from_secs(20)).await;
+
+            let schedule = state.settings.lock().unwrap().restart_schedule.clone();
+            let Some(schedule) = schedule else {
+                continue;
+            };
+            let Some((hours, minutes)) = settings::parse_hhmm(&schedule) else {
+                continue;
+            };
+
+            let now = Local::now();
+            let Some(naive) = now.date_naive().and_hms_opt(hours, minutes, 0) else {
+                continue;
+            };
+            let Some(mut target) = Local.from_local_datetime(&naive).single() else {
+                continue;
+            };
+            if target <= now {
+                target += chrono::Duration::days(1);
+            }
+            let seconds = (target - now).num_seconds();
+            let key = target.format("%Y-%m-%d %H:%M").to_string();
+            let running = state.supervisor.is_running();
+
+            if seconds <= 25 {
+                if running && fired.as_deref() != Some(&key) {
+                    tracing::info!("scheduled restart: restarting the server now");
+                    state
+                        .supervisor
+                        .command("/announce Server restarting now".into())
+                        .await;
+                    state.supervisor.restart().await;
+                    fired = Some(key);
+                }
+            } else if seconds <= 90 {
+                if running && warned1.as_deref() != Some(&key) {
+                    state
+                        .supervisor
+                        .command("/announce Server restart in 1 minute".into())
+                        .await;
+                    warned1 = Some(key);
+                }
+            } else if seconds <= 360 && running && warned5.as_deref() != Some(&key) {
+                state
+                    .supervisor
+                    .command("/announce Server restart in 5 minutes".into())
+                    .await;
+                warned5 = Some(key);
+            }
+        }
+    });
 }
 
 async fn shutdown_signal() {

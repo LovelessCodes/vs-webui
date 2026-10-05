@@ -21,6 +21,14 @@ const pageMeta: Record<string, { title: string; description?: string }> = {
     title: "Mod Configs",
     description: "Edit ModConfig files with the live or code editor",
   },
+  "/players": {
+    title: "Players",
+    description: "Online players, whitelist and moderation",
+  },
+  "/backups": {
+    title: "Backups",
+    description: "Create, download, restore and delete backups",
+  },
   "/versions": {
     title: "Versions",
     description: "Install and switch Vintage Story builds",

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::process::Stdio;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -47,6 +48,7 @@ pub struct Supervisor {
     tx: mpsc::Sender<Cmd>,
     status: Arc<Mutex<Status>>,
     pub console: ConsoleLog,
+    online: Arc<Mutex<HashMap<String, u64>>>,
 }
 
 impl Supervisor {
@@ -55,12 +57,14 @@ impl Supervisor {
         let notify_tx = tx.clone();
         let console = ConsoleLog::new();
         let status = Arc::new(Mutex::new(initial_status(&layout, &settings)));
+        let online: Arc<Mutex<HashMap<String, u64>>> = Arc::new(Mutex::new(HashMap::new()));
 
         {
             let status = status.clone();
             let console = console.clone();
+            let online = online.clone();
             tokio::spawn(async move {
-                run(rx, notify_tx, status, console, layout, settings).await;
+                run(rx, notify_tx, status, console, online, layout, settings).await;
             });
         }
 
@@ -68,7 +72,21 @@ impl Supervisor {
             tx,
             status,
             console,
+            online,
         }
+    }
+
+    /// Best-effort online player list from console join/leave events.
+    pub fn online_players(&self) -> Vec<(String, u64)> {
+        let mut players: Vec<(String, u64)> = self
+            .online
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|(name, since)| (name.clone(), *since))
+            .collect();
+        players.sort_by_key(|entry| entry.0.to_lowercase());
+        players
     }
 
     pub fn status(&self) -> Status {
@@ -156,6 +174,7 @@ async fn run(
     notify_tx: mpsc::Sender<Cmd>,
     status: Arc<Mutex<Status>>,
     console: ConsoleLog,
+    online: Arc<Mutex<HashMap<String, u64>>>,
     layout: Layout,
     settings: Arc<Mutex<Settings>>,
 ) {
@@ -174,6 +193,7 @@ async fn run(
                     &notify_tx,
                     &status,
                     &console,
+                    &online,
                     &layout,
                     &settings,
                 )
@@ -202,6 +222,7 @@ async fn run(
                         &notify_tx,
                         &status,
                         &console,
+                        &online,
                         &layout,
                         &settings,
                     )
@@ -231,6 +252,7 @@ async fn run(
                 let Some(server) = running.take() else {
                     continue;
                 };
+                online.lock().unwrap().clear();
                 let user_stop = server.user_stop;
                 let uptime = server.started.elapsed().as_secs();
                 let clean = user_stop || code == Some(0);
@@ -277,6 +299,7 @@ async fn run(
                     &notify_tx,
                     &status,
                     &console,
+                    &online,
                     &layout,
                     &settings,
                 )
@@ -299,9 +322,11 @@ async fn start_server(
     notify_tx: &mpsc::Sender<Cmd>,
     status: &Arc<Mutex<Status>>,
     console: &ConsoleLog,
+    online: &Arc<Mutex<HashMap<String, u64>>>,
     layout: &Layout,
     settings: &Arc<Mutex<Settings>>,
 ) -> Result<(), String> {
+    online.lock().unwrap().clear();
     let (flavor, version, tag, params) = {
         let guard = settings.lock().unwrap();
         (
@@ -383,8 +408,8 @@ async fn start_server(
 
     set_status(status, |s| s.pid = pid);
 
-    spawn_reader(stdout, console.clone(), status.clone());
-    spawn_reader(stderr, console.clone(), status.clone());
+    spawn_reader(stdout, console.clone(), status.clone(), online.clone());
+    spawn_reader(stderr, console.clone(), status.clone(), online.clone());
 
     let (exit_tx, exit_rx) = oneshot::channel();
     let exit_notify = notify_tx.clone();
@@ -460,8 +485,12 @@ fn kill_group(pid: Option<u32>, signal: i32) {
     let _ = (pid, signal);
 }
 
-fn spawn_reader<R>(reader: R, console: ConsoleLog, status: Arc<Mutex<Status>>)
-where
+fn spawn_reader<R>(
+    reader: R,
+    console: ConsoleLog,
+    status: Arc<Mutex<Status>>,
+    online: Arc<Mutex<HashMap<String, u64>>>,
+) where
     R: tokio::io::AsyncRead + Unpin + Send + 'static,
 {
     tokio::spawn(async move {
@@ -474,10 +503,34 @@ where
                     }
                 });
             }
+            track_player(&line, &online);
             console.push(line.clone());
             tracing::info!(target: "server", "{}", line);
         }
     });
+}
+
+/// Best-effort online tracking from console join/leave events.
+fn track_player(line: &str, online: &Arc<Mutex<HashMap<String, u64>>>) {
+    let lower = line.to_lowercase();
+    let extract = |marker: &str| -> Option<String> {
+        let start = lower.find("player ")? + "player ".len();
+        let end = lower[start..].find(marker)?;
+        let name = line[start..start + end]
+            .trim()
+            .trim_matches(|c: char| c == '\'' || c == '"' || c == '.' || c == ',');
+        (!name.is_empty()).then(|| name.to_string())
+    };
+
+    if lower.contains(" joined") {
+        if let Some(name) = extract(" joined") {
+            online.lock().unwrap().insert(name, now_unix());
+        }
+    } else if lower.contains(" left") || lower.contains("disconnected") {
+        if let Some(name) = extract(" left").or_else(|| extract(" disconnected")) {
+            online.lock().unwrap().remove(&name);
+        }
+    }
 }
 
 async fn wait_or_stop(rx: &mut mpsc::Receiver<Cmd>, delay: Duration) -> bool {
@@ -538,7 +591,7 @@ pub fn parse_params(input: &str) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_params;
+    use super::*;
 
     #[test]
     fn splits_plain_args() {
@@ -560,5 +613,26 @@ mod tests {
     fn handles_escapes_and_empty() {
         assert_eq!(parse_params(""), Vec::<String>::new());
         assert_eq!(parse_params("a\\ b c"), vec!["a b", "c"]);
+    }
+
+    #[test]
+    fn tracks_player_join_and_leave() {
+        let online = Arc::new(Mutex::new(HashMap::new()));
+        track_player(
+            "5.10.2026 20:00:00 [Server Event] Player Alice joined.",
+            &online,
+        );
+        track_player(
+            "5.10.2026 20:00:01 [Server Event] Player Bob joined.",
+            &online,
+        );
+        assert_eq!(online.lock().unwrap().len(), 2);
+        track_player(
+            "5.10.2026 20:05:00 [Server Event] Player Alice left.",
+            &online,
+        );
+        let players = online.lock().unwrap();
+        assert_eq!(players.len(), 1);
+        assert!(players.contains_key("Bob"));
     }
 }

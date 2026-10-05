@@ -815,7 +815,7 @@ fn prune_backups(layout: &Layout) {
     }
 }
 
-fn timestamp_label() -> String {
+pub(crate) fn timestamp_label() -> String {
     let secs = now_unix() as i64;
     let days = secs.div_euclid(86_400);
     let rem = secs.rem_euclid(86_400);

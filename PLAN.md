@@ -234,10 +234,20 @@ Design vocabulary from `storyforge/PORTING.md`: sharp corners, right-side Sheets
       `/stratum reload` applied ("config reloaded; preflight passed"), graceful stop saved
       the world
 
-### Phase 5 — parity & polish
+### Phase 5 — parity & polish ✅ implemented (i18n deferred)
 
-- Players/whitelist/moderation, scheduled restarts, i18n (port storyforge catalogs),
-  screenshots, docs
+- [x] Players page: online list (console join/leave tracking), whitelist entries
+      (tolerant read of both `uid`/`PlayerUID` shapes), whitelist mode switch
+      (`OnlyWhitelisted` or legacy `WhitelistMode`)
+- [x] Moderation: kick/ban/unban/op/deop via console commands
+- [x] Daily restart schedule (`HH:MM` local) with 5- and 1-minute `/announce` warnings
+- [x] Backups page: create (server data / mods), list, download, restore (stopped server
+      only; mods archives restore into `Mods/`), delete; automatic mod backups retained
+- [x] Sidebar/header wiring; settings schedule field
+- Deferred: i18n catalog port and screenshot pipeline — the UI is English-only for now.
+- Verified locally: whitelist shapes, mode flip (modern + legacy), backup zip contents
+      (Logs excluded), restore, download, delete, schedule validation; in-container smoke
+      test of players/backups endpoints
 
 ## Verification
 

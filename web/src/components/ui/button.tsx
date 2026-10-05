@@ -26,6 +26,8 @@ const buttonVariants = cva(
           "border-success/40 text-success hover:bg-success/10 hover:text-success",
         "outline-info":
           "border-info/40 text-info hover:bg-info/10 hover:text-info",
+        "outline-warning":
+          "border-warning/40 text-warning hover:bg-warning/10 hover:text-warning",
         "outline-accent-primary":
           "border-accent-primary/40 text-accent-primary hover:bg-accent-primary/10 hover:text-accent-primary",
         link: "text-accent-primary underline-offset-4 hover:underline",

@@ -31,6 +31,17 @@ pub struct Settings {
     /// Mods excluded from update checks and "Update All" (lowercased modids).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub pinned_mods: Vec<String>,
+    /// Daily restart time as local `HH:MM`; `None` disables scheduled restarts.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub restart_schedule: Option<String>,
+}
+
+/// Parse a 24-hour `HH:MM` time.
+pub fn parse_hhmm(value: &str) -> Option<(u32, u32)> {
+    let (hours, minutes) = value.trim().split_once(':')?;
+    let hours: u32 = hours.parse().ok()?;
+    let minutes: u32 = minutes.parse().ok()?;
+    (hours < 24 && minutes < 60).then_some((hours, minutes))
 }
 
 impl Default for Settings {
@@ -43,6 +54,7 @@ impl Default for Settings {
             auto_restart: false,
             start_params: String::new(),
             pinned_mods: Vec::new(),
+            restart_schedule: None,
         }
     }
 }

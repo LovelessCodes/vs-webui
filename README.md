@@ -42,15 +42,17 @@ Game clients connect to `<host>:42420`.
 
 ## Status
 
-Phase 1 (manager core), Phase 2 (mods), Phase 3 (config editors) and Phase 4 (Stratum)
-implemented. Phase 1 verified end-to-end in the built linux/amd64 image: auto-install of VS
-1.22.7, server reaching `running`, live console, graceful `/stop` shutdown on `docker stop`.
-Phase 2 verified live against ModDB: browsing, dependency-aware install, update-all, remove,
-pins and automatic backups. Phase 3 verified locally: ModConfig listing/editing (live +
-Monaco), JSON5 validation, path-traversal rejection and the serverconfig form. Phase 4
-verified in-container: Stratum one-click install, first-run bootstrap + patch to `running`,
-config editing with `/stratum reload`, graceful stop. Phase 5 (players/whitelist/backups UI)
-is next — see [PLAN.md](PLAN.md).
+Phase 1 (manager core), Phase 2 (mods), Phase 3 (config editors), Phase 4 (Stratum) and
+Phase 5 (players, scheduled restarts, backups) implemented. Phase 1 verified end-to-end in
+the built linux/amd64 image: auto-install of VS 1.22.7, server reaching `running`, live
+console, graceful `/stop` shutdown on `docker stop`. Phase 2 verified live against ModDB:
+browsing, dependency-aware install, update-all, remove, pins and automatic backups. Phase 3
+verified locally: ModConfig listing/editing (live + Monaco), JSON5 validation, path-traversal
+rejection and the serverconfig form. Phase 4 verified in-container: Stratum one-click
+install, first-run bootstrap + patch to `running`, config editing with `/stratum reload`,
+graceful stop. Phase 5 verified locally and in-container: players/whitelist endpoints,
+server + mods backups (create/download/restore/delete) and the daily restart schedule.
+Deferred: i18n catalog port and the screenshot pipeline — the UI is English-only for now.
 
 ## Development
 

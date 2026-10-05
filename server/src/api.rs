@@ -8,7 +8,7 @@ use axum::http::request::Parts;
 use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, post, put};
+use axum::routing::{delete, get, post, put};
 use axum::{Json, Router};
 use futures_util::Stream;
 use serde::Deserialize;
@@ -67,6 +67,12 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/stratum/configs", get(stratum_configs))
         .route("/api/stratum/configs/{filename}", put(save_stratum_config))
         .route("/api/server/flavor", post(set_flavor))
+        .route("/api/players", get(players_view))
+        .route("/api/whitelist/mode", post(set_whitelist_mode))
+        .route("/api/backups", get(list_backups).post(create_backup))
+        .route("/api/backups/{name}/restore", post(restore_backup))
+        .route("/api/backups/{name}/download", get(download_backup))
+        .route("/api/backups/{name}", delete(delete_backup))
         .fallback_service(ServeDir::new(&dist).fallback(ServeFile::new(&index)))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
@@ -203,6 +209,8 @@ struct SettingsReq {
     auto_restart: bool,
     #[serde(default)]
     start_params: String,
+    #[serde(default)]
+    restart_schedule: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -538,11 +546,24 @@ async fn put_settings(
     _authed: Authed,
     Json(req): Json<SettingsReq>,
 ) -> Result<Json<Value>, ApiError> {
+    let schedule = match req.restart_schedule {
+        None => None,
+        Some(value) if value.trim().is_empty() => Some(None),
+        Some(value) => {
+            if crate::settings::parse_hhmm(&value).is_none() {
+                return Err(ApiError::bad_request("restart time must look like 04:30"));
+            }
+            Some(Some(value.trim().to_string()))
+        }
+    };
     let settings = {
         let mut guard = state.settings.lock().unwrap();
         guard.auto_start = req.auto_start;
         guard.auto_restart = req.auto_restart;
         guard.start_params = req.start_params;
+        if let Some(schedule) = schedule {
+            guard.restart_schedule = schedule;
+        }
         guard
             .save(&state.layout.settings_path())
             .map_err(|e| ApiError::internal(format!("cannot save settings: {e}")))?;
@@ -1033,4 +1054,152 @@ async fn set_flavor(
         "settings": settings,
         "restart_required": state.supervisor.is_running(),
     })))
+}
+
+// ── players & whitelist ─────────────────────────────────────────────────────
+
+#[derive(Deserialize)]
+struct WhitelistModeReq {
+    enabled: bool,
+}
+
+async fn players_view(
+    State(state): State<SharedState>,
+    _authed: Authed,
+) -> Result<Json<Value>, ApiError> {
+    let server_dir = state.layout.server_dir();
+    let (whitelist, enabled) = tokio::task::spawn_blocking(move || {
+        let whitelist = crate::players::read_whitelist(&server_dir);
+        let enabled = crate::players::whitelist_enabled(&server_dir);
+        (whitelist, enabled)
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("player data scan failed: {e}")))?;
+
+    let online: Vec<Value> = state
+        .supervisor
+        .online_players()
+        .into_iter()
+        .map(|(name, since)| json!({ "name": name, "since": since }))
+        .collect();
+
+    Ok(Json(json!({
+        "online": online,
+        "whitelist": whitelist,
+        "whitelist_enabled": enabled,
+    })))
+}
+
+async fn set_whitelist_mode(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Json(req): Json<WhitelistModeReq>,
+) -> Result<Json<Value>, ApiError> {
+    let server_dir = state.layout.server_dir();
+    tokio::task::spawn_blocking(move || {
+        crate::players::set_whitelist_enabled(&server_dir, req.enabled)
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("whitelist update failed: {e}")))?
+    .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({
+        "ok": true,
+        "restart_required": state.supervisor.is_running(),
+    })))
+}
+
+// ── backups ─────────────────────────────────────────────────────────────────
+
+#[derive(Deserialize)]
+struct BackupCreateReq {
+    #[serde(default = "default_backup_kind")]
+    kind: String,
+}
+
+fn default_backup_kind() -> String {
+    "server".into()
+}
+
+async fn list_backups(
+    State(state): State<SharedState>,
+    _authed: Authed,
+) -> Result<Json<Value>, ApiError> {
+    let layout = state.layout.clone();
+    let backups = tokio::task::spawn_blocking(move || crate::backups::list_backups(&layout))
+        .await
+        .map_err(|e| ApiError::internal(format!("backup scan failed: {e}")))?;
+    Ok(Json(json!({ "backups": backups })))
+}
+
+async fn create_backup(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Json(req): Json<BackupCreateReq>,
+) -> Result<Json<Value>, ApiError> {
+    let layout = state.layout.clone();
+    let kind = req.kind.clone();
+    let name = tokio::task::spawn_blocking(move || match kind.as_str() {
+        "mods" => crate::mods::create_mods_backup(&layout),
+        "server" => crate::backups::create_server_backup(&layout),
+        other => Err(format!("unknown backup kind: {other}")),
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("backup task failed: {e}")))?
+    .map_err(ApiError::internal)?;
+    Ok(Json(json!({ "ok": true, "name": name })))
+}
+
+async fn restore_backup(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(name): UrlPath<String>,
+) -> Result<Json<Value>, ApiError> {
+    if state.supervisor.is_running() {
+        return Err(ApiError::new(
+            StatusCode::CONFLICT,
+            "stop the server before restoring a backup",
+        ));
+    }
+    let layout = state.layout.clone();
+    tokio::task::spawn_blocking(move || crate::backups::restore_backup(&layout, &name))
+        .await
+        .map_err(|e| ApiError::internal(format!("restore task failed: {e}")))?
+        .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+async fn delete_backup(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(name): UrlPath<String>,
+) -> Result<Json<Value>, ApiError> {
+    let layout = state.layout.clone();
+    tokio::task::spawn_blocking(move || crate::backups::delete_backup(&layout, &name))
+        .await
+        .map_err(|e| ApiError::internal(format!("delete task failed: {e}")))?
+        .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+async fn download_backup(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(name): UrlPath<String>,
+) -> Result<Response, ApiError> {
+    let path = crate::backups::backup_path(&state.layout, &name).map_err(ApiError::bad_request)?;
+    if !path.is_file() {
+        return Err(ApiError::new(StatusCode::NOT_FOUND, "backup not found"));
+    }
+    let bytes = tokio::task::spawn_blocking(move || std::fs::read(&path))
+        .await
+        .map_err(|e| ApiError::internal(format!("read task failed: {e}")))?
+        .map_err(|e| ApiError::internal(format!("cannot read backup: {e}")))?;
+    Response::builder()
+        .header(header::CONTENT_TYPE, "application/zip")
+        .header(
+            header::CONTENT_DISPOSITION,
+            format!("attachment; filename=\"{}\"", name.replace('"', "")),
+        )
+        .body(axum::body::Body::from(bytes))
+        .map_err(|e| ApiError::internal(format!("response error: {e}")))
 }

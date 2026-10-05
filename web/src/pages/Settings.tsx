@@ -20,6 +20,7 @@ export default function Settings() {
   const [autoStart, setAutoStart] = useState(false);
   const [autoRestart, setAutoRestart] = useState(false);
   const [startParams, setStartParams] = useState("");
+  const [restartSchedule, setRestartSchedule] = useState("");
   const [saved, setSaved] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -32,11 +33,18 @@ export default function Settings() {
       setAutoStart(settings.data.auto_start ?? false);
       setAutoRestart(settings.data.auto_restart ?? false);
       setStartParams(settings.data.start_params ?? "");
+      setRestartSchedule(settings.data.restart_schedule ?? "");
     }
   }, [settings.data]);
 
   const saveSettings = useMutation({
-    mutationFn: () => api.saveSettings({ auto_start: autoStart, auto_restart: autoRestart, start_params: startParams }),
+    mutationFn: () =>
+      api.saveSettings({
+        auto_start: autoStart,
+        auto_restart: autoRestart,
+        start_params: startParams,
+        restart_schedule: restartSchedule,
+      }),
     onSuccess: () => {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -127,6 +135,32 @@ export default function Settings() {
             />
             <p className="text-text-muted text-[11px]">
               Appended to the server command line; supports quoted values.
+            </p>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label htmlFor="restart-schedule">Daily restart</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                className="w-32"
+                id="restart-schedule"
+                onChange={(event) => setRestartSchedule(event.target.value)}
+                type="time"
+                value={restartSchedule}
+              />
+              {restartSchedule && (
+                <Button
+                  onClick={() => setRestartSchedule("")}
+                  size="sm"
+                  variant="ghost"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+            <p className="text-text-muted text-[11px]">
+              Restarts the server daily at this local time with 5- and 1-minute announcements.
+              Leave empty to disable.
             </p>
           </div>
 

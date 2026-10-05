@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 
 import { StatusDot, statusMeta } from "@/components/status-badge";
-import { Badge } from "@/components/ui/badge";
 import { useStatus } from "@/hooks/use-api";
 import { cn } from "@/lib/utils";
 
@@ -28,13 +27,10 @@ const navItems: NavItem[] = [
   { to: "/console", label: "Console", icon: Terminal },
   { to: "/mods", label: "Mods", icon: Package },
   { to: "/config", label: "Mod Configs", icon: FileJson2 },
+  { to: "/players", label: "Players", icon: Users },
+  { to: "/backups", label: "Backups", icon: Archive },
   { to: "/versions", label: "Versions", icon: Boxes },
   { to: "/settings", label: "Settings", icon: Settings },
-];
-
-const soonItems: { label: string; icon: LucideIcon }[] = [
-  { label: "Players", icon: Users },
-  { label: "Backups", icon: Archive },
 ];
 
 export default function Sidebar() {
@@ -79,28 +75,6 @@ export default function Sidebar() {
                   <Icon className="size-4 shrink-0" />
                   <span>{item.label}</span>
                 </Link>
-              </li>
-            );
-          })}
-        </ul>
-
-        <p className="px-2 pt-4 pb-1 text-[10px] font-medium tracking-widest uppercase text-text-muted">
-          Coming soon
-        </p>
-        <ul className="grid gap-0.5">
-          {soonItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <li
-                className="flex cursor-default items-center gap-2.5 px-2.5 py-2 text-xs font-medium text-text-muted opacity-70"
-                key={item.label}
-                title="Not available yet — planned"
-              >
-                <Icon className="size-4 shrink-0" />
-                <span>{item.label}</span>
-                <Badge className="ml-auto" variant="outline">
-                  Soon
-                </Badge>
               </li>
             );
           })}

@@ -299,3 +299,72 @@ export function useSetFlavor() {
     },
   });
 }
+
+// ── players & backups ───────────────────────────────────────────────────────
+
+export function usePlayers(enabled = true) {
+  return useQuery({
+    queryKey: ["players"],
+    queryFn: api.players,
+    refetchInterval: 5_000,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useSetWhitelistMode() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (enabled: boolean) => api.setWhitelistMode(enabled),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["players"] });
+      void queryClient.invalidateQueries({ queryKey: ["status"] });
+      void queryClient.invalidateQueries({ queryKey: ["serverconfig"] });
+    },
+  });
+}
+
+export function useBackups(enabled = true) {
+  return useQuery({
+    queryKey: ["backups"],
+    queryFn: api.backups,
+    refetchInterval: 15_000,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useCreateBackup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (kind: "server" | "mods") => api.createBackup(kind),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["backups"] });
+    },
+  });
+}
+
+export function useRestoreBackup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => api.restoreBackup(name),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["backups"] });
+      void queryClient.invalidateQueries({ queryKey: ["mods"] });
+      void queryClient.invalidateQueries({ queryKey: ["configs"] });
+      void queryClient.invalidateQueries({ queryKey: ["stratum"] });
+      void queryClient.invalidateQueries({ queryKey: ["serverconfig"] });
+      void queryClient.invalidateQueries({ queryKey: ["status"] });
+    },
+  });
+}
+
+export function useDeleteBackup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => api.deleteBackup(name),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["backups"] });
+    },
+  });
+}

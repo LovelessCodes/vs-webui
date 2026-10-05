@@ -68,6 +68,7 @@ export interface Settings {
   auto_restart?: boolean;
   start_params?: string;
   pinned_mods?: string[];
+  restart_schedule?: string | null;
 }
 
 export interface ConfigSummary {
@@ -246,6 +247,33 @@ export interface StratumRelease {
   prerelease: boolean;
 }
 
+export interface OnlinePlayer {
+  name: string;
+  since: number;
+}
+
+export interface WhitelistEntry {
+  name: string | null;
+  uid: string | null;
+}
+
+export interface WhitelistView {
+  entries: WhitelistEntry[];
+  error: string | null;
+}
+
+export interface PlayersResponse {
+  online: OnlinePlayer[];
+  whitelist: WhitelistView;
+  whitelist_enabled: boolean | null;
+}
+
+export interface BackupEntry {
+  name: string;
+  size: number;
+  modified: number;
+}
+
 export const api = {
   me: () => request<Me>("/api/me"),
   login: (password: string) =>
@@ -288,6 +316,7 @@ export const api = {
     auto_start: boolean;
     auto_restart: boolean;
     start_params: string;
+    restart_schedule: string;
   }) =>
     request<Settings>("/api/settings", {
       method: "PUT",
@@ -376,6 +405,29 @@ export const api = {
         body: JSON.stringify({ flavor }),
       },
     ),
+
+  players: () => request<PlayersResponse>("/api/players"),
+  setWhitelistMode: (enabled: boolean) =>
+    request<{ ok: boolean; restart_required: boolean }>("/api/whitelist/mode", {
+      method: "POST",
+      body: JSON.stringify({ enabled }),
+    }),
+
+  backups: () => request<{ backups: BackupEntry[] }>("/api/backups"),
+  createBackup: (kind: "server" | "mods") =>
+    request<{ ok: boolean; name: string }>("/api/backups", {
+      method: "POST",
+      body: JSON.stringify({ kind }),
+    }),
+  restoreBackup: (name: string) =>
+    request<{ ok: boolean }>(`/api/backups/${encodeURIComponent(name)}/restore`, {
+      method: "POST",
+    }),
+  deleteBackup: (name: string) =>
+    request<{ ok: boolean }>(`/api/backups/${encodeURIComponent(name)}`, {
+      method: "DELETE",
+    }),
+  backupDownloadUrl: (name: string) => `/api/backups/${encodeURIComponent(name)}/download`,
 };
 
 export function consoleStream(): EventSource {
