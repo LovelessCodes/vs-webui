@@ -1,0 +1,23 @@
+services:
+  vs-webui:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: vs-webui:local
+    container_name: vs-webui
+    restart: unless-stopped
+    stop_grace_period: 60s
+    ports:
+      - "42420:42420/tcp" # game clients
+      - "42420:42420/udp"
+      - "8080:8080" # web UI
+    environment:
+      # Change this (or remove it and grab the generated password from the logs once).
+      VS_WEB_PASSWORD: "change-me"
+      # VS_AUTO_INSTALL: "true"
+      # VS_AUTO_START: "true"
+    volumes:
+      - vs-data:/data
+
+volumes:
+  vs-data:

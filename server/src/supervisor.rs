@@ -1,0 +1,528 @@
+use std::process::Stdio;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
+
+use serde::Serialize;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::process::{Child, Command};
+use tokio::sync::{mpsc, oneshot};
+
+use crate::console::{now_unix, ConsoleLog};
+use crate::paths::Layout;
+use crate::settings::Settings;
+
+const STARTUP_MARKER: &str = "Dedicated Server now running on Port";
+const MAX_AUTO_RESTARTS: u32 = 5;
+
+#[derive(Clone, Debug, Serialize)]
+pub struct Status {
+    pub status: String,
+    pub pid: Option<u32>,
+    pub started_at: Option<u64>,
+    pub exit_code: Option<i32>,
+    pub version: Option<String>,
+}
+
+enum Cmd {
+    Start,
+    Stop,
+    Restart,
+    Command(String),
+    Exited(Option<i32>),
+    Shutdown(oneshot::Sender<()>),
+}
+
+struct Running {
+    pid: Option<u32>,
+    stdin: tokio::process::ChildStdin,
+    exit_rx: Option<oneshot::Receiver<Option<i32>>>,
+    started: Instant,
+    user_stop: bool,
+}
+
+/// Owns the game server process. All process operations run through a single
+/// actor task so stdin/exit handling never races.
+#[derive(Clone)]
+pub struct Supervisor {
+    tx: mpsc::Sender<Cmd>,
+    status: Arc<Mutex<Status>>,
+    pub console: ConsoleLog,
+}
+
+impl Supervisor {
+    pub fn spawn(layout: Layout, settings: Arc<Mutex<Settings>>) -> Self {
+        let (tx, rx) = mpsc::channel(32);
+        let notify_tx = tx.clone();
+        let console = ConsoleLog::new();
+        let status = Arc::new(Mutex::new(initial_status(&layout, &settings)));
+
+        {
+            let status = status.clone();
+            let console = console.clone();
+            tokio::spawn(async move {
+                run(rx, notify_tx, status, console, layout, settings).await;
+            });
+        }
+
+        Self {
+            tx,
+            status,
+            console,
+        }
+    }
+
+    pub fn status(&self) -> Status {
+        self.status.lock().unwrap().clone()
+    }
+
+    pub fn is_running(&self) -> bool {
+        matches!(
+            self.status.lock().unwrap().status.as_str(),
+            "starting" | "running" | "stopping"
+        )
+    }
+
+    pub async fn start(&self) {
+        let _ = self.tx.send(Cmd::Start).await;
+    }
+
+    pub async fn stop(&self) {
+        let _ = self.tx.send(Cmd::Stop).await;
+    }
+
+    pub async fn restart(&self) {
+        let _ = self.tx.send(Cmd::Restart).await;
+    }
+
+    pub async fn command(&self, command: String) {
+        let _ = self.tx.send(Cmd::Command(command)).await;
+    }
+
+    /// Graceful stop with a bounded wait; used on container shutdown.
+    pub async fn shutdown(&self) {
+        let (ack_tx, ack_rx) = oneshot::channel();
+        if self.tx.send(Cmd::Shutdown(ack_tx)).await.is_ok() {
+            let _ = tokio::time::timeout(Duration::from_secs(16), ack_rx).await;
+        }
+    }
+}
+
+fn initial_status(layout: &Layout, settings: &Arc<Mutex<Settings>>) -> Status {
+    let selected = settings.lock().unwrap().version.clone();
+    let installed = match selected {
+        Some(version) => layout.server_exe(&version).exists(),
+        None => any_installed(layout).is_some(),
+    };
+    Status {
+        status: if installed {
+            "stopped"
+        } else {
+            "not_installed"
+        }
+        .into(),
+        pid: None,
+        started_at: None,
+        exit_code: None,
+        version: None,
+    }
+}
+
+pub fn any_installed(layout: &Layout) -> Option<String> {
+    let mut versions: Vec<String> = std::fs::read_dir(layout.vanilla_dir())
+        .ok()?
+        .flatten()
+        .filter(|entry| entry.path().is_dir() && crate::paths::is_server_install(&entry.path()))
+        .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .collect();
+    versions.sort_by(|a, b| crate::versions::compare_versions(b, a));
+    versions.into_iter().next()
+}
+
+async fn run(
+    mut rx: mpsc::Receiver<Cmd>,
+    notify_tx: mpsc::Sender<Cmd>,
+    status: Arc<Mutex<Status>>,
+    console: ConsoleLog,
+    layout: Layout,
+    settings: Arc<Mutex<Settings>>,
+) {
+    let mut running: Option<Running> = None;
+    let mut failures: u32 = 0;
+
+    while let Some(cmd) = rx.recv().await {
+        match cmd {
+            Cmd::Start => {
+                if running.is_some() {
+                    console.push("[manager] server is already running");
+                    continue;
+                }
+                match start_server(
+                    &mut running,
+                    &notify_tx,
+                    &status,
+                    &console,
+                    &layout,
+                    &settings,
+                )
+                .await
+                {
+                    Ok(()) => failures = 0,
+                    Err(message) => {
+                        console.push(format!("[manager] cannot start: {message}"));
+                        set_status(&status, |s| {
+                            s.status = "crashed".into();
+                            s.pid = None;
+                        });
+                    }
+                }
+            }
+            Cmd::Stop => {
+                stop_server(&mut running, &status, &console).await;
+            }
+            Cmd::Restart => {
+                if stop_server(&mut running, &status, &console).await {
+                    // The process is gone; drop the stale handle. The queued
+                    // `Exited` notification will be ignored (running is None).
+                    running = None;
+                    match start_server(
+                        &mut running,
+                        &notify_tx,
+                        &status,
+                        &console,
+                        &layout,
+                        &settings,
+                    )
+                    .await
+                    {
+                        Ok(()) => failures = 0,
+                        Err(message) => {
+                            console.push(format!("[manager] cannot restart: {message}"))
+                        }
+                    }
+                } else {
+                    console.push("[manager] restart aborted: the server would not stop");
+                }
+            }
+            Cmd::Command(command) => match running.as_mut() {
+                Some(server) => {
+                    console.push(format!("» {command}"));
+                    let _ = server
+                        .stdin
+                        .write_all(format!("{command}\n").as_bytes())
+                        .await;
+                    let _ = server.stdin.flush().await;
+                }
+                None => console.push("[manager] server is not running"),
+            },
+            Cmd::Exited(code) => {
+                let Some(server) = running.take() else {
+                    continue;
+                };
+                let user_stop = server.user_stop;
+                let uptime = server.started.elapsed().as_secs();
+                let clean = user_stop || code == Some(0);
+                console.push(format!(
+                    "[manager] server exited (code {}, uptime {}s){}",
+                    code.map(|c| c.to_string())
+                        .unwrap_or_else(|| "unknown".into()),
+                    uptime,
+                    if clean { "" } else { " — unexpected" }
+                ));
+                set_status(&status, |s| {
+                    s.status = if clean { "stopped" } else { "crashed" }.into();
+                    s.pid = None;
+                    s.exit_code = code;
+                });
+
+                if clean {
+                    failures = 0;
+                    continue;
+                }
+                let auto_restart = settings.lock().unwrap().auto_restart;
+                if !auto_restart {
+                    continue;
+                }
+                if uptime >= 60 {
+                    failures = 0;
+                }
+                failures += 1;
+                if failures > MAX_AUTO_RESTARTS {
+                    console.push(format!(
+                        "[manager] too many failed starts ({MAX_AUTO_RESTARTS}); auto-restart paused"
+                    ));
+                    continue;
+                }
+                console.push(format!(
+                    "[manager] auto-restart in 5s (attempt {failures}/{MAX_AUTO_RESTARTS})"
+                ));
+                if wait_or_stop(&mut rx, Duration::from_secs(5)).await {
+                    console.push("[manager] auto-restart cancelled");
+                    continue;
+                }
+                if let Err(message) = start_server(
+                    &mut running,
+                    &notify_tx,
+                    &status,
+                    &console,
+                    &layout,
+                    &settings,
+                )
+                .await
+                {
+                    console.push(format!("[manager] cannot auto-restart: {message}"));
+                }
+            }
+            Cmd::Shutdown(ack) => {
+                stop_server(&mut running, &status, &console).await;
+                let _ = ack.send(());
+                return;
+            }
+        }
+    }
+}
+
+async fn start_server(
+    running: &mut Option<Running>,
+    notify_tx: &mpsc::Sender<Cmd>,
+    status: &Arc<Mutex<Status>>,
+    console: &ConsoleLog,
+    layout: &Layout,
+    settings: &Arc<Mutex<Settings>>,
+) -> Result<(), String> {
+    let (version, params) = {
+        let guard = settings.lock().unwrap();
+        (guard.version.clone(), guard.start_params.clone())
+    };
+    let version = version
+        .or_else(|| any_installed(layout))
+        .ok_or("no version installed")?;
+
+    let exe = layout.server_exe(&version);
+    if !exe.exists() {
+        return Err(format!("version {version} is not installed"));
+    }
+
+    set_status(status, |s| {
+        s.status = "starting".into();
+        s.pid = None;
+        s.started_at = Some(now_unix());
+        s.exit_code = None;
+        s.version = Some(version.clone());
+    });
+    console.push(format!("[manager] starting Vintage Story {version}"));
+
+    let mut cmd = Command::new(&exe);
+    cmd.env("DOTNET_ROLL_FORWARD", "LatestMinor")
+        .env("DOTNET_ROLL_FORWARD_TO_PRERELEASE", "0")
+        .arg("--dataPath")
+        .arg(layout.server_dir())
+        .args(parse_params(&params))
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true);
+    if std::env::var_os("DOTNET_ROOT").is_none() {
+        // The apphost needs the runtime root; probe the standard install
+        // locations (Linux container, macOS dev machines).
+        for candidate in ["/usr/share/dotnet", "/usr/local/share/dotnet"] {
+            if std::path::Path::new(candidate).join("host/fxr").exists() {
+                cmd.env("DOTNET_ROOT", candidate);
+                break;
+            }
+        }
+    }
+    #[cfg(unix)]
+    unsafe {
+        cmd.pre_exec(|| {
+            libc::setpgid(0, 0);
+            Ok(())
+        });
+    }
+
+    let mut child: Child = cmd.spawn().map_err(|e| format!("spawn failed: {e}"))?;
+    let pid = child.id();
+    let stdin = child.stdin.take().ok_or("stdin not piped")?;
+    let stdout = child.stdout.take().ok_or("stdout not piped")?;
+    let stderr = child.stderr.take().ok_or("stderr not piped")?;
+
+    set_status(status, |s| s.pid = pid);
+
+    spawn_reader(stdout, console.clone(), status.clone());
+    spawn_reader(stderr, console.clone(), status.clone());
+
+    let (exit_tx, exit_rx) = oneshot::channel();
+    let exit_notify = notify_tx.clone();
+    tokio::spawn(async move {
+        let code = match child.wait().await {
+            Ok(exit) => exit.code(),
+            Err(_) => None,
+        };
+        let _ = exit_tx.send(code);
+        let _ = exit_notify.send(Cmd::Exited(code)).await;
+    });
+
+    *running = Some(Running {
+        pid,
+        stdin,
+        exit_rx: Some(exit_rx),
+        started: Instant::now(),
+        user_stop: false,
+    });
+    Ok(())
+}
+
+/// Returns true when the process is confirmed gone.
+async fn stop_server(
+    running: &mut Option<Running>,
+    status: &Arc<Mutex<Status>>,
+    console: &ConsoleLog,
+) -> bool {
+    let Some(server) = running.as_mut() else {
+        return true;
+    };
+    server.user_stop = true;
+    set_status(status, |s| s.status = "stopping".into());
+    console.push("[manager] sending /stop");
+    let _ = server.stdin.write_all(b"/stop\n").await;
+    let _ = server.stdin.flush().await;
+
+    let pid = server.pid;
+    let Some(mut exit_rx) = server.exit_rx.take() else {
+        return false;
+    };
+
+    if tokio::time::timeout(Duration::from_secs(10), &mut exit_rx)
+        .await
+        .is_ok()
+    {
+        return true;
+    }
+    console.push("[manager] graceful stop timed out; sending SIGTERM");
+    kill_group(pid, libc::SIGTERM);
+    if tokio::time::timeout(Duration::from_secs(5), &mut exit_rx)
+        .await
+        .is_ok()
+    {
+        return true;
+    }
+    console.push("[manager] server still alive; sending SIGKILL");
+    kill_group(pid, libc::SIGKILL);
+    let _ = exit_rx.await;
+    true
+}
+
+fn kill_group(pid: Option<u32>, signal: i32) {
+    #[cfg(unix)]
+    if let Some(pid) = pid {
+        // SAFETY: the child was started in its own process group (setpgid above),
+        // so the pgid equals its pid. Failures (already exited) are ignored.
+        unsafe {
+            libc::killpg(pid as i32, signal);
+        }
+    }
+    #[cfg(not(unix))]
+    let _ = (pid, signal);
+}
+
+fn spawn_reader<R>(reader: R, console: ConsoleLog, status: Arc<Mutex<Status>>)
+where
+    R: tokio::io::AsyncRead + Unpin + Send + 'static,
+{
+    tokio::spawn(async move {
+        let mut lines = BufReader::new(reader).lines();
+        while let Ok(Some(line)) = lines.next_line().await {
+            if line.contains(STARTUP_MARKER) {
+                set_status(&status, |s| {
+                    if s.status == "starting" {
+                        s.status = "running".into();
+                    }
+                });
+            }
+            console.push(line.clone());
+            tracing::info!(target: "server", "{}", line);
+        }
+    });
+}
+
+async fn wait_or_stop(rx: &mut mpsc::Receiver<Cmd>, delay: Duration) -> bool {
+    let deadline = tokio::time::Instant::now() + delay;
+    loop {
+        tokio::select! {
+            _ = tokio::time::sleep_until(deadline) => return false,
+            cmd = rx.recv() => match cmd {
+                Some(Cmd::Stop) => return true,
+                Some(Cmd::Shutdown(ack)) => { let _ = ack.send(()); return true; }
+                Some(_) => continue,
+                None => return true,
+            }
+        }
+    }
+}
+
+fn set_status(status: &Arc<Mutex<Status>>, f: impl FnOnce(&mut Status)) {
+    let mut guard = status.lock().unwrap();
+    f(&mut guard);
+}
+
+/// Shell-like argument splitting honoring single/double quotes and backslash escapes.
+pub fn parse_params(input: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut current = String::new();
+    let mut quote: Option<char> = None;
+    let mut chars = input.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        match (quote, c) {
+            (Some(q), c) if c == q => quote = None,
+            (Some(_), '\\') => {
+                if let Some(next) = chars.next() {
+                    current.push(next);
+                }
+            }
+            (Some(_), c) => current.push(c),
+            (None, '\'' | '"') => quote = Some(c),
+            (None, c) if c.is_whitespace() => {
+                if !current.is_empty() {
+                    out.push(std::mem::take(&mut current));
+                }
+            }
+            (None, '\\') => {
+                if let Some(next) = chars.next() {
+                    current.push(next);
+                }
+            }
+            (None, c) => current.push(c),
+        }
+    }
+    if !current.is_empty() {
+        out.push(current);
+    }
+    out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_params;
+
+    #[test]
+    fn splits_plain_args() {
+        assert_eq!(
+            parse_params("--port 42421 --ip 0.0.0.0"),
+            vec!["--port", "42421", "--ip", "0.0.0.0"]
+        );
+    }
+
+    #[test]
+    fn keeps_quoted_values_together() {
+        assert_eq!(
+            parse_params("--worldname \"My World\" --flag"),
+            vec!["--worldname", "My World", "--flag"]
+        );
+    }
+
+    #[test]
+    fn handles_escapes_and_empty() {
+        assert_eq!(parse_params(""), Vec::<String>::new());
+        assert_eq!(parse_params("a\\ b c"), vec!["a b", "c"]);
+    }
+}
