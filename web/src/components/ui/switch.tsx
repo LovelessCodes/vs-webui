@@ -1,33 +1,30 @@
+import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
+
 import { cn } from "@/lib/utils";
 
-interface SwitchProps {
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
-  disabled?: boolean;
-  id?: string;
-}
-
-export function Switch({ checked, onCheckedChange, disabled, id }: SwitchProps) {
+function Switch({
+  className,
+  size = "default",
+  ...props
+}: SwitchPrimitive.Root.Props & {
+  size?: "sm" | "default";
+}) {
   return (
-    <button
-      aria-checked={checked}
+    <SwitchPrimitive.Root
       className={cn(
-        "relative inline-flex h-5 w-9 shrink-0 items-center border transition-colors",
-        checked ? "border-accent-primary bg-accent-primary/80" : "border-border-default bg-bg-input",
-        disabled && "pointer-events-none opacity-50",
+        "peer group/switch relative inline-flex shrink-0 items-center border border-transparent transition-all outline-none after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-1 aria-invalid:ring-destructive/20 data-[size=default]:h-[18.4px] data-[size=default]:w-[32px] data-[size=sm]:h-[14px] data-[size=sm]:w-[24px] dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:border-accent-primary data-checked:bg-accent-primary data-unchecked:bg-input data-checked:hover:bg-accent-primary-hover dark:data-unchecked:bg-input/80 data-disabled:cursor-not-allowed data-disabled:opacity-50",
+        className,
       )}
-      disabled={disabled}
-      id={id}
-      onClick={() => onCheckedChange(!checked)}
-      role="switch"
-      type="button"
+      data-size={size}
+      data-slot="switch"
+      {...props}
     >
-      <span
-        className={cn(
-          "absolute size-3.5 bg-white transition-transform",
-          checked ? "translate-x-[18px]" : "translate-x-[2px]",
-        )}
+      <SwitchPrimitive.Thumb
+        className="pointer-events-none block bg-background ring-0 transition-transform group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 data-checked:bg-white group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-2px)] group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-2px)] group-data-[size=default]/switch:data-unchecked:translate-x-0 group-data-[size=sm]/switch:data-unchecked:translate-x-0 dark:data-unchecked:bg-foreground"
+        data-slot="switch-thumb"
       />
-    </button>
+    </SwitchPrimitive.Root>
   );
 }
+
+export { Switch };

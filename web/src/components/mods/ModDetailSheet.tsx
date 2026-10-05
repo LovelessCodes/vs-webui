@@ -8,7 +8,7 @@ import { useInstallMod, useModDetail, useModJobs } from "@/hooks/use-api";
 import { errorMessage, formatCount } from "@/lib/format";
 import { sortReleasesDesc } from "@/lib/version";
 
-import { plainText, sideKey, sideVariant } from "./utils";
+import { plainText, sideBadgeClass, sideKey } from "./utils";
 
 interface ModDetailSheetProps {
   modid: string | null;
@@ -68,7 +68,9 @@ export default function ModDetailSheet({ modid, onClose, installedVersion }: Mod
         {mod && (
           <div className="grid gap-4 p-4">
             <div className="flex flex-wrap items-center gap-1.5">
-              <Badge variant={sideVariant(mod.side)}>{t(sideKey(mod.side))}</Badge>
+              <Badge className={sideBadgeClass(mod.side)} variant="outline">
+                {t(sideKey(mod.side))}
+              </Badge>
               <Badge variant="outline">{mod.type}</Badge>
               {mod.tags.map((tag) => (
                 <Badge key={tag} variant="outline">

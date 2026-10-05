@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { useSettings, useStatus } from "@/hooks/use-api";
 import { api, setCsrf } from "@/lib/api";
@@ -80,7 +81,8 @@ export default function Settings() {
   }
 
   return (
-    <div className="grid h-full gap-4 overflow-y-auto pb-4 lg:grid-cols-2">
+    <ScrollArea className="h-full" scrollFade>
+      <div className="grid gap-4 pb-4 pr-1 lg:grid-cols-2">
       <Card className="self-start lg:col-span-2">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -265,6 +267,7 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </ScrollArea>
   );
 }

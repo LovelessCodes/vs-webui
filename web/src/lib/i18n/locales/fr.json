@@ -20,7 +20,8 @@
     "reallyRemove": "Vraiment supprimer ?",
     "reset": "Réinitialiser",
     "switch": "Changer",
-    "close": "Fermer"
+    "close": "Fermer",
+    "scrollToTop": "Remonter en haut"
   },
   "nav": {
     "dashboard": "Tableau de bord",

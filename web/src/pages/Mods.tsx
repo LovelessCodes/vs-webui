@@ -3,6 +3,7 @@ import { Loader2, RefreshCw, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import VirtualList from "@/components/common/VirtualList";
 import { BrokenModsBanner, MissingDepsBanner } from "@/components/mods/banners";
 import InstalledModRow from "@/components/mods/InstalledModRow";
 import ModBrowseRow from "@/components/mods/ModBrowseRow";
@@ -33,8 +34,6 @@ import { findMissingDependencies } from "@/lib/version";
 type Tab = "browse" | "installed";
 type Side = "any" | "server" | "client";
 type SortBy = "downloads" | "trending" | "name" | "recent";
-
-const PAGE_SIZE = 40;
 
 function useDebounced<T>(value: T, delay = 350): T {
   const [debounced, setDebounced] = useState(value);
@@ -87,7 +86,6 @@ export default function Mods() {
   const [side, setSide] = useState<Side>("any");
   const [tag, setTag] = useState("");
   const [sort, setSort] = useState<SortBy>("downloads");
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [detailMod, setDetailMod] = useState<ModSummary | null>(null);
   const [versionPicker, setVersionPicker] = useState<InstalledMod | null>(null);
 
@@ -130,10 +128,6 @@ export default function Mods() {
     previousActive.current = activeJobs.length;
   }, [activeJobs.length, queryClient]);
 
-  useEffect(() => {
-    setVisibleCount(PAGE_SIZE);
-  }, [debouncedSearch, side, tag, sort, compatibleOnly, activeVersion]);
-
   const filtered = useMemo(() => {
     let list = modb.data?.mods ?? [];
     if (side !== "any") {
@@ -154,7 +148,7 @@ export default function Mods() {
     install.error ?? update.error ?? remove.error ?? updateAll.error ?? pin.error;
 
   return (
-    <div className="flex h-full flex-col gap-4">
+    <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex border border-border-default">
           {(["browse", "installed"] as const).map((option) => (
@@ -287,37 +281,27 @@ export default function Mods() {
                 {t("mods.count", { count: filtered.length })}
                 {modb.isFetching ? ` · ${t("mods.updating")}` : ""}
               </p>
-              <div className="min-h-0 flex-1 overflow-y-auto border border-border-default">
-                {filtered.slice(0, visibleCount).map((mod) => (
+              <VirtualList
+                empty={
+                  <p className="p-6 text-center text-xs text-text-muted">{t("mods.noMatch")}</p>
+                }
+                estimateRowHeight={96}
+                items={filtered}
+                keyOf={(mod) => String(mod.modid)}
+                renderItem={(mod) => (
                   <ModBrowseRow
                     installed={mod.modidstrs.some((id) => installedIds.has(id.toLowerCase()))}
-                    key={mod.modid}
                     mod={mod}
                     onOpen={() => setDetailMod(mod)}
                   />
-                ))}
-                {filtered.length === 0 && (
-                  <p className="p-6 text-center text-xs text-text-muted">
-                    {t("mods.noMatch")}
-                  </p>
                 )}
-              </div>
-              {filtered.length > visibleCount && (
-                <div className="flex justify-center">
-                  <Button
-                    onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
-                    size="sm"
-                    variant="outline"
-                  >
-                    {t("mods.showMore", { count: filtered.length - visibleCount })}
-                  </Button>
-                </div>
-              )}
+                scrollButtonAlign="center"
+              />
             </>
           )}
         </>
       ) : (
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col gap-3">
           <BrokenModsBanner errors={installed.data?.errors ?? []} />
           <MissingDepsBanner missing={missing} />
 
@@ -344,20 +328,22 @@ export default function Mods() {
           )}
 
           {installed.data && installed.data.mods.length > 0 && (
-            <div className="border border-border-default">
-              <div className="flex items-center gap-2 border-b border-border-default bg-bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
+            <div className="flex min-h-0 flex-1 flex-col border border-border-default">
+              <div className="flex shrink-0 items-center gap-2 border-b border-border-default bg-bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
                 <span className="flex-1">{t("mods.installedHeader")}</span>
                 {updateCount > 0 && (
                   <Badge variant="accent">{t("mods.updates", { count: updateCount })}</Badge>
                 )}
               </div>
-              <div className="divide-y divide-border-subtle">
-                {installed.data.mods.map((mod) => {
+              <VirtualList
+                estimateRowHeight={64}
+                items={installed.data.mods}
+                keyOf={(mod) => mod.file}
+                renderItem={(mod) => {
                   const key = mod.modid.toLowerCase();
                   const pending = activeJobs.some((job) => job.modid.toLowerCase() === key);
                   return (
                     <InstalledModRow
-                      key={mod.file}
                       mod={mod}
                       onPin={() => pin.mutate({ modid: mod.modid, pinned: !pinned.has(key) })}
                       onPickVersion={() => setVersionPicker(mod)}
@@ -375,8 +361,8 @@ export default function Mods() {
                       update={updateMap[key]}
                     />
                   );
-                })}
-              </div>
+                }}
+              />
             </div>
           )}
         </div>

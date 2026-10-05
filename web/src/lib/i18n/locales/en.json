@@ -20,7 +20,8 @@
     "reallyRemove": "Really remove?",
     "reset": "Reset",
     "switch": "Switch",
-    "close": "Close"
+    "close": "Close",
+    "scrollToTop": "Scroll to top"
   },
   "nav": {
     "dashboard": "Dashboard",

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { usePlayers, useServerCommand, useSetWhitelistMode, useStatus } from "@/hooks/use-api";
 import { errorMessage, formatDuration } from "@/lib/format";
@@ -28,7 +29,8 @@ export default function Players() {
   }
 
   return (
-    <div className="flex h-full flex-col gap-4 overflow-y-auto pb-4">
+    <ScrollArea className="h-full" scrollFade>
+      <div className="flex flex-col gap-4 pb-4 pr-1">
       {!running && (
         <p className="border border-warning/40 bg-warning/5 px-3 py-2 text-[11px] text-warning">
           {t("players.notRunning")}
@@ -216,6 +218,7 @@ export default function Players() {
           </CardContent>
         </Card>
       </div>
-    </div>
+      </div>
+    </ScrollArea>
   );
 }

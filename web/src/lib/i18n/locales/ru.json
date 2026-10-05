@@ -20,7 +20,8 @@
     "reallyRemove": "Точно удалить?",
     "reset": "Сбросить",
     "switch": "Сменить",
-    "close": "Закрыть"
+    "close": "Закрыть",
+    "scrollToTop": "Наверх"
   },
   "nav": {
     "dashboard": "Обзор",

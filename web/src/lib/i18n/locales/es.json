@@ -20,7 +20,8 @@
     "reallyRemove": "¿Eliminar de verdad?",
     "reset": "Restablecer",
     "switch": "Cambiar",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "scrollToTop": "Ir arriba"
   },
   "nav": {
     "dashboard": "Panel",

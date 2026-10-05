@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import type { ModSummary } from "@/lib/api";
 import { formatCount } from "@/lib/format";
 
-import { sideKey, sideVariant } from "./utils";
+import { sideBadgeClass, sideKey } from "./utils";
 
 interface ModBrowseRowProps {
   mod: ModSummary;
@@ -32,7 +32,9 @@ export default function ModBrowseRow({ mod, installed, onOpen }: ModBrowseRowPro
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="truncate text-xs font-medium">{mod.name}</span>
           {installed && <Badge variant="success">{t("mods.installedBadge")}</Badge>}
-          <Badge variant={sideVariant(mod.side)}>{t(sideKey(mod.side))}</Badge>
+          <Badge className={sideBadgeClass(mod.side)} variant="outline">
+            {t(sideKey(mod.side))}
+          </Badge>
         </div>
         <p className="truncate text-[11px] text-text-secondary">
           {mod.author} — {mod.summary}

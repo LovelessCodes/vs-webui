@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   useBackups,
   useCreateBackup,
@@ -31,7 +32,8 @@ export default function Backups() {
   const mutationError = create.error ?? restore.error ?? remove.error;
 
   return (
-    <div className="flex h-full flex-col gap-4 overflow-y-auto pb-4">
+    <ScrollArea className="h-full" scrollFade>
+      <div className="flex flex-col gap-4 pb-4 pr-1">
       <Card className="self-start">
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -101,7 +103,7 @@ export default function Backups() {
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-2">
                         <span className="truncate font-mono text-[11px]">{backup.name}</span>
-                        <Badge variant={isMods ? "info" : "default"}>
+                        <Badge variant={isMods ? "info" : "outline"}>
                           {isMods ? t("backups.modsBadge") : t("backups.serverBadge")}
                         </Badge>
                       </div>
@@ -184,6 +186,7 @@ export default function Backups() {
           <p className="text-[11px] text-text-muted">{t("backups.footer")}</p>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </ScrollArea>
   );
 }

@@ -9,14 +9,15 @@ export function sideKey(side: string): string {
   }
 }
 
-export function sideVariant(side: string): "info" | "warning" | "default" {
+/** Outline badge styling per mod side, matching the Story Forge idiom. */
+export function sideBadgeClass(side: string): string {
   switch (side) {
     case "server":
-      return "info";
+      return "border-info/40 text-info";
     case "client":
-      return "warning";
+      return "border-warning/40 text-warning";
     default:
-      return "default";
+      return "text-muted-foreground";
   }
 }
 

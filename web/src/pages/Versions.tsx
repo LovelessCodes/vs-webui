@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   useInstallStratum,
   useInstallVersion,
@@ -79,7 +80,8 @@ export default function Versions() {
     install.error ?? setActive.error ?? installStratum.error ?? setFlavor.error;
 
   return (
-    <div className="flex h-full flex-col gap-4 overflow-y-auto pb-4">
+    <ScrollArea className="h-full" scrollFade>
+      <div className="flex flex-col gap-4 pb-4 pr-1">
       <div className="flex flex-wrap items-center gap-3 border border-border-default bg-bg-card px-3 py-2.5">
         <span className="text-[10px] font-medium tracking-widest text-text-muted uppercase">
           {t("versions.flavor")}
@@ -332,6 +334,7 @@ export default function Versions() {
       </section>
 
       <p className="text-[11px] text-text-muted">{t("versions.footer")}</p>
-    </div>
+      </div>
+    </ScrollArea>
   );
 }

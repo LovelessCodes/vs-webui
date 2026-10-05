@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import CodeEditor from "@/components/config/CodeEditor";
 import LiveEditor from "@/components/config/LiveEditor";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   useModConfigs,
   useSaveModConfig,
@@ -174,42 +175,44 @@ export default function Configs() {
             <div className="border-b border-border-subtle px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
               {t("configs.files")}
             </div>
-            <div className="min-h-0 flex-1 divide-y divide-border-subtle overflow-y-auto">
-              {files.map((file) => {
-                const isActive = file.filename === active.filename;
-                return (
-                  <button
-                    className={cn(
-                      "flex w-full items-center gap-2 border-l-2 border-transparent px-3 py-2 text-left transition-colors hover:bg-bg-card-hover",
-                      isActive
-                        ? "border-l-accent-primary bg-bg-card text-text-primary"
-                        : "text-text-secondary",
-                    )}
-                    key={file.filename}
-                    onClick={() => {
-                      save.reset();
-                      setSelected(file.filename);
-                    }}
-                    type="button"
-                  >
-                    <FileJson2 className="size-3.5 shrink-0" />
-                    <span className="truncate font-mono text-[11px]">{file.filename}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <ScrollArea className="min-h-0 flex-1">
+              <div className="divide-y divide-border-subtle">
+                {files.map((file) => {
+                  const isActive = file.filename === active.filename;
+                  return (
+                    <button
+                      className={cn(
+                        "flex w-full items-center gap-2 border-l-2 border-transparent px-3 py-2 text-left transition-colors hover:bg-bg-card-hover",
+                        isActive
+                          ? "border-l-accent-primary bg-bg-card text-text-primary"
+                          : "text-text-secondary",
+                      )}
+                      key={file.filename}
+                      onClick={() => {
+                        save.reset();
+                        setSelected(file.filename);
+                      }}
+                      type="button"
+                    >
+                      <FileJson2 className="size-3.5 shrink-0" />
+                      <span className="truncate font-mono text-[11px]">{file.filename}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </ScrollArea>
           </div>
 
           <div className="relative min-w-0 flex-1">
             {mode === "live" ? (
-              <div className="h-full overflow-y-auto">
+              <ScrollArea className="h-full" scrollFade>
                 <LiveEditor
                   code={active.content}
                   file={active.filename}
                   key={`${source}-${active.filename}`}
                   onSave={handleSave}
                 />
-              </div>
+              </ScrollArea>
             ) : (
               <CodeEditor
                 code={active.content}

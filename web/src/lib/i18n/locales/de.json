@@ -20,7 +20,8 @@
     "reallyRemove": "Wirklich entfernen?",
     "reset": "Zurücksetzen",
     "switch": "Wechseln",
-    "close": "Schließen"
+    "close": "Schließen",
+    "scrollToTop": "Nach oben scrollen"
   },
   "nav": {
     "dashboard": "Übersicht",

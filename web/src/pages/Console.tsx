@@ -1,7 +1,8 @@
 import { Eraser, Loader2, Play, Send, Square, Wifi, WifiOff } from "lucide-react";
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 
+import VirtualList from "@/components/common/VirtualList";
 import { StatusDot } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +33,6 @@ export default function Console() {
   const [input, setInput] = useState("");
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const endRef = useRef<HTMLDivElement>(null);
 
   const status = useStatus();
   const start = useServerStart();
@@ -72,10 +72,6 @@ export default function Console() {
       source.close();
     };
   }, []);
-
-  useEffect(() => {
-    if (follow) endRef.current?.scrollIntoView({ block: "end" });
-  }, [lines, follow]);
 
   function submit() {
     const command = input.trim();
@@ -169,15 +165,21 @@ export default function Console() {
         )}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto border border-border-default bg-bg-input p-3 font-mono text-[11px] leading-relaxed">
-        {lines.length === 0 && <p className="text-text-muted">{t("console.empty")}</p>}
-        {lines.map((line, index) => (
-          <div className="whitespace-pre-wrap" key={`${line.ts}-${index}`}>
-            <span className="text-text-muted">{line.ts}</span>{" "}
-            <span className={lineClass(line.line)}>{line.line}</span>
-          </div>
-        ))}
-        <div ref={endRef} />
+      <div className="flex min-h-0 flex-1 flex-col border border-border-default bg-bg-input">
+        <VirtualList
+          empty={<p className="px-3 py-2 text-text-muted">{t("console.empty")}</p>}
+          estimateRowHeight={18}
+          items={lines}
+          keyOf={(line, index) => `${line.ts}-${index}`}
+          onStickChange={setFollow}
+          renderItem={(line) => (
+            <div className="px-3 py-0.5 font-mono text-[11px] leading-relaxed whitespace-pre-wrap">
+              <span className="text-text-muted">{line.ts}</span>{" "}
+              <span className={lineClass(line.line)}>{line.line}</span>
+            </div>
+          )}
+          stickToBottom={follow}
+        />
       </div>
 
       <div className="flex items-center gap-2">

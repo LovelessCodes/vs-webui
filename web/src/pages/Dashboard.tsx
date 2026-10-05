@@ -16,6 +16,7 @@ import { StatusDot, statusMeta } from "@/components/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   useConsolePreview,
   useServerRestart,
@@ -67,7 +68,8 @@ export default function Dashboard() {
   const actionError = start.error ?? stop.error ?? restart.error;
 
   return (
-    <div className="h-full space-y-4 overflow-y-auto pb-4">
+    <ScrollArea className="h-full" scrollFade>
+      <div className="space-y-4 pb-4 pr-1">
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
@@ -150,7 +152,7 @@ export default function Dashboard() {
                 <Boxes className="size-4 text-text-secondary" />
                 {t("dashboard.gameBuild")}
               </CardTitle>
-              <Badge variant={data.settings.flavor === "stratum" ? "accent" : "default"}>
+              <Badge variant={data.settings.flavor === "stratum" ? "accent" : "outline"}>
                 {data.settings.flavor === "stratum"
                   ? t("versions.stratum")
                   : t("versions.vanilla")}
@@ -313,6 +315,7 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </ScrollArea>
   );
 }
