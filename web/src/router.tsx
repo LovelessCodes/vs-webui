@@ -1,6 +1,7 @@
 import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
 
 import AppShell from "@/components/layout/AppShell";
+import Configs from "@/pages/Configs";
 import Console from "@/pages/Console";
 import Dashboard from "@/pages/Dashboard";
 import Mods from "@/pages/Mods";
@@ -33,6 +34,12 @@ const modsRoute = createRoute({
   component: Mods,
 });
 
+const configsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/config",
+  component: Configs,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/settings",
@@ -43,6 +50,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   consoleRoute,
   modsRoute,
+  configsRoute,
   versionsRoute,
   settingsRoute,
 ]);

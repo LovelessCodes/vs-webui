@@ -223,6 +223,16 @@ export interface ModJobsResponse {
   jobs: ModJob[];
 }
 
+export interface ModConfigFile {
+  filename: string;
+  content: string;
+}
+
+export interface ModConfigList {
+  files: ModConfigFile[];
+  errors: ModScanError[];
+}
+
 export const api = {
   me: () => request<Me>("/api/me"),
   login: (password: string) =>
@@ -313,6 +323,21 @@ export const api = {
     request<Settings>("/api/mods/pin", {
       method: "POST",
       body: JSON.stringify({ modid, pinned }),
+    }),
+
+  configs: () => request<ModConfigList>("/api/configs"),
+  saveConfig: (filename: string, content: string) =>
+    request<{ ok: boolean; restart_required: boolean }>(
+      `/api/configs/${encodeURIComponent(filename)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ content }),
+      },
+    ),
+  saveServerConfig: (content: string) =>
+    request<{ ok: boolean; restart_required: boolean }>("/api/serverconfig", {
+      method: "PUT",
+      body: JSON.stringify({ content }),
     }),
 };
 

@@ -60,6 +60,8 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/mods/update", post(mods_update))
         .route("/api/mods/update-all", post(mods_update_all))
         .route("/api/mods/pin", post(mods_pin))
+        .route("/api/configs", get(list_configs))
+        .route("/api/configs/{filename}", put(save_config))
         .fallback_service(ServeDir::new(&dist).fallback(ServeFile::new(&index)))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
@@ -853,4 +855,37 @@ async fn mods_pin(
         guard.clone()
     };
     Ok(Json(json!(settings)))
+}
+
+// ── mod configs ─────────────────────────────────────────────────────────────
+
+async fn list_configs(
+    State(state): State<SharedState>,
+    _authed: Authed,
+) -> Result<Json<Value>, ApiError> {
+    let server_dir = state.layout.server_dir();
+    let list = tokio::task::spawn_blocking(move || crate::configs::list_mod_configs(&server_dir))
+        .await
+        .map_err(|e| ApiError::internal(format!("config scan failed: {e}")))?;
+    Ok(Json(json!(list)))
+}
+
+async fn save_config(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(filename): UrlPath<String>,
+    Json(req): Json<ConfigReq>,
+) -> Result<Json<Value>, ApiError> {
+    let server_dir = state.layout.server_dir();
+    let content = req.content;
+    tokio::task::spawn_blocking(move || {
+        crate::configs::write_mod_config(&server_dir, &filename, &content)
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("config save failed: {e}")))?
+    .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({
+        "ok": true,
+        "restart_required": state.supervisor.is_running(),
+    })))
 }

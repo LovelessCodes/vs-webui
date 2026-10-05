@@ -1,5 +1,15 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Boxes, FileJson2, Gauge, Package, Settings, Terminal, type LucideIcon } from "lucide-react";
+import {
+  Archive,
+  Boxes,
+  FileJson2,
+  Gauge,
+  Package,
+  Settings,
+  Terminal,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 
 import { StatusDot, statusMeta } from "@/components/status-badge";
 import { Badge } from "@/components/ui/badge";
@@ -17,12 +27,14 @@ const navItems: NavItem[] = [
   { to: "/", label: "Dashboard", icon: Gauge, exact: true },
   { to: "/console", label: "Console", icon: Terminal },
   { to: "/mods", label: "Mods", icon: Package },
+  { to: "/config", label: "Mod Configs", icon: FileJson2 },
   { to: "/versions", label: "Versions", icon: Boxes },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
 const soonItems: { label: string; icon: LucideIcon }[] = [
-  { label: "Mod Configs", icon: FileJson2 },
+  { label: "Players", icon: Users },
+  { label: "Backups", icon: Archive },
 ];
 
 export default function Sidebar() {

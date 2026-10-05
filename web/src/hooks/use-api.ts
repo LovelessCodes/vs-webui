@@ -201,3 +201,47 @@ export function usePinMod() {
     },
   });
 }
+
+// ── configs ─────────────────────────────────────────────────────────────────
+
+export function useModConfigs(enabled = true) {
+  return useQuery({
+    queryKey: ["configs"],
+    queryFn: api.configs,
+    staleTime: 5_000,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useSaveModConfig() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ file, newCode }: { file: string; newCode: string }) =>
+      api.saveConfig(file, newCode),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["configs"] });
+    },
+  });
+}
+
+export function useServerConfig(enabled = true) {
+  return useQuery({
+    queryKey: ["serverconfig"],
+    queryFn: api.serverConfig,
+    staleTime: 5_000,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useSaveServerConfig() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (content: string) => api.saveServerConfig(content),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["serverconfig"] });
+      void queryClient.invalidateQueries({ queryKey: ["status"] });
+    },
+  });
+}

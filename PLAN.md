@@ -206,10 +206,17 @@ Design vocabulary from `storyforge/PORTING.md`: sharp corners, right-side Sheets
       (dependency), update-all moved both to the newest dev builds and removed old files,
       remove + pin + CSRF checks pass.
 
-### Phase 3 — configs
+### Phase 3 — configs ✅ implemented
 
-- ModConfig list + Live editor + Monaco code editor
-- serverconfig form editor (raw JSON tab already available)
+- [x] `ModConfig/*.json` browser with file list, read errors and empty state
+- [x] Live editor: recursive form for objects/arrays/primitives with debounced auto-save
+      (600ms) and JSON5 validation server-side before writing
+- [x] Monaco code editor (bundled locally, no CDN; lazy-loaded 4MB chunk) with explicit
+      save and unsaved indicator
+- [x] `serverconfig.json` form editor (name, ports, limits, whitelist, PvP, advertise…)
+      merging only changed fields, plus a raw JSON tab
+- Verified locally: JSON5 files list/save, invalid content rejected (400), path traversal
+      rejected, missing serverconfig handled ("generated on first start")
 
 ### Phase 4 — Stratum
 

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import ServerConfigForm from "@/components/config/ServerConfigForm";
 import { useSettings, useStatus } from "@/hooks/use-api";
 import { api, setCsrf } from "@/lib/api";
 import { errorMessage } from "@/lib/format";
@@ -71,6 +72,22 @@ export default function Settings() {
 
   return (
     <div className="grid h-full gap-4 overflow-y-auto pb-4 lg:grid-cols-2">
+      <Card className="self-start lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ServerCog className="size-4 text-text-secondary" />
+            Server configuration
+          </CardTitle>
+          <CardDescription>
+            serverconfig.json — name, ports, limits, PvP and whitelist. The raw JSON tab covers
+            roles, world config and everything else.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <ServerConfigForm />
+        </CardContent>
+      </Card>
+
       <Card className="self-start">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

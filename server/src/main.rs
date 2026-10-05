@@ -1,5 +1,6 @@
 mod api;
 mod auth;
+mod configs;
 mod console;
 mod mods;
 mod paths;

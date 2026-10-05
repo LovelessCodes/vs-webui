@@ -17,6 +17,10 @@ const pageMeta: Record<string, { title: string; description?: string }> = {
     title: "Mods",
     description: "Browse the mod database and manage installed mods",
   },
+  "/config": {
+    title: "Mod Configs",
+    description: "Edit ModConfig files with the live or code editor",
+  },
   "/versions": {
     title: "Versions",
     description: "Install and switch Vintage Story builds",
