@@ -12,6 +12,7 @@ mod players;
 mod serverconfig;
 mod settings;
 mod state;
+mod storage;
 mod stratum;
 mod supervisor;
 mod versions;

@@ -44,6 +44,8 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/console/stream", get(console_stream))
         .route("/api/versions", get(list_versions))
         .route("/api/versions/install", post(install_version))
+        .route("/api/versions/{version}", delete(delete_version))
+        .route("/api/storage", get(storage_view))
         .route("/api/settings", get(get_settings).put(put_settings))
         .route("/api/webhook/test", post(test_webhook))
         .route("/api/tokens", get(list_tokens).post(create_token))
@@ -71,6 +73,7 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/configs/{filename}", put(save_config))
         .route("/api/stratum/releases", get(stratum_releases))
         .route("/api/stratum/install", post(stratum_install))
+        .route("/api/stratum/{tag}", delete(delete_stratum_release))
         .route("/api/stratum/configs", get(stratum_configs))
         .route("/api/stratum/configs/{filename}", put(save_stratum_config))
         .route("/api/server/flavor", post(set_flavor))
@@ -860,6 +863,60 @@ async fn modb_gameversions(
         .await
         .map(Json)
         .map_err(|message| ApiError::new(StatusCode::BAD_GATEWAY, message))
+}
+
+async fn delete_version(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(version): UrlPath<String>,
+) -> Result<Json<Value>, ApiError> {
+    if state.supervisor.is_running() {
+        return Err(ApiError::bad_request(
+            "stop the server before deleting builds",
+        ));
+    }
+    if state.settings.lock().unwrap().version.as_deref() == Some(version.as_str()) {
+        return Err(ApiError::bad_request(
+            "this build is selected; switch to another version first",
+        ));
+    }
+    let layout = state.layout.clone();
+    tokio::task::spawn_blocking(move || crate::versions::delete_version(&layout, &version))
+        .await
+        .map_err(|e| ApiError::internal(format!("delete task failed: {e}")))?
+        .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+async fn delete_stratum_release(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(tag): UrlPath<String>,
+) -> Result<Json<Value>, ApiError> {
+    if state.supervisor.is_running() {
+        return Err(ApiError::bad_request(
+            "stop the server before deleting builds",
+        ));
+    }
+    if state.settings.lock().unwrap().stratum_tag.as_deref() == Some(tag.as_str()) {
+        return Err(ApiError::bad_request(
+            "this release is selected; install or pick another one first",
+        ));
+    }
+    let layout = state.layout.clone();
+    tokio::task::spawn_blocking(move || crate::stratum::delete_release(&layout, &tag))
+        .await
+        .map_err(|e| ApiError::internal(format!("delete task failed: {e}")))?
+        .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+async fn storage_view(State(state): State<SharedState>, _authed: Authed) -> Result<Json<Value>, ApiError> {
+    let layout = state.layout.clone();
+    let view = tokio::task::spawn_blocking(move || crate::storage::storage_view(&layout))
+        .await
+        .map_err(|e| ApiError::internal(format!("storage task failed: {e}")))?;
+    Ok(Json(json!(view)))
 }
 
 async fn modb_tags(

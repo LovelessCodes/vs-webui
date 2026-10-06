@@ -7,6 +7,8 @@ use futures_util::StreamExt;
 use md5::{Digest, Md5};
 use serde::{Deserialize, Serialize};
 use tokio::io::AsyncWriteExt;
+
+use crate::paths::Layout;
 use tokio::sync::Mutex;
 
 use crate::state::SharedState;
@@ -129,6 +131,24 @@ impl VersionCache {
 /// Numeric comparison of `major.minor.patch` style versions. Prerelease
 /// suffixes (`-dev.26`, `-rc.1`) sort below the matching release and among
 /// themselves by their numeric parts (dev.26 > dev.1).
+/// Removes an installed vanilla build. The caller checks that it is not the
+/// selected version and that the server is stopped.
+pub fn delete_version(layout: &Layout, version: &str) -> Result<(), String> {
+    let trimmed = version.trim();
+    if trimmed.is_empty()
+        || trimmed.contains('/')
+        || trimmed.contains('\\')
+        || trimmed.contains("..")
+    {
+        return Err("invalid version".into());
+    }
+    let dir = layout.vanilla_version_dir(trimmed);
+    if !dir.is_dir() {
+        return Err(format!("{trimmed} is not installed"));
+    }
+    std::fs::remove_dir_all(&dir).map_err(|e| format!("cannot delete {trimmed}: {e}"))
+}
+
 pub fn compare_versions(a: &str, b: &str) -> Ordering {
     fn split(v: &str) -> (Vec<u64>, Option<String>) {
         let (base, pre) = match v.split_once(['-', '+']) {

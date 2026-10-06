@@ -3,6 +3,7 @@ import {
   Activity,
   Boxes,
   FolderCog,
+  HardDrive,
   Loader2,
   Play,
   RotateCw,
@@ -27,6 +28,7 @@ import {
   useServerStart,
   useServerStop,
   useStatus,
+  useStorage,
 } from "@/hooks/use-api";
 import { errorMessage, formatBytes, formatDuration } from "@/lib/format";
 import { cn } from "cn";
@@ -39,6 +41,16 @@ export default function Dashboard() {
   const stop = useServerStop();
   const restart = useServerRestart();
   const metrics = useMetrics();
+  const storage = useStorage();
+
+  const storageAreaKeys: Record<string, string> = {
+    runtime: "dashboard.storageRuntime",
+    saves: "dashboard.storageSaves",
+    mods: "dashboard.storageMods",
+    logs: "dashboard.storageLogs",
+    backups: "dashboard.storageBackups",
+    config: "dashboard.storageConfig",
+  };
 
   if (isLoading && !data) {
     return (
@@ -226,6 +238,40 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <HardDrive className="size-4 text-muted-foreground" />
+              {t("dashboard.storage")}
+            </CardTitle>
+            <CardDescription>{t("dashboard.storageDescription")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {storage.data ? (
+              <div className="grid gap-2">
+                <dl className="grid gap-1.5 text-xs">
+                  {storage.data.areas.map((area) => (
+                    <div className="flex items-center justify-between gap-3" key={area.name}>
+                      <dt className="text-muted-foreground">
+                        {t(storageAreaKeys[area.name] ?? area.name)}
+                      </dt>
+                      <dd className="font-mono">{formatBytes(area.bytes)}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className="text-muted-foreground text-[11px]">
+                  {t("dashboard.storageFree", {
+                    size: formatBytes(storage.data.free_bytes),
+                    total: formatBytes(storage.data.total_bytes),
+                  })}
+                </p>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-xs">{t("common.loading")}</p>
             )}
           </CardContent>
         </Card>

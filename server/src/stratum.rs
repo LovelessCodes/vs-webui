@@ -8,6 +8,7 @@ use serde_json::Value;
 use tokio::io::AsyncWriteExt;
 
 use crate::configs::{ModConfigFile, ModConfigList};
+use crate::paths::Layout;
 use crate::mods::ScanError;
 use crate::state::SharedState;
 use crate::versions::{set_install_status, InstallStatus};
@@ -321,6 +322,24 @@ fn extract_stratum_zip(archive: &Path, dest: &Path) -> Result<(), String> {
 }
 
 // ── Stratum config files (data path root) ───────────────────────────────────
+
+/// Removes an installed Stratum release. The caller checks that it is not the
+/// selected tag and that the server is stopped.
+pub fn delete_release(layout: &Layout, tag: &str) -> Result<(), String> {
+    let trimmed = tag.trim();
+    if trimmed.is_empty()
+        || trimmed.contains('/')
+        || trimmed.contains('\\')
+        || trimmed.contains("..")
+    {
+        return Err("invalid tag".into());
+    }
+    let dir = layout.stratum_version_dir(trimmed);
+    if !dir.is_dir() {
+        return Err(format!("{trimmed} is not installed"));
+    }
+    std::fs::remove_dir_all(&dir).map_err(|e| format!("cannot delete {trimmed}: {e}"))
+}
 
 /// `stratum.json`, `stratum-commands.json`, `stratum-performance.json` — written
 /// by Stratum on its first run.

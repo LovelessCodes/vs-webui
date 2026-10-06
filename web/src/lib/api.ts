@@ -303,6 +303,24 @@ export interface MetricSample {
   tps: number | null;
 }
 
+export interface StorageArea {
+  name: string;
+  bytes: number;
+}
+
+export interface StorageBuild {
+  id: string;
+  bytes: number;
+}
+
+export interface StorageView {
+  areas: StorageArea[];
+  free_bytes: number;
+  total_bytes: number;
+  vanilla_builds: StorageBuild[];
+  stratum_builds: StorageBuild[];
+}
+
 export const api = {
   me: () => request<Me>("/api/me"),
   login: (password: string) =>
@@ -378,6 +396,11 @@ export const api = {
     request<{ ok: boolean }>(`/api/tokens/${encodeURIComponent(id)}`, { method: "DELETE" }),
 
   metrics: () => request<{ running: boolean; samples: MetricSample[] }>("/api/metrics"),
+  storage: () => request<StorageView>("/api/storage"),
+  deleteVersion: (version: string) =>
+    request<{ ok: boolean }>(`/api/versions/${encodeURIComponent(version)}`, { method: "DELETE" }),
+  deleteStratumRelease: (tag: string) =>
+    request<{ ok: boolean }>(`/api/stratum/${encodeURIComponent(tag)}`, { method: "DELETE" }),
 
   serverConfig: () => request<ServerConfigResponse>("/api/serverconfig"),
 

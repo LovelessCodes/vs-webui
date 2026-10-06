@@ -474,6 +474,44 @@ export function useMetrics(enabled = true) {
   });
 }
 
+export function useStorage(enabled = true) {
+  return useQuery({
+    queryKey: ["storage"],
+    queryFn: api.storage,
+    staleTime: 30_000,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useDeleteVersion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (version: string) => api.deleteVersion(version),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["versions"] });
+      void queryClient.invalidateQueries({ queryKey: ["storage"] });
+      void queryClient.invalidateQueries({ queryKey: ["status"] });
+    },
+  });
+}
+
+export function useDeleteStratumRelease() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (tag: string) => api.deleteStratumRelease(tag),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["stratum", "releases"] });
+      void queryClient.invalidateQueries({ queryKey: ["storage"] });
+      void queryClient.invalidateQueries({ queryKey: ["status"] });
+    },
+  });
+}
+
 export function useCreateBackup() {
   const queryClient = useQueryClient();
   return useMutation({

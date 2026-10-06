@@ -1,4 +1,4 @@
-import { Boxes, Check, Download, Loader2, Zap } from "lucide-react";
+import { Boxes, Check, Download, Loader2, Trash2, Zap } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
+  useDeleteStratumRelease,
+  useDeleteVersion,
   useInstallStratum,
   useInstallVersion,
   useSetActiveVersion,
@@ -61,10 +63,14 @@ export default function Versions() {
   const setActive = useSetActiveVersion();
   const installStratum = useInstallStratum();
   const setFlavor = useSetFlavor();
+  const deleteVersion = useDeleteVersion();
+  const deleteStratum = useDeleteStratumRelease();
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const settings = status.data?.settings;
   const flavor = settings?.flavor ?? "vanilla";
   const stratumTag = settings?.stratum_tag ?? null;
+  const running = status.data?.status.status === "running";
   const installState = status.data?.install;
   const installing =
     installState && installState.phase !== "done" && installState.phase !== "error"
@@ -184,26 +190,65 @@ export default function Versions() {
                         </span>
                       ) : isActive ? (
                         <span className="text-xs text-muted-foreground">{t("versions.inUse")}</span>
+                      ) : confirmDelete === `stratum:${release.tag}` ? (
+                        <>
+                          <Button
+                            disabled={running || deleteStratum.isPending}
+                            onClick={() =>
+                              deleteStratum.mutate(release.tag, {
+                                onSuccess: () => setConfirmDelete(null),
+                              })
+                            }
+                            size="sm"
+                            variant="destructive"
+                          >
+                            {t("common.yes")}
+                          </Button>
+                          <Button
+                            className="ml-1.5"
+                            onClick={() => setConfirmDelete(null)}
+                            size="sm"
+                            variant="ghost"
+                          >
+                            {t("common.cancel")}
+                          </Button>
+                        </>
                       ) : (
-                        <Button
-                          disabled={installStratum.isPending || Boolean(installing)}
-                          onClick={() =>
-                            isInstalled
-                              ? setFlavor.mutate("stratum")
-                              : installStratum.mutate(release.tag)
-                          }
-                          size="sm"
-                          variant={isInstalled ? "outline" : "accent-primary"}
-                        >
-                          {isInstalled ? (
-                            t("versions.use")
-                          ) : (
-                            <>
-                              <Download />
-                              {t("common.install")}
-                            </>
+                        <>
+                          {isInstalled && (
+                            <Button
+                              disabled={running || deleteStratum.isPending}
+                              onClick={() => setConfirmDelete(`stratum:${release.tag}`)}
+                              size="icon-sm"
+                              title={
+                                running ? t("versions.stopToDelete") : t("versions.deleteBuild")
+                              }
+                              variant="ghost"
+                            >
+                              <Trash2 />
+                            </Button>
                           )}
-                        </Button>
+                          <Button
+                            className={isInstalled ? "ml-1.5" : undefined}
+                            disabled={installStratum.isPending || Boolean(installing)}
+                            onClick={() =>
+                              isInstalled
+                                ? setFlavor.mutate("stratum")
+                                : installStratum.mutate(release.tag)
+                            }
+                            size="sm"
+                            variant={isInstalled ? "outline" : "accent-primary"}
+                          >
+                            {isInstalled ? (
+                              t("versions.use")
+                            ) : (
+                              <>
+                                <Download />
+                                {t("common.install")}
+                              </>
+                            )}
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -287,15 +332,50 @@ export default function Versions() {
                         </span>
                       ) : entry.active ? (
                         <span className="text-xs text-muted-foreground">{t("versions.inUse")}</span>
+                      ) : entry.installed && confirmDelete === `vanilla:${entry.version}` ? (
+                        <>
+                          <Button
+                            disabled={running || deleteVersion.isPending}
+                            onClick={() =>
+                              deleteVersion.mutate(entry.version, {
+                                onSuccess: () => setConfirmDelete(null),
+                              })
+                            }
+                            size="sm"
+                            variant="destructive"
+                          >
+                            {t("common.yes")}
+                          </Button>
+                          <Button
+                            className="ml-1.5"
+                            onClick={() => setConfirmDelete(null)}
+                            size="sm"
+                            variant="ghost"
+                          >
+                            {t("common.cancel")}
+                          </Button>
+                        </>
                       ) : entry.installed ? (
-                        <Button
-                          disabled={setActive.isPending}
-                          onClick={() => setActive.mutate(entry.version)}
-                          size="sm"
-                          variant="outline"
-                        >
-                          {t("versions.setActive")}
-                        </Button>
+                        <>
+                          <Button
+                            disabled={running || deleteVersion.isPending}
+                            onClick={() => setConfirmDelete(`vanilla:${entry.version}`)}
+                            size="icon-sm"
+                            title={running ? t("versions.stopToDelete") : t("versions.deleteBuild")}
+                            variant="ghost"
+                          >
+                            <Trash2 />
+                          </Button>
+                          <Button
+                            className="ml-1.5"
+                            disabled={setActive.isPending}
+                            onClick={() => setActive.mutate(entry.version)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            {t("versions.setActive")}
+                          </Button>
+                        </>
                       ) : (
                         <Button
                           disabled={install.isPending || Boolean(installing)}
