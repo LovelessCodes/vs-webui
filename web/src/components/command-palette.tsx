@@ -16,6 +16,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import {
+  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -67,43 +68,45 @@ export default function CommandPalette({
 
   return (
     <CommandDialog onOpenChange={onOpenChange} open={open}>
-      <CommandInput placeholder={t("command.placeholder")} />
-      <CommandList>
-        <CommandEmpty>{t("command.empty")}</CommandEmpty>
-        <CommandGroup heading={t("command.navigation")}>
-          {pages.map((page) => {
-            const Icon = page.icon;
-            return (
-              <CommandItem
-                key={page.to}
-                onSelect={() =>
-                  run(() => void navigate({ to: page.to as "/" }))
-                }
-              >
-                <Icon />
-                <span>{t(page.labelKey)}</span>
-              </CommandItem>
-            );
-          })}
-        </CommandGroup>
-        <CommandGroup heading={t("command.server")}>
-          <CommandItem disabled={!canStart} onSelect={() => run(() => start.mutate())}>
-            <Play />
-            <span>{t("dashboard.start")}</span>
-          </CommandItem>
-          <CommandItem disabled={!canStop} onSelect={() => run(() => stop.mutate())}>
-            <Square />
-            <span>{t("dashboard.stop")}</span>
-          </CommandItem>
-          <CommandItem disabled={!canStop} onSelect={() => run(() => restart.mutate())}>
-            <RotateCw />
-            <span>{t("dashboard.restart")}</span>
-          </CommandItem>
-        </CommandGroup>
-      </CommandList>
-      <div className="flex items-center justify-end border-t border-border px-3 py-2">
-        <CommandShortcut>⌘K</CommandShortcut>
-      </div>
+      <Command>
+        <CommandInput placeholder={t("command.placeholder")} />
+        <CommandList>
+          <CommandEmpty>{t("command.empty")}</CommandEmpty>
+          <CommandGroup heading={t("command.navigation")}>
+            {pages.map((page) => {
+              const Icon = page.icon;
+              return (
+                <CommandItem
+                  key={page.to}
+                  onSelect={() =>
+                    run(() => void navigate({ to: page.to as "/" }))
+                  }
+                >
+                  <Icon />
+                  <span>{t(page.labelKey)}</span>
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+          <CommandGroup heading={t("command.server")}>
+            <CommandItem disabled={!canStart} onSelect={() => run(() => start.mutate())}>
+              <Play />
+              <span>{t("dashboard.start")}</span>
+            </CommandItem>
+            <CommandItem disabled={!canStop} onSelect={() => run(() => stop.mutate())}>
+              <Square />
+              <span>{t("dashboard.stop")}</span>
+            </CommandItem>
+            <CommandItem disabled={!canStop} onSelect={() => run(() => restart.mutate())}>
+              <RotateCw />
+              <span>{t("dashboard.restart")}</span>
+            </CommandItem>
+          </CommandGroup>
+        </CommandList>
+        <div className="flex items-center justify-end border-t border-border px-3 py-2">
+          <CommandShortcut>⌘K</CommandShortcut>
+        </div>
+      </Command>
     </CommandDialog>
   );
 }

@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -131,13 +132,15 @@ export default function Sidebar() {
               <span className="truncate">{t(`language.${i18n.language}`)}</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" side="top">
-              <DropdownMenuLabel>{t("language.label")}</DropdownMenuLabel>
-              {LANGUAGES.map((language) => (
-                <DropdownMenuItem key={language} onClick={() => setLanguage(language)}>
-                  <span className="flex-1">{t(`language.${language}`)}</span>
-                  {i18n.language === language && <Check />}
-                </DropdownMenuItem>
-              ))}
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>{t("language.label")}</DropdownMenuLabel>
+                {LANGUAGES.map((language) => (
+                  <DropdownMenuItem key={language} onClick={() => setLanguage(language)}>
+                    <span className="flex-1">{t(`language.${language}`)}</span>
+                    {i18n.language === language && <Check />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
