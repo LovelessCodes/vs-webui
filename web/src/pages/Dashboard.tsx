@@ -86,11 +86,17 @@ export default function Dashboard() {
 
   const metricsSamples = metrics.data?.samples ?? [];
   const lastSample = metricsSamples[metricsSamples.length - 1];
-  const cpuValues = metricsSamples.map((sample) => sample.cpu);
-  const memoryValues = metricsSamples.map((sample) => sample.memory / (1024 * 1024));
-  const tpsValues = metricsSamples
-    .map((sample) => sample.tps)
-    .filter((value): value is number => value !== null);
+  const cpuPoints = metricsSamples.map((sample) => ({ ts: sample.ts, value: sample.cpu }));
+  const memoryPoints = metricsSamples.map((sample) => ({
+    ts: sample.ts,
+    value: sample.memory / (1024 * 1024),
+  }));
+  const tpsPoints = metricsSamples
+    .filter((sample): sample is typeof sample & { tps: number } => sample.tps !== null)
+    .map((sample) => ({ ts: sample.ts, value: sample.tps }));
+  const formatPercent = (value: number) => `${value.toFixed(0)}%`;
+  const formatMegabytes = (value: number) => formatBytes(value * 1024 * 1024);
+  const formatTps = (value: number) => value.toFixed(1);
 
   return (
     <ScrollArea className="h-full" scrollFade>
@@ -200,7 +206,9 @@ export default function Dashboard() {
                   <Sparkline
                     ariaLabel={t("dashboard.cpu")}
                     color="#8b5cf6"
-                    values={cpuValues}
+                    formatValue={formatPercent}
+                    points={cpuPoints}
+                    valueLabel={t("dashboard.cpu")}
                   />
                 </div>
                 <div className="grid min-w-0 gap-1">
@@ -215,7 +223,9 @@ export default function Dashboard() {
                   <Sparkline
                     ariaLabel={t("dashboard.memory")}
                     color="#2ea043"
-                    values={memoryValues}
+                    formatValue={formatMegabytes}
+                    points={memoryPoints}
+                    valueLabel={t("dashboard.memory")}
                   />
                 </div>
                 <div className="grid min-w-0 gap-1">
@@ -227,11 +237,13 @@ export default function Dashboard() {
                         : "—"}
                     </span>
                   </div>
-                  {tpsValues.length >= 2 ? (
+                  {tpsPoints.length >= 2 ? (
                     <Sparkline
                       ariaLabel={t("dashboard.tps")}
                       color="#f59e0b"
-                      values={tpsValues}
+                      formatValue={formatTps}
+                      points={tpsPoints}
+                      valueLabel={t("dashboard.tps")}
                     />
                   ) : (
                     <p className="text-muted-foreground text-[10px]">{t("dashboard.tpsHint")}</p>
