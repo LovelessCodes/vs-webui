@@ -4,6 +4,7 @@ mod backups;
 mod configs;
 mod console;
 mod logfiles;
+mod metrics;
 mod mods;
 mod notifications;
 mod paths;
@@ -78,12 +79,15 @@ async fn main() -> anyhow::Result<()> {
         moddb: mods::ModDbCache::new(http_client.clone()),
         mods: Arc::new(mods::ModsManager::new()),
         stratum: stratum::StratumCache::new(http_client),
+        metrics: metrics::MetricsStore::default(),
         install: Mutex::new(None),
         started: std::time::Instant::now(),
     });
 
     tokio::spawn(state.mods.clone().run_worker(state.clone()));
     spawn_schedulers(state.clone());
+    metrics::spawn_collector(state.clone());
+    metrics::spawn_tps_collector(state.clone());
 
     // Forward supervisor events (starts, stops, crashes, players) to the
     // configured webhook, when one is set.

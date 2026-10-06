@@ -121,6 +121,14 @@
     "pid": "PID",
     "uptime": "运行时长",
     "lastExit": "上次退出",
+    "performance": "性能",
+    "performanceDescription": "游戏服务器进程的资源占用。",
+    "performanceWindow": "最近 15 分钟",
+    "cpu": "CPU",
+    "memory": "内存",
+    "tps": "TPS",
+    "noMetrics": "正在收集指标——启动服务器后即可查看数据。",
+    "tpsHint": "等待 /stats…",
     "start": "启动",
     "stop": "停止",
     "restart": "重启",
@@ -385,7 +393,9 @@
     "gameDataPath": "游戏数据路径",
     "gamePort": "游戏端口",
     "backupRetention": "每类保留的备份数",
-    "backupRetentionHint": "旧备份会自动清理（1–100）。"
+    "backupRetentionHint": "旧备份会自动清理（1–100）。",
+    "collectTps": "收集 TPS 指标",
+    "collectTpsHint": "服务器运行时每分钟发送一次 /stats，以便仪表盘绘制 tick 率。"
   },
   "players": {
     "notRunning": "服务器未运行 — 白名单与管理命令需要服务器处于运行状态。",

@@ -74,6 +74,7 @@ export interface Settings {
   backup_before_restart?: boolean;
   webhook_url?: string | null;
   webhook_events?: string[];
+  collect_tps?: boolean;
   backup_retention?: number;
 }
 
@@ -295,6 +296,13 @@ export interface ApiToken {
   last_used: number | null;
 }
 
+export interface MetricSample {
+  ts: number;
+  cpu: number;
+  memory: number;
+  tps: number | null;
+}
+
 export const api = {
   me: () => request<Me>("/api/me"),
   login: (password: string) =>
@@ -343,6 +351,7 @@ export const api = {
     backup_retention: number;
     webhook_url: string;
     webhook_events: string[];
+    collect_tps: boolean;
   }) =>
     request<Settings>("/api/settings", {
       method: "PUT",
@@ -367,6 +376,8 @@ export const api = {
     }),
   revokeToken: (id: string) =>
     request<{ ok: boolean }>(`/api/tokens/${encodeURIComponent(id)}`, { method: "DELETE" }),
+
+  metrics: () => request<{ running: boolean; samples: MetricSample[] }>("/api/metrics"),
 
   serverConfig: () => request<ServerConfigResponse>("/api/serverconfig"),
 

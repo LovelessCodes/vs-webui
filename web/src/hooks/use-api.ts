@@ -464,6 +464,16 @@ export function useRevokeToken() {
   });
 }
 
+export function useMetrics(enabled = true) {
+  return useQuery({
+    queryKey: ["metrics"],
+    queryFn: api.metrics,
+    refetchInterval: 5_000,
+    retry: false,
+    enabled,
+  });
+}
+
 export function useCreateBackup() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -48,6 +48,8 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/webhook/test", post(test_webhook))
         .route("/api/tokens", get(list_tokens).post(create_token))
         .route("/api/tokens/{id}", delete(revoke_token))
+        .route("/api/metrics", get(metrics_history))
+        .route("/metrics", get(prometheus_metrics))
         .route(
             "/api/serverconfig",
             get(get_serverconfig).put(put_serverconfig),
@@ -244,6 +246,8 @@ struct SettingsReq {
     webhook_url: Option<String>,
     #[serde(default)]
     webhook_events: Option<Vec<String>>,
+    #[serde(default)]
+    collect_tps: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -646,6 +650,9 @@ async fn put_settings(
         if let Some(events) = webhook_events {
             guard.webhook_events = events;
         }
+        if let Some(collect) = req.collect_tps {
+            guard.collect_tps = collect;
+        }
         if let Some(retention) = retention {
             guard.backup_retention = retention;
         }
@@ -718,6 +725,47 @@ async fn revoke_token(
         return Err(ApiError::new(StatusCode::NOT_FOUND, "token not found"));
     }
     Ok(Json(json!({ "ok": true })))
+}
+
+// ── metrics ─────────────────────────────────────────────────────────────────
+
+async fn metrics_history(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {
+    Json(json!({
+        "running": state.supervisor.is_running(),
+        "samples": state.metrics.samples(),
+    }))
+}
+
+async fn prometheus_metrics(
+    State(state): State<SharedState>,
+    _authed: Authed,
+) -> impl axum::response::IntoResponse {
+    let running = state.supervisor.is_running();
+    let last = state.metrics.last();
+    let tps = state.metrics.last_tps();
+    let body = format!(
+        "# HELP vs_webui_server_running Whether the game server process is running.\n\
+         # TYPE vs_webui_server_running gauge\n\
+         vs_webui_server_running {}\n\
+         # HELP vs_webui_server_cpu_percent CPU usage of the game server process (percent of one core).\n\
+         # TYPE vs_webui_server_cpu_percent gauge\n\
+         vs_webui_server_cpu_percent {:.2}\n\
+         # HELP vs_webui_server_memory_bytes Resident memory of the game server process.\n\
+         # TYPE vs_webui_server_memory_bytes gauge\n\
+         vs_webui_server_memory_bytes {}\n\
+         # HELP vs_webui_server_tps Ticks per second reported by /stats.\n\
+         # TYPE vs_webui_server_tps gauge\n\
+         vs_webui_server_tps {}\n",
+        if running { 1 } else { 0 },
+        last.as_ref().map(|sample| sample.cpu).unwrap_or_default(),
+        last.as_ref().map(|sample| sample.memory).unwrap_or_default(),
+        tps.map(|value| format!("{value:.2}"))
+            .unwrap_or_else(|| "NaN".into()),
+    );
+    (
+        [(header::CONTENT_TYPE, "text/plain; version=0.0.4; charset=utf-8")],
+        body,
+    )
 }
 
 async fn get_serverconfig(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {

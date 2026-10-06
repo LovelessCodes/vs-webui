@@ -121,6 +121,14 @@
     "pid": "PID",
     "uptime": "Uptime",
     "lastExit": "Last exit",
+    "performance": "Performance",
+    "performanceDescription": "Resource usage of the game server process.",
+    "performanceWindow": "last 15 min",
+    "cpu": "CPU",
+    "memory": "Memory",
+    "tps": "TPS",
+    "noMetrics": "Collecting metrics — start the server to see data.",
+    "tpsHint": "Waiting for /stats…",
     "start": "Start",
     "stop": "Stop",
     "restart": "Restart",
@@ -385,7 +393,9 @@
     "gameDataPath": "Game data path",
     "gamePort": "Game port",
     "backupRetention": "Backups kept per type",
-    "backupRetentionHint": "Older backups are pruned automatically (1–100)."
+    "backupRetentionHint": "Older backups are pruned automatically (1–100).",
+    "collectTps": "Collect TPS metrics",
+    "collectTpsHint": "Sends /stats once a minute while the server runs so the dashboard can chart tick rate."
   },
   "players": {
     "notRunning": "The server is not running — whitelist and moderation commands need a running server.",

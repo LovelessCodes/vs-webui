@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 use crate::auth::AuthStore;
+use crate::metrics::MetricsStore;
 use crate::mods::{ModDbCache, ModsManager};
 use crate::paths::Layout;
 use crate::settings::Settings;
@@ -18,6 +19,7 @@ pub struct AppState {
     pub moddb: ModDbCache,
     pub mods: Arc<ModsManager>,
     pub stratum: StratumCache,
+    pub metrics: MetricsStore,
     pub install: Mutex<Option<InstallStatus>>,
     pub started: Instant,
 }

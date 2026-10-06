@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import {
+  Activity,
   Boxes,
   FolderCog,
   Loader2,
@@ -14,12 +15,14 @@ import { useTranslation } from "react-i18next";
 
 import { StatusDot, statusMeta } from "@/components/status-badge";
 import ProgressBar from "@/components/common/ProgressBar";
+import Sparkline from "@/components/dashboard/Sparkline";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   useConsolePreview,
+  useMetrics,
   useServerRestart,
   useServerStart,
   useServerStop,
@@ -35,6 +38,7 @@ export default function Dashboard() {
   const start = useServerStart();
   const stop = useServerStop();
   const restart = useServerRestart();
+  const metrics = useMetrics();
 
   if (isLoading && !data) {
     return (
@@ -67,6 +71,14 @@ export default function Dashboard() {
   const install = data.install;
   const installing = install && install.phase !== "done" && install.phase !== "error";
   const actionError = start.error ?? stop.error ?? restart.error;
+
+  const metricsSamples = metrics.data?.samples ?? [];
+  const lastSample = metricsSamples[metricsSamples.length - 1];
+  const cpuValues = metricsSamples.map((sample) => sample.cpu);
+  const memoryValues = metricsSamples.map((sample) => sample.memory / (1024 * 1024));
+  const tpsValues = metricsSamples
+    .map((sample) => sample.tps)
+    .filter((value): value is number => value !== null);
 
   return (
     <ScrollArea className="h-full" scrollFade>
@@ -142,6 +154,78 @@ export default function Dashboard() {
                 </Link>
                 .
               </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="size-4 text-muted-foreground" />
+                {t("dashboard.performance")}
+              </CardTitle>
+              {metricsSamples.length > 0 && (
+                <span className="text-muted-foreground text-[10px] tracking-widest uppercase">
+                  {t("dashboard.performanceWindow")}
+                </span>
+              )}
+            </div>
+            <CardDescription>{t("dashboard.performanceDescription")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {metricsSamples.length < 2 ? (
+              <p className="text-muted-foreground text-xs">{t("dashboard.noMetrics")}</p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="grid min-w-0 gap-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-muted-foreground text-[11px]">{t("dashboard.cpu")}</span>
+                    <span className="font-mono text-xs">
+                      {lastSample ? `${lastSample.cpu.toFixed(0)}%` : "—"}
+                    </span>
+                  </div>
+                  <Sparkline
+                    ariaLabel={t("dashboard.cpu")}
+                    color="#8b5cf6"
+                    values={cpuValues}
+                  />
+                </div>
+                <div className="grid min-w-0 gap-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-muted-foreground text-[11px]">
+                      {t("dashboard.memory")}
+                    </span>
+                    <span className="font-mono text-xs">
+                      {lastSample ? formatBytes(lastSample.memory) : "—"}
+                    </span>
+                  </div>
+                  <Sparkline
+                    ariaLabel={t("dashboard.memory")}
+                    color="#2ea043"
+                    values={memoryValues}
+                  />
+                </div>
+                <div className="grid min-w-0 gap-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-muted-foreground text-[11px]">{t("dashboard.tps")}</span>
+                    <span className="font-mono text-xs">
+                      {lastSample?.tps !== null && lastSample?.tps !== undefined
+                        ? lastSample.tps.toFixed(1)
+                        : "—"}
+                    </span>
+                  </div>
+                  {tpsValues.length >= 2 ? (
+                    <Sparkline
+                      ariaLabel={t("dashboard.tps")}
+                      color="#f59e0b"
+                      values={tpsValues}
+                    />
+                  ) : (
+                    <p className="text-muted-foreground text-[10px]">{t("dashboard.tpsHint")}</p>
+                  )}
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>

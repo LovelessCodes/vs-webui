@@ -37,6 +37,7 @@ export default function Settings() {
   const [backupRetention, setBackupRetention] = useState(10);
   const [webhookUrl, setWebhookUrl] = useState("");
   const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
+  const [collectTps, setCollectTps] = useState(true);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -59,6 +60,7 @@ export default function Settings() {
       setBackupRetention(settings.data.backup_retention ?? 10);
       setWebhookUrl(settings.data.webhook_url ?? "");
       setWebhookEvents(settings.data.webhook_events ?? []);
+      setCollectTps(settings.data.collect_tps ?? true);
     }
   }, [settings.data]);
 
@@ -74,6 +76,7 @@ export default function Settings() {
         backup_retention: backupRetention,
         webhook_url: webhookUrl,
         webhook_events: webhookEvents,
+        collect_tps: collectTps,
       }),
     onSuccess: () => {
       toast.success(t("common.saved"));
@@ -243,6 +246,14 @@ export default function Settings() {
             <p className="text-muted-foreground text-[11px]">
               {t("settings.backupRetentionHint")}
             </p>
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <Label htmlFor="collect-tps">{t("settings.collectTps")}</Label>
+              <p className="text-muted-foreground text-[11px]">{t("settings.collectTpsHint")}</p>
+            </div>
+            <Switch checked={collectTps} id="collect-tps" onCheckedChange={setCollectTps} />
           </div>
 
           {saveSettings.isError && (

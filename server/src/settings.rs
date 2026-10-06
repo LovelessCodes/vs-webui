@@ -13,6 +13,14 @@ fn is_false(v: &bool) -> bool {
     !*v
 }
 
+fn is_true(v: &bool) -> bool {
+    *v
+}
+
+fn default_true() -> bool {
+    true
+}
+
 /// Manager settings, persisted as `config/settings.json`.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Settings {
@@ -54,6 +62,9 @@ pub struct Settings {
     /// player_leave, backup.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub webhook_events: Vec<String>,
+    /// Send `/stats` every minute to collect tick rate for the metrics charts.
+    #[serde(default = "default_true", skip_serializing_if = "is_true")]
+    pub collect_tps: bool,
     /// How many backups of each kind to keep.
     #[serde(default = "default_retention")]
     pub backup_retention: u32,
@@ -83,6 +94,7 @@ impl Default for Settings {
             backup_before_restart: false,
             webhook_url: None,
             webhook_events: Vec::new(),
+            collect_tps: true,
             backup_retention: default_retention(),
         }
     }

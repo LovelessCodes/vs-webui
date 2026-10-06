@@ -121,6 +121,14 @@
     "pid": "PID",
     "uptime": "Durée de fonctionnement",
     "lastExit": "Dernière sortie",
+    "performance": "Performance",
+    "performanceDescription": "Utilisation des ressources du processus serveur.",
+    "performanceWindow": "15 dernières min",
+    "cpu": "CPU",
+    "memory": "Mémoire",
+    "tps": "TPS",
+    "noMetrics": "Collecte des métriques — démarrez le serveur pour voir des données.",
+    "tpsHint": "En attente de /stats…",
     "start": "Démarrer",
     "stop": "Arrêter",
     "restart": "Redémarrer",
@@ -385,7 +393,9 @@
     "gameDataPath": "Chemin des données du jeu",
     "gamePort": "Port du jeu",
     "backupRetention": "Sauvegardes conservées par type",
-    "backupRetentionHint": "Les anciennes sauvegardes sont supprimées automatiquement (1–100)."
+    "backupRetentionHint": "Les anciennes sauvegardes sont supprimées automatiquement (1–100).",
+    "collectTps": "Collecter les métriques TPS",
+    "collectTpsHint": "Envoie /stats une fois par minute pendant que le serveur tourne pour que le tableau de bord puisse tracer le tick rate."
   },
   "players": {
     "notRunning": "Le serveur n'est pas en cours — les commandes de liste blanche et de modération l'exigent.",
