@@ -100,7 +100,7 @@ pub fn spawn_tps_collector(state: SharedState) {
             }
 
             let mut receiver = state.supervisor.console.subscribe();
-            state.supervisor.command("/stats".into()).await;
+            state.supervisor.probe_stats().await;
 
             let deadline = tokio::time::Instant::now() + Duration::from_secs(TPS_CAPTURE_SECS);
             let mut captured: Vec<String> = Vec::new();

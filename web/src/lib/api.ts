@@ -117,6 +117,8 @@ export interface VersionsResponse {
 export interface ConsoleLine {
   ts: string;
   line: string;
+  /** Manager telemetry (e.g. /stats probes) — hidden by the console UI. */
+  internal?: boolean;
 }
 
 export interface ServerConfigResponse {

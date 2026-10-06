@@ -58,7 +58,13 @@ pub struct Supervisor {
     status: Arc<Mutex<Status>>,
     pub console: ConsoleLog,
     online: Arc<Mutex<HashMap<String, u64>>>,
+    /// While this instant is in the future, server output is treated as
+    /// manager telemetry (`/stats` probes) and hidden from the web console.
+    internal_window: Arc<Mutex<Option<Instant>>>,
 }
+
+/// How long `/stats` probe output is considered internal after the probe starts.
+const PROBE_WINDOW: Duration = Duration::from_secs(5);
 
 impl Supervisor {
     pub fn spawn(
@@ -71,13 +77,26 @@ impl Supervisor {
         let console = ConsoleLog::new();
         let status = Arc::new(Mutex::new(initial_status(&layout, &settings)));
         let online: Arc<Mutex<HashMap<String, u64>>> = Arc::new(Mutex::new(HashMap::new()));
+        let internal_window: Arc<Mutex<Option<Instant>>> = Arc::new(Mutex::new(None));
 
         {
             let status = status.clone();
             let console = console.clone();
             let online = online.clone();
+            let internal_window = internal_window.clone();
             tokio::spawn(async move {
-                run(rx, notify_tx, status, console, online, layout, settings, events).await;
+                run(
+                    rx,
+                    notify_tx,
+                    status,
+                    console,
+                    online,
+                    layout,
+                    settings,
+                    events,
+                    internal_window,
+                )
+                .await;
             });
         }
 
@@ -86,6 +105,7 @@ impl Supervisor {
             status,
             console,
             online,
+            internal_window,
         }
     }
 
@@ -126,7 +146,15 @@ impl Supervisor {
     }
 
     pub async fn command(&self, command: String) {
+        // User commands cancel any probe window so their output is shown.
+        *self.internal_window.lock().unwrap() = None;
         let _ = self.tx.send(Cmd::Command(command)).await;
+    }
+
+    /// Sends `/stats` for telemetry; its output is hidden from the web console.
+    pub async fn probe_stats(&self) {
+        *self.internal_window.lock().unwrap() = Some(Instant::now() + PROBE_WINDOW);
+        let _ = self.tx.send(Cmd::Command("/stats".into())).await;
     }
 
     /// Graceful stop with a bounded wait; used on container shutdown.
@@ -191,6 +219,7 @@ async fn run(
     layout: Layout,
     settings: Arc<Mutex<Settings>>,
     events: mpsc::UnboundedSender<ServerEvent>,
+    internal_window: Arc<Mutex<Option<Instant>>>,
 ) {
     let mut running: Option<Running> = None;
     let mut failures: u32 = 0;
@@ -211,6 +240,7 @@ async fn run(
                     &layout,
                     &settings,
                     &events,
+                    &internal_window,
                 )
                 .await
                 {
@@ -246,6 +276,7 @@ async fn run(
                         &layout,
                         &settings,
                         &events,
+                        &internal_window,
                     )
                     .await
                     {
@@ -336,6 +367,7 @@ async fn run(
                     &layout,
                     &settings,
                     &events,
+                    &internal_window,
                 )
                 .await
                 {
@@ -360,6 +392,7 @@ async fn start_server(
     layout: &Layout,
     settings: &Arc<Mutex<Settings>>,
     events: &mpsc::UnboundedSender<ServerEvent>,
+    internal_window: &Arc<Mutex<Option<Instant>>>,
 ) -> Result<(), String> {
     online.lock().unwrap().clear();
     let (flavor, version, tag, params) = {
@@ -449,6 +482,7 @@ async fn start_server(
         status.clone(),
         online.clone(),
         events.clone(),
+        internal_window.clone(),
     );
     spawn_reader(
         stderr,
@@ -456,6 +490,7 @@ async fn start_server(
         status.clone(),
         online.clone(),
         events.clone(),
+        internal_window.clone(),
     );
 
     let (exit_tx, exit_rx) = oneshot::channel();
@@ -538,6 +573,7 @@ fn spawn_reader<R>(
     status: Arc<Mutex<Status>>,
     online: Arc<Mutex<HashMap<String, u64>>>,
     events: mpsc::UnboundedSender<ServerEvent>,
+    internal_window: Arc<Mutex<Option<Instant>>>,
 ) where
     R: tokio::io::AsyncRead + Unpin + Send + 'static,
 {
@@ -564,7 +600,16 @@ fn spawn_reader<R>(
                 }
             }
             track_player(&line, &online, &events);
-            console.push(line.clone());
+            let internal = internal_window
+                .lock()
+                .unwrap()
+                .map(|until| Instant::now() < until)
+                .unwrap_or(false);
+            if internal {
+                console.push_internal(line.clone());
+            } else {
+                console.push(line.clone());
+            }
             tracing::info!(target: "server", "{}", line);
         }
     });

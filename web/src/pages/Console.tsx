@@ -180,7 +180,9 @@ export default function Console() {
   async function loadHistory() {
     try {
       const data = await api.consoleHistory(500);
-      if (modeRef.current === "live" && data.lines) setLines(data.lines);
+      if (modeRef.current === "live" && data.lines) {
+        setLines(data.lines.filter((entry) => !entry.internal));
+      }
     } catch {
       // ignore; the stream will fill the view
     }
@@ -196,6 +198,7 @@ export default function Console() {
       if (modeRef.current === "file") return;
       try {
         const line = JSON.parse(event.data) as ConsoleLine;
+        if (line.internal) return;
         setLines((previous) => {
           const next = [...previous, line];
           return next.length > MAX_LINES ? next.slice(next.length - MAX_LINES) : next;

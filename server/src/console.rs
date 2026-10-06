@@ -11,6 +11,10 @@ const BROADCAST_CAP: usize = 1024;
 pub struct LogLine {
     pub ts: String,
     pub line: String,
+    /// True for manager-generated probe output (e.g. `/stats` telemetry) that
+    /// the web console hides by default.
+    #[serde(default)]
+    pub internal: bool,
 }
 
 /// Bounded in-memory console ring buffer plus a broadcast feed for SSE clients.
@@ -36,9 +40,19 @@ impl ConsoleLog {
     }
 
     pub fn push(&self, line: impl Into<String>) {
+        self.push_tagged(line, false);
+    }
+
+    /// Like [`push`], but marks the line as manager-internal telemetry.
+    pub fn push_internal(&self, line: impl Into<String>) {
+        self.push_tagged(line, true);
+    }
+
+    fn push_tagged(&self, line: impl Into<String>, internal: bool) {
         let entry = LogLine {
             ts: now_hms(),
             line: line.into(),
+            internal,
         };
         {
             let mut buf = self.buf.lock().unwrap();

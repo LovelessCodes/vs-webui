@@ -419,7 +419,7 @@
     "backupRetention": "Behaltene Backups pro Typ",
     "backupRetentionHint": "Ältere Backups werden automatisch gelöscht (1–100).",
     "collectTps": "TPS-Metriken sammeln",
-    "collectTpsHint": "Sendet einmal pro Minute /stats, solange der Server läuft, damit das Dashboard die Tickrate darstellen kann."
+    "collectTpsHint": "Sendet einmal pro Minute /stats, solange der Server läuft, damit das Dashboard die Tickrate darstellen kann. Die Ausgabe wird in der Konsole ausgeblendet."
   },
   "players": {
     "notRunning": "Der Server läuft nicht — Whitelist- und Moderationsbefehle brauchen einen laufenden Server.",

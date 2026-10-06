@@ -419,7 +419,7 @@
     "backupRetention": "Copias conservadas por tipo",
     "backupRetentionHint": "Las copias antiguas se eliminan automáticamente (1–100).",
     "collectTps": "Recopilar métricas de TPS",
-    "collectTpsHint": "Envía /stats una vez por minuto mientras el servidor está en marcha para que el panel pueda graficar el tick rate."
+    "collectTpsHint": "Envía /stats una vez por minuto mientras el servidor está en marcha para que el panel pueda graficar el tick rate. La salida de la sonda se oculta en la consola."
   },
   "players": {
     "notRunning": "El servidor no está en ejecución — los comandos de lista blanca y moderación lo requieren.",

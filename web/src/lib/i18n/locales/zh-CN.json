@@ -419,7 +419,7 @@
     "backupRetention": "每类保留的备份数",
     "backupRetentionHint": "旧备份会自动清理（1–100）。",
     "collectTps": "收集 TPS 指标",
-    "collectTpsHint": "服务器运行时每分钟发送一次 /stats，以便仪表盘绘制 tick 率。"
+    "collectTpsHint": "服务器运行时每分钟发送一次 /stats，以便仪表盘绘制 tick 率。探测输出不会显示在控制台中。"
   },
   "players": {
     "notRunning": "服务器未运行 — 白名单与管理命令需要服务器处于运行状态。",

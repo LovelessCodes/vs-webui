@@ -190,7 +190,8 @@ curl -H "Authorization: Bearer $TOKEN" $BASE/api/status
 
 `GET /metrics` exposes `vs_webui_server_running`, `vs_webui_server_cpu_percent`,
 `vs_webui_server_memory_bytes` and `vs_webui_server_tps` (parsed from the server's `/stats`,
-toggle under **Settings**). Scrape config with a token:
+toggle under **Settings**; the probe output is hidden from the web console, though the game's own
+`server-main.txt` still contains it). Scrape config with a token:
 
 ```yaml
 scrape_configs:

@@ -419,7 +419,7 @@
     "backupRetention": "Backups kept per type",
     "backupRetentionHint": "Older backups are pruned automatically (1–100).",
     "collectTps": "Collect TPS metrics",
-    "collectTpsHint": "Sends /stats once a minute while the server runs so the dashboard can chart tick rate."
+    "collectTpsHint": "Sends /stats once a minute while the server runs so the dashboard can chart tick rate. Probe output is hidden from the console."
   },
   "players": {
     "notRunning": "The server is not running — whitelist and moderation commands need a running server.",
