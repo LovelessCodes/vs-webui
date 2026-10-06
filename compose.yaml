@@ -21,6 +21,12 @@ services:
       # PGID: "1000"
     volumes:
       - vs-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
 
 volumes:
   vs-data:
