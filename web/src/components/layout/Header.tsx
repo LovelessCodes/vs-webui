@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { LANGUAGES, setLanguage } from "@/lib/i18n";
+import { revealTransition } from "@/lib/theme-transition";
 
 /**
  * Full-width app bar spanning above the sidebar and the page inset
@@ -79,7 +80,16 @@ export default function Header({ onOpenPalette }: { onOpenPalette?: () => void }
             <DropdownMenuGroup>
               <DropdownMenuLabel>{t("language.label")}</DropdownMenuLabel>
               {LANGUAGES.map((language) => (
-                <DropdownMenuItem key={language} onClick={() => setLanguage(language)}>
+                <DropdownMenuItem
+                  key={language}
+                  onClick={(event) => {
+                    if (language === i18n.language) return;
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    revealTransition(() => setLanguage(language), {
+                      origin: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 },
+                    });
+                  }}
+                >
                   <span className="flex-1">{t(`language.${language}`)}</span>
                   {i18n.language === language && <Check />}
                 </DropdownMenuItem>

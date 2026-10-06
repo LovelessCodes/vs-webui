@@ -4,29 +4,24 @@ export function elementCenter(element: Element | null): { x: number; y: number }
   return { x: left + width / 2, y: top + height / 2 };
 }
 
-interface SwitchThemeOptions {
+interface RevealOptions {
   duration?: number;
   origin?: { x: number; y: number };
-  setTheme: (theme: string) => void;
 }
 
 /**
- * Switch the theme with a clip-path circle reveal when the View Transitions
- * API is available, and a plain switch when it is not. The `data-theme-vt`
- * flag keeps the page out of its own snapshot group so the reveal covers the
- * whole window.
+ * Run an update behind a clip-path circle reveal when the View Transitions
+ * API is available, and plainly when it is not. The `data-theme-vt` flag
+ * keeps the page out of its own snapshot group so the reveal covers the
+ * whole window. Async updates (e.g. `changeLanguage`) are awaited before the
+ * new snapshot is captured.
  */
-export function switchTheme(
-  nextTheme: "light" | "dark",
-  { duration = 400, origin, setTheme }: SwitchThemeOptions,
+export function revealTransition(
+  update: () => void | Promise<void>,
+  { duration = 400, origin }: RevealOptions = {},
 ): void {
-  const applyTheme = () => {
-    document.documentElement.classList.toggle("dark", nextTheme === "dark");
-    setTheme(nextTheme);
-  };
-
   if (typeof document.startViewTransition !== "function") {
-    applyTheme();
+    void update();
     return;
   }
 
@@ -42,7 +37,7 @@ export function switchTheme(
   const endRadius = `${((maxRadius / (Math.hypot(viewportWidth, viewportHeight) / Math.SQRT2)) * 100).toFixed(3)}%`;
 
   document.documentElement.dataset.themeVt = "";
-  const transition = document.startViewTransition(applyTheme);
+  const transition = document.startViewTransition(update);
   void transition.finished
     .finally(() => {
       delete document.documentElement.dataset.themeVt;
@@ -61,4 +56,27 @@ export function switchTheme(
       );
     })
     .catch(() => {});
+}
+
+interface SwitchThemeOptions {
+  duration?: number;
+  origin?: { x: number; y: number };
+  setTheme: (theme: string) => void;
+}
+
+/**
+ * Switch the theme with a clip-path circle reveal when the View Transitions
+ * API is available, and a plain switch when it is not.
+ */
+export function switchTheme(
+  nextTheme: "light" | "dark",
+  { duration = 400, origin, setTheme }: SwitchThemeOptions,
+): void {
+  revealTransition(
+    () => {
+      document.documentElement.classList.toggle("dark", nextTheme === "dark");
+      setTheme(nextTheme);
+    },
+    { duration, origin },
+  );
 }

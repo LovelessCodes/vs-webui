@@ -26,6 +26,8 @@ function detectLanguage(): Language {
   return (LANGUAGES as readonly string[]).includes(short) ? (short as Language) : "en";
 }
 
+const initialLanguage = detectLanguage();
+
 void i18n.use(initReactI18next).init({
   resources: {
     en: { translation: en },
@@ -36,14 +38,19 @@ void i18n.use(initReactI18next).init({
     ru: { translation: ru },
     "zh-CN": { translation: zhCN },
   },
-  lng: detectLanguage(),
+  lng: initialLanguage,
   fallbackLng: "en",
   interpolation: { escapeValue: false },
 });
 
-export function setLanguage(language: string) {
+document.documentElement.lang = initialLanguage;
+i18n.on("languageChanged", (language) => {
+  document.documentElement.lang = language;
+});
+
+export function setLanguage(language: string): Promise<void> {
   localStorage.setItem(STORAGE_KEY, language);
-  void i18n.changeLanguage(language);
+  return i18n.changeLanguage(language).then(() => undefined);
 }
 
 export default i18n;
