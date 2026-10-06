@@ -9,6 +9,7 @@ use argon2::Argon2;
 use base64::Engine;
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 use crate::console::now_unix;
 use crate::paths::Layout;
@@ -33,10 +34,36 @@ struct SessionsFile {
     sessions: HashMap<String, Session>,
 }
 
+/// Bearer token for automation. Only the SHA-256 hash is persisted.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ApiToken {
+    pub id: String,
+    pub label: String,
+    pub hash: String,
+    pub created: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_used: Option<u64>,
+}
+
+/// API shape for a token (never exposes the hash).
+#[derive(Serialize)]
+pub struct ApiTokenView {
+    pub id: String,
+    pub label: String,
+    pub created: u64,
+    pub last_used: Option<u64>,
+}
+
+#[derive(Default, Serialize, Deserialize)]
+struct TokensFile {
+    tokens: Vec<ApiToken>,
+}
+
 struct Inner {
     password_hash: Option<String>,
     sessions: HashMap<String, Session>,
     attempts: VecDeque<(String, Instant)>,
+    tokens: Vec<ApiToken>,
 }
 
 /// Password + session store. Sessions persist across manager restarts.
@@ -45,6 +72,7 @@ pub struct AuthStore {
     inner: Arc<Mutex<Inner>>,
     password_path: PathBuf,
     sessions_path: PathBuf,
+    tokens_path: PathBuf,
 }
 
 pub struct LoginOk {
@@ -58,6 +86,7 @@ impl AuthStore {
     pub fn new(layout: &Layout, enabled: bool) -> (Self, Option<String>) {
         let password_path = layout.auth_path();
         let sessions_path = layout.sessions_path();
+        let tokens_path = layout.tokens_path();
 
         let mut inner = Inner {
             password_hash: std::fs::read_to_string(&password_path)
@@ -71,6 +100,11 @@ impl AuthStore {
                 .map(|f| f.sessions)
                 .unwrap_or_default(),
             attempts: VecDeque::new(),
+            tokens: std::fs::read_to_string(&tokens_path)
+                .ok()
+                .and_then(|raw| serde_json::from_str::<TokensFile>(&raw).ok())
+                .map(|f| f.tokens)
+                .unwrap_or_default(),
         };
         inner.sessions.retain(|_, s| s.expires > now_unix());
 
@@ -92,6 +126,7 @@ impl AuthStore {
             inner: Arc::new(Mutex::new(inner)),
             password_path,
             sessions_path,
+            tokens_path,
         };
         store.persist_password();
         store.persist_sessions();
@@ -159,6 +194,78 @@ impl AuthStore {
         self.persist_sessions();
     }
 
+    // ── API tokens ──────────────────────────────────────────────────────────
+
+    /// Creates a token and returns it together with the one-time plaintext.
+    pub fn create_token(&self, label: &str) -> (ApiToken, String) {
+        let plaintext = format!("vsw_{}", random_token(32));
+        let token = ApiToken {
+            id: random_token(9),
+            label: label.trim().to_string(),
+            hash: hash_token(&plaintext),
+            created: now_unix(),
+            last_used: None,
+        };
+        let mut inner = self.inner.lock().unwrap();
+        inner.tokens.push(token.clone());
+        drop(inner);
+        self.persist_tokens();
+        (token, plaintext)
+    }
+
+    pub fn tokens(&self) -> Vec<ApiTokenView> {
+        let mut tokens: Vec<ApiTokenView> = self
+            .inner
+            .lock()
+            .unwrap()
+            .tokens
+            .iter()
+            .map(|token| ApiTokenView {
+                id: token.id.clone(),
+                label: token.label.clone(),
+                created: token.created,
+                last_used: token.last_used,
+            })
+            .collect();
+        tokens.sort_by(|a, b| b.created.cmp(&a.created));
+        tokens
+    }
+
+    pub fn revoke_token(&self, id: &str) -> bool {
+        let removed = {
+            let mut inner = self.inner.lock().unwrap();
+            let before = inner.tokens.len();
+            inner.tokens.retain(|token| token.id != id);
+            inner.tokens.len() != before
+        };
+        if removed {
+            self.persist_tokens();
+        }
+        removed
+    }
+
+    /// Verifies a bearer token and records its last use.
+    pub fn verify_token(&self, plaintext: &str) -> bool {
+        let hash = hash_token(plaintext);
+        let found = {
+            let mut inner = self.inner.lock().unwrap();
+            let now = now_unix();
+            let mut found = false;
+            for token in inner.tokens.iter_mut() {
+                if token.hash == hash {
+                    token.last_used = Some(now);
+                    found = true;
+                    break;
+                }
+            }
+            found
+        };
+        if found {
+            self.persist_tokens();
+        }
+        found
+    }
+
     pub fn change_password(&self, current: Option<&str>, new: &str) -> Result<(), String> {
         if new.chars().count() < 8 {
             return Err("Password must be at least 8 characters.".into());
@@ -210,6 +317,19 @@ impl AuthStore {
             }
         }
     }
+
+    fn persist_tokens(&self) {
+        let inner = self.inner.lock().unwrap();
+        let file = TokensFile {
+            tokens: inner.tokens.clone(),
+        };
+        if let Ok(bytes) = serde_json::to_vec_pretty(&file) {
+            let tmp = self.tokens_path.with_extension("json.tmp");
+            if std::fs::write(&tmp, bytes).is_ok() {
+                let _ = std::fs::rename(&tmp, &self.tokens_path);
+            }
+        }
+    }
 }
 
 fn hash_password(password: &str) -> String {
@@ -218,6 +338,41 @@ fn hash_password(password: &str) -> String {
         .hash_password(password.as_bytes(), &salt)
         .map(|h| h.to_string())
         .unwrap_or_default()
+}
+
+fn hash_token(token: &str) -> String {
+    Sha256::digest(token.as_bytes())
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn api_tokens_roundtrip() {
+        let dir = std::env::temp_dir().join(format!("vs-webui-auth-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let layout = Layout::new(&dir);
+        let (store, _) = AuthStore::new(&layout, true);
+
+        let (token, plaintext) = store.create_token("monitoring");
+        assert!(plaintext.starts_with("vsw_"));
+        assert!(store.verify_token(&plaintext));
+        assert!(!store.verify_token("vsw_bogus"));
+
+        let listed = store.tokens();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].label, "monitoring");
+        assert!(listed[0].last_used.is_some());
+
+        assert!(store.revoke_token(&token.id));
+        assert!(!store.verify_token(&plaintext));
+        assert!(store.tokens().is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }
 
 fn random_token(bytes: usize) -> String {

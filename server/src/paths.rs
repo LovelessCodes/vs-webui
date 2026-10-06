@@ -51,6 +51,10 @@ impl Layout {
         self.config_dir().join("sessions.json")
     }
 
+    pub fn tokens_path(&self) -> PathBuf {
+        self.config_dir().join("tokens.json")
+    }
+
     pub fn server_exe(&self, version: &str) -> PathBuf {
         self.vanilla_version_dir(version).join("VintagestoryServer")
     }

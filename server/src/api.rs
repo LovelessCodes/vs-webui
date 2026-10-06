@@ -46,6 +46,8 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/versions/install", post(install_version))
         .route("/api/settings", get(get_settings).put(put_settings))
         .route("/api/webhook/test", post(test_webhook))
+        .route("/api/tokens", get(list_tokens).post(create_token))
+        .route("/api/tokens/{id}", delete(revoke_token))
         .route(
             "/api/serverconfig",
             get(get_serverconfig).put(put_serverconfig),
@@ -163,6 +165,21 @@ impl FromRequestParts<SharedState> for Authed {
     ) -> Result<Self, Self::Rejection> {
         if !state.auth.enabled() {
             return Ok(Self { token: None });
+        }
+        // Bearer tokens authenticate automation; there is no cookie to protect
+        // against CSRF, so the header check does not apply to them.
+        let bearer = parts
+            .headers
+            .get(axum::http::header::AUTHORIZATION)
+            .and_then(|value| value.to_str().ok())
+            .and_then(|value| value.strip_prefix("Bearer "))
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        if let Some(bearer) = bearer {
+            if state.auth.verify_token(bearer) {
+                return Ok(Self { token: None });
+            }
+            return Err(ApiError::unauthorized());
         }
         let token = cookie_token(&parts.headers).ok_or_else(ApiError::unauthorized)?;
         let session = state
@@ -654,6 +671,52 @@ async fn test_webhook(
     crate::notifications::send(&url, "test", "vs-webui test notification")
         .await
         .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+// ── API tokens ──────────────────────────────────────────────────────────────
+
+#[derive(Deserialize)]
+struct TokenCreateReq {
+    label: String,
+}
+
+async fn list_tokens(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {
+    Json(json!({ "tokens": state.auth.tokens() }))
+}
+
+async fn create_token(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Json(req): Json<TokenCreateReq>,
+) -> Result<Json<Value>, ApiError> {
+    let label = req.label.trim().to_string();
+    if label.is_empty() {
+        return Err(ApiError::bad_request("missing label"));
+    }
+    if label.chars().count() > 64 {
+        return Err(ApiError::bad_request("label is too long"));
+    }
+    let (token, plaintext) = state.auth.create_token(&label);
+    Ok(Json(json!({
+        "token": {
+            "id": token.id,
+            "label": token.label,
+            "created": token.created,
+            "last_used": token.last_used,
+        },
+        "plaintext": plaintext,
+    })))
+}
+
+async fn revoke_token(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(id): UrlPath<String>,
+) -> Result<Json<Value>, ApiError> {
+    if !state.auth.revoke_token(&id) {
+        return Err(ApiError::new(StatusCode::NOT_FOUND, "token not found"));
+    }
     Ok(Json(json!({ "ok": true })))
 }
 

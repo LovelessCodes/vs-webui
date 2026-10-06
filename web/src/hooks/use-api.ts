@@ -431,6 +431,39 @@ export function useTestWebhook() {
   });
 }
 
+export function useTokens(enabled = true) {
+  return useQuery({
+    queryKey: ["tokens"],
+    queryFn: api.tokens,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useCreateToken() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (label: string) => api.createToken(label),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["tokens"] });
+    },
+  });
+}
+
+export function useRevokeToken() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.revokeToken(id),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["tokens"] });
+    },
+  });
+}
+
 export function useCreateBackup() {
   const queryClient = useQueryClient();
   return useMutation({

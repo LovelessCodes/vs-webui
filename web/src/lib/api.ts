@@ -288,6 +288,13 @@ export interface LogFileEntry {
   modified: number;
 }
 
+export interface ApiToken {
+  id: string;
+  label: string;
+  created: number;
+  last_used: number | null;
+}
+
 export const api = {
   me: () => request<Me>("/api/me"),
   login: (password: string) =>
@@ -351,6 +358,15 @@ export const api = {
       `/api/logs/${encodeURIComponent(name)}?tail=${tail}`,
     ),
   testWebhook: () => request<{ ok: boolean }>("/api/webhook/test", { method: "POST" }),
+
+  tokens: () => request<{ tokens: ApiToken[] }>("/api/tokens"),
+  createToken: (label: string) =>
+    request<{ token: ApiToken; plaintext: string }>("/api/tokens", {
+      method: "POST",
+      body: JSON.stringify({ label }),
+    }),
+  revokeToken: (id: string) =>
+    request<{ ok: boolean }>(`/api/tokens/${encodeURIComponent(id)}`, { method: "DELETE" }),
 
   serverConfig: () => request<ServerConfigResponse>("/api/serverconfig"),
 

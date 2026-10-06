@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, KeyRound, Loader2, ServerCog, Send } from "lucide-react";
+import { Check, Copy, KeyRound, Loader2, Plus, Send, ServerCog, ShieldCheck } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -10,7 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
-import { useSettings, useStatus, useTestWebhook } from "@/hooks/use-api";
+import {
+  useCreateToken,
+  useRevokeToken,
+  useSettings,
+  useStatus,
+  useTestWebhook,
+  useTokens,
+} from "@/hooks/use-api";
 import { api, setCsrf } from "@/lib/api";
 import { errorMessage } from "@/lib/format";
 import { toast } from "@/lib/notify";
@@ -35,6 +42,11 @@ export default function Settings() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordChanged, setPasswordChanged] = useState(false);
+
+  const [tokenLabel, setTokenLabel] = useState("");
+  const [createdToken, setCreatedToken] = useState<string | null>(null);
+  const [tokenCopied, setTokenCopied] = useState(false);
+  const [revokeConfirm, setRevokeConfirm] = useState<string | null>(null);
 
   useEffect(() => {
     if (settings.data) {
@@ -83,6 +95,10 @@ export default function Settings() {
   });
 
   const testWebhook = useTestWebhook();
+
+  const tokens = useTokens();
+  const createToken = useCreateToken();
+  const revokeToken = useRevokeToken();
 
   const WEBHOOK_EVENTS: Array<{ event: string; labelKey: string }> = [
     { event: "start", labelKey: "settings.webhookEventStart" },
@@ -381,6 +397,139 @@ export default function Settings() {
                 {t("settings.changePassword")}
               </Button>
             </form>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="self-start lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck className="size-4 text-muted-foreground" />
+            {t("settings.tokensTitle")}
+          </CardTitle>
+          <CardDescription>{t("settings.tokensDescription")}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="grid gap-1.5">
+            <Label htmlFor="token-label">{t("settings.tokenLabel")}</Label>
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                className="w-64"
+                id="token-label"
+                onChange={(event) => setTokenLabel(event.target.value)}
+                placeholder={t("settings.tokenLabelPlaceholder")}
+                value={tokenLabel}
+              />
+              <Button
+                disabled={!tokenLabel.trim() || createToken.isPending}
+                onClick={() =>
+                  createToken.mutate(tokenLabel.trim(), {
+                    onSuccess: (data) => {
+                      setCreatedToken(data.plaintext);
+                      setTokenCopied(false);
+                      setTokenLabel("");
+                    },
+                  })
+                }
+                size="sm"
+                variant="accent-primary"
+              >
+                {createToken.isPending ? <Loader2 className="animate-spin" /> : <Plus />}
+                {t("settings.tokenCreate")}
+              </Button>
+            </div>
+          </div>
+
+          {createdToken && (
+            <div className="border border-success/40 bg-success/5 p-3">
+              <p className="text-xs text-success">{t("settings.tokenCreated")}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <code className="min-w-0 flex-1 truncate border border-border bg-input/40 px-2 py-1 font-mono text-[11px]">
+                  {createdToken}
+                </code>
+                <Button
+                  onClick={() => {
+                    void navigator.clipboard.writeText(createdToken).then(() => {
+                      setTokenCopied(true);
+                      window.setTimeout(() => setTokenCopied(false), 2000);
+                    });
+                  }}
+                  size="sm"
+                  variant="outline"
+                >
+                  {tokenCopied ? <Check /> : <Copy />}
+                  {tokenCopied ? t("settings.tokenCopied") : t("settings.tokenCopy")}
+                </Button>
+                <Button onClick={() => setCreatedToken(null)} size="sm" variant="ghost">
+                  {t("common.clear")}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {tokens.data && tokens.data.tokens.length === 0 && (
+            <p className="text-xs text-muted-foreground">{t("settings.tokenNone")}</p>
+          )}
+
+          {tokens.data && tokens.data.tokens.length > 0 && (
+            <div className="border border-border">
+              <div className="flex items-center gap-3 border-b border-border bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-muted-foreground uppercase">
+                <span className="flex-1">{t("settings.tokenLabel")}</span>
+                <span className="hidden w-40 sm:block">{t("settings.tokenCreatedAt")}</span>
+                <span className="hidden w-40 sm:block">{t("settings.tokenLastUsed")}</span>
+                <span className="w-24 text-right" />
+              </div>
+              <div className="divide-y divide-border">
+                {tokens.data.tokens.map((token) => (
+                  <div className="flex items-center gap-3 px-3 py-2.5" key={token.id}>
+                    <span className="min-w-0 flex-1 truncate text-xs font-medium">
+                      {token.label}
+                    </span>
+                    <span className="hidden w-40 font-mono text-[11px] text-muted-foreground sm:block">
+                      {new Date(token.created * 1000).toLocaleString()}
+                    </span>
+                    <span className="hidden w-40 font-mono text-[11px] text-muted-foreground sm:block">
+                      {token.last_used
+                        ? new Date(token.last_used * 1000).toLocaleString()
+                        : t("settings.tokenNever")}
+                    </span>
+                    <div className="flex w-24 shrink-0 items-center justify-end gap-1.5">
+                      {revokeConfirm === token.id ? (
+                        <>
+                          <Button
+                            disabled={revokeToken.isPending}
+                            onClick={() =>
+                              revokeToken.mutate(token.id, {
+                                onSuccess: () => setRevokeConfirm(null),
+                              })
+                            }
+                            size="sm"
+                            variant="destructive"
+                          >
+                            {t("common.yes")}
+                          </Button>
+                          <Button
+                            onClick={() => setRevokeConfirm(null)}
+                            size="sm"
+                            variant="ghost"
+                          >
+                            {t("common.cancel")}
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          onClick={() => setRevokeConfirm(token.id)}
+                          size="sm"
+                          variant="outline"
+                        >
+                          {t("settings.tokenRevoke")}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
