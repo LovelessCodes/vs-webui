@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::process::Stdio;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -29,7 +30,8 @@ enum Cmd {
     Stop,
     Restart,
     Command(String),
-    Exited(Option<i32>),
+    /// `generation` identifies the process this notification belongs to.
+    Exited { generation: u64, code: Option<i32> },
     Shutdown(oneshot::Sender<()>),
 }
 
@@ -43,6 +45,7 @@ pub struct ServerEvent {
 }
 
 struct Running {
+    generation: u64,
     pid: Option<u32>,
     stdin: tokio::process::ChildStdin,
     exit_rx: Option<oneshot::Receiver<Option<i32>>>,
@@ -78,12 +81,14 @@ impl Supervisor {
         let status = Arc::new(Mutex::new(initial_status(&layout, &settings)));
         let online: Arc<Mutex<HashMap<String, u64>>> = Arc::new(Mutex::new(HashMap::new()));
         let internal_window: Arc<Mutex<Option<Instant>>> = Arc::new(Mutex::new(None));
+        let generations: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
 
         {
             let status = status.clone();
             let console = console.clone();
             let online = online.clone();
             let internal_window = internal_window.clone();
+            let generations = generations.clone();
             tokio::spawn(async move {
                 run(
                     rx,
@@ -95,6 +100,7 @@ impl Supervisor {
                     settings,
                     events,
                     internal_window,
+                    generations,
                 )
                 .await;
             });
@@ -220,6 +226,7 @@ async fn run(
     settings: Arc<Mutex<Settings>>,
     events: mpsc::UnboundedSender<ServerEvent>,
     internal_window: Arc<Mutex<Option<Instant>>>,
+    generations: Arc<AtomicU64>,
 ) {
     let mut running: Option<Running> = None;
     let mut failures: u32 = 0;
@@ -241,6 +248,7 @@ async fn run(
                     &settings,
                     &events,
                     &internal_window,
+                    &generations,
                 )
                 .await
                 {
@@ -264,8 +272,9 @@ async fn run(
             }
             Cmd::Restart => {
                 if stop_server(&mut running, &status, &console).await {
-                    // The process is gone; drop the stale handle. The queued
-                    // `Exited` notification will be ignored (running is None).
+                    // The process is gone; drop the stale handle. Its queued
+                    // `Exited` notification is matched by generation and
+                    // ignored once the next process owns `running`.
                     running = None;
                     match start_server(
                         &mut running,
@@ -277,6 +286,7 @@ async fn run(
                         &settings,
                         &events,
                         &internal_window,
+                        &generations,
                     )
                     .await
                     {
@@ -300,7 +310,16 @@ async fn run(
                 }
                 None => console.push("[manager] server is not running"),
             },
-            Cmd::Exited(code) => {
+            Cmd::Exited { generation, code } => {
+                // Exit notifications from a superseded process (the previous
+                // instance of a restart) must not touch the current one.
+                let is_current = running
+                    .as_ref()
+                    .map(|server| server.generation == generation)
+                    .unwrap_or(false);
+                if !is_current {
+                    continue;
+                }
                 let Some(server) = running.take() else {
                     continue;
                 };
@@ -368,6 +387,7 @@ async fn run(
                     &settings,
                     &events,
                     &internal_window,
+                    &generations,
                 )
                 .await
                 {
@@ -393,6 +413,7 @@ async fn start_server(
     settings: &Arc<Mutex<Settings>>,
     events: &mpsc::UnboundedSender<ServerEvent>,
     internal_window: &Arc<Mutex<Option<Instant>>>,
+    generations: &Arc<AtomicU64>,
 ) -> Result<(), String> {
     online.lock().unwrap().clear();
     let (flavor, version, tag, params) = {
@@ -468,6 +489,7 @@ async fn start_server(
         });
     }
 
+    let generation = generations.fetch_add(1, Ordering::SeqCst) + 1;
     let mut child: Child = cmd.spawn().map_err(|e| format!("spawn failed: {e}"))?;
     let pid = child.id();
     let stdin = child.stdin.take().ok_or("stdin not piped")?;
@@ -501,10 +523,11 @@ async fn start_server(
             Err(_) => None,
         };
         let _ = exit_tx.send(code);
-        let _ = exit_notify.send(Cmd::Exited(code)).await;
+        let _ = exit_notify.send(Cmd::Exited { generation, code }).await;
     });
 
     *running = Some(Running {
+        generation,
         pid,
         stdin,
         exit_rx: Some(exit_rx),
