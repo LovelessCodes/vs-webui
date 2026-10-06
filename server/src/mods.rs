@@ -19,7 +19,6 @@ use crate::versions::compare_versions;
 pub const MODS_DIR: &str = "Mods";
 const DB_CACHE_TTL: Duration = Duration::from_secs(300);
 const TAGS_CACHE_TTL: Duration = Duration::from_secs(3600);
-const MAX_BACKUPS: usize = 10;
 const MAX_JOBS: usize = 100;
 
 // ── ModDB client (with small response cache) ────────────────────────────────
@@ -762,7 +761,7 @@ fn safe_filename(name: &str) -> String {
 // ── backups ─────────────────────────────────────────────────────────────────
 
 /// Zip the current `Mods` directory into `backups/`, pruning old backups.
-pub fn create_mods_backup(layout: &Layout) -> Result<String, String> {
+pub fn create_mods_backup(layout: &Layout, retention: usize) -> Result<String, String> {
     let mods_dir = layout.server_dir().join(MODS_DIR);
     std::fs::create_dir_all(&mods_dir).map_err(|e| format!("cannot create Mods dir: {e}"))?;
     std::fs::create_dir_all(layout.backups_dir())
@@ -791,11 +790,11 @@ pub fn create_mods_backup(layout: &Layout) -> Result<String, String> {
     zip.finish()
         .map_err(|e| format!("cannot finish backup: {e}"))?;
 
-    prune_backups(layout);
+    prune_backups(layout, retention);
     Ok(name)
 }
 
-fn prune_backups(layout: &Layout) {
+fn prune_backups(layout: &Layout, retention: usize) {
     let dir = layout.backups_dir();
     let Ok(entries) = std::fs::read_dir(&dir) else {
         return;
@@ -809,7 +808,7 @@ fn prune_backups(layout: &Layout) {
         .map(|entry| entry.file_name().to_string_lossy().into_owned())
         .collect();
     backups.sort();
-    while backups.len() > MAX_BACKUPS {
+    while backups.len() > retention {
         let oldest = backups.remove(0);
         let _ = std::fs::remove_file(dir.join(oldest));
     }

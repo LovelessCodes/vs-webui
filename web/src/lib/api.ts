@@ -69,6 +69,7 @@ export interface Settings {
   start_params?: string;
   pinned_mods?: string[];
   restart_schedule?: string | null;
+  backup_retention?: number;
 }
 
 export interface ConfigSummary {
@@ -119,6 +120,7 @@ export interface ServerConfigResponse {
 
 export interface ModSummary {
   modid: number;
+  assetid: number;
   name: string;
   summary: string;
   author: string;
@@ -128,6 +130,7 @@ export interface ModSummary {
   tags: string[];
   downloads: number;
   follows: number;
+  comments: number;
   trendingpoints: number;
   lastreleased: string;
   modidstrs: string[];
@@ -317,6 +320,7 @@ export const api = {
     auto_restart: boolean;
     start_params: string;
     restart_schedule: string;
+    backup_retention: number;
   }) =>
     request<Settings>("/api/settings", {
       method: "PUT",

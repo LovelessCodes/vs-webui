@@ -10,10 +10,11 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { Check, Languages } from "lucide-react";
+import { Check, Download, Languages } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import ThemeToggle from "@/components/common/ThemeToggle";
+import { useDownloadsSheet } from "@/components/downloads/downloads-sheet";
 import { StatusDot, statusMeta } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,6 +65,7 @@ export default function Sidebar() {
   const { t, i18n } = useTranslation();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { data } = useStatus();
+  const { setOpen, activeCount } = useDownloadsSheet();
   const status = data?.status.status;
   const meta = statusMeta(status);
 
@@ -115,6 +117,19 @@ export default function Sidebar() {
 
       <SidebarFooter>
         <div className="grid gap-2 group-data-[collapsible=icon]:hidden">
+          <Button
+            className="w-full justify-start px-1"
+            onClick={() => setOpen(true)}
+            size="sm"
+            variant="outline"
+          >
+            <Download />
+            <span className="truncate">
+              {activeCount > 0
+                ? t("downloads.active", { count: activeCount })
+                : t("downloads.title")}
+            </span>
+          </Button>
           <div className="flex items-center gap-2 px-1">
             <StatusDot status={status} />
             <span className={cn("text-xs font-medium", meta.text)}>{t(meta.labelKey)}</span>

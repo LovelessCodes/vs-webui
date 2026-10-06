@@ -7,7 +7,6 @@ use crate::paths::Layout;
 
 /// Directories never included in a server-data backup (logs/caches/tmp).
 const SKIP_DIRS: [&str; 4] = ["Logs", "Cache", "Backups", "BackupSaves"];
-const MAX_SERVER_BACKUPS: usize = 10;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct BackupEntry {
@@ -50,7 +49,7 @@ pub fn list_backups(layout: &Layout) -> Vec<BackupEntry> {
 }
 
 /// Zip the server data directory (world, mods, configs, player data).
-pub fn create_server_backup(layout: &Layout) -> Result<String, String> {
+pub fn create_server_backup(layout: &Layout, retention: usize) -> Result<String, String> {
     let server_dir = layout.server_dir();
     if !server_dir.exists() {
         return Err("server data directory does not exist".into());
@@ -68,7 +67,7 @@ pub fn create_server_backup(layout: &Layout) -> Result<String, String> {
     add_dir(&mut zip, &server_dir, Path::new(""), &options)?;
     zip.finish()
         .map_err(|e| format!("cannot finish backup: {e}"))?;
-    prune_server_backups(layout);
+    prune_server_backups(layout, retention);
     Ok(name)
 }
 
@@ -159,7 +158,7 @@ pub fn backup_path(layout: &Layout, name: &str) -> Result<PathBuf, String> {
     Ok(layout.backups_dir().join(name))
 }
 
-fn prune_server_backups(layout: &Layout) {
+fn prune_server_backups(layout: &Layout, retention: usize) {
     let dir = layout.backups_dir();
     let Ok(entries) = std::fs::read_dir(&dir) else {
         return;
@@ -173,7 +172,7 @@ fn prune_server_backups(layout: &Layout) {
         .map(|entry| entry.file_name().to_string_lossy().into_owned())
         .collect();
     backups.sort();
-    while backups.len() > MAX_SERVER_BACKUPS {
+    while backups.len() > retention {
         let oldest = backups.remove(0);
         let _ = std::fs::remove_file(dir.join(oldest));
     }

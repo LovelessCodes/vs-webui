@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 
 import CommandPalette from "@/components/command-palette";
+import { DownloadsProvider } from "@/components/downloads/downloads-sheet";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -32,15 +33,17 @@ export default function AppShell() {
 
   return (
     <SidebarProvider className="h-svh overflow-hidden">
-      <Toaster />
-      <Sidebar />
-      <SidebarInset className="min-w-0 overflow-hidden">
-        <Header />
-        <main className="min-h-0 flex-1 overflow-hidden p-6">
-          <Outlet />
-        </main>
-      </SidebarInset>
-      <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+      <DownloadsProvider>
+        <Toaster />
+        <Sidebar />
+        <SidebarInset className="min-w-0 overflow-hidden">
+          <Header />
+          <main className="min-h-0 flex-1 overflow-hidden p-6">
+            <Outlet />
+          </main>
+        </SidebarInset>
+        <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+      </DownloadsProvider>
     </SidebarProvider>
   );
 }

@@ -1,6 +1,5 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, RefreshCw, Search } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ListSkeleton } from "@/components/common/LoadingSkeleton";
@@ -9,7 +8,6 @@ import { BrokenModsBanner, MissingDepsBanner } from "@/components/mods/banners";
 import InstalledModRow from "@/components/mods/InstalledModRow";
 import ModBrowseRow from "@/components/mods/ModBrowseRow";
 import ModDetailSheet from "@/components/mods/ModDetailSheet";
-import ModJobsPanel from "@/components/mods/ModJobsPanel";
 import VersionPickerSheet from "@/components/mods/VersionPickerSheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,7 +33,7 @@ import {
   useUpdateAllMods,
   useUpdateMod,
 } from "@/hooks/use-api";
-import type { InstalledMod, ModSummary } from "@/lib/api";
+import type { InstalledMod, ModSummary, ModUpdate } from "@/lib/api";
 import { errorMessage } from "@/lib/format";
 import { findMissingDependencies } from "@/lib/version";
 
@@ -75,15 +73,29 @@ function installedVersionOf(
   mod: ModSummary | null,
   installed: InstalledMod[] | undefined,
 ): string | undefined {
+  return installedModOf(mod, installed)?.version;
+}
+
+function installedModOf(
+  mod: ModSummary | null,
+  installed: InstalledMod[] | undefined,
+): InstalledMod | undefined {
   if (!mod || !installed) return undefined;
   const ids = new Set(mod.modidstrs.map((id) => id.toLowerCase()));
   if (mod.urlalias) ids.add(mod.urlalias.toLowerCase());
-  return installed.find((entry) => ids.has(entry.modid.toLowerCase()))?.version;
+  return installed.find((entry) => ids.has(entry.modid.toLowerCase()));
+}
+
+function updateOf(
+  mod: ModSummary,
+  updates: Record<string, ModUpdate> | undefined,
+): ModUpdate | undefined {
+  if (!updates) return undefined;
+  return mod.modidstrs.map((id) => updates[id.toLowerCase()]).find(Boolean);
 }
 
 export default function Mods() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const status = useStatus();
   const activeVersion = status.data?.settings.version ?? undefined;
 
@@ -114,10 +126,7 @@ export default function Mods() {
     () => new Set((status.data?.settings.pinned_mods ?? []).map((id) => id.toLowerCase())),
     [status.data],
   );
-  const installedIds = useMemo(
-    () => new Set((installed.data?.mods ?? []).map((mod) => mod.modid.toLowerCase())),
-    [installed.data],
-  );
+  const installedMods = installed.data?.mods;
   const missing = useMemo(
     () => findMissingDependencies(installed.data?.mods),
     [installed.data],
@@ -127,14 +136,6 @@ export default function Mods() {
   const activeJobs = (jobs.data?.jobs ?? []).filter(
     (job) => job.status === "queued" || job.status === "running",
   );
-
-  const previousActive = useRef(0);
-  useEffect(() => {
-    if (previousActive.current > 0 && activeJobs.length === 0) {
-      void queryClient.invalidateQueries({ queryKey: ["mods"] });
-    }
-    previousActive.current = activeJobs.length;
-  }, [activeJobs.length, queryClient]);
 
   const filtered = useMemo(() => {
     let list = modb.data?.mods ?? [];
@@ -149,6 +150,11 @@ export default function Mods() {
 
   const tagNames = useMemo(
     () => [...new Set((tags.data?.tags ?? []).map((entry) => entry.name))].sort(),
+    [tags.data],
+  );
+  const tagColorMap = useMemo(
+    () =>
+      Object.fromEntries((tags.data?.tags ?? []).map((entry) => [entry.name, entry.color])),
     [tags.data],
   );
 
@@ -200,8 +206,6 @@ export default function Mods() {
           </>
         )}
       </div>
-
-      <ModJobsPanel />
 
       {mutationError && (
         <p className="border border-error/40 bg-error/5 px-3 py-2 text-xs text-error">
@@ -314,18 +318,39 @@ export default function Mods() {
               </p>
               <VirtualList
                 empty={
-                  <p className="p-6 text-center text-xs text-muted-foreground">{t("mods.noMatch")}</p>
+                  <p className="p-6 text-center text-xs text-muted-foreground">
+                    {t("mods.noMatch")}
+                  </p>
                 }
-                estimateRowHeight={96}
+                estimateRowHeight={132}
                 items={filtered}
                 keyOf={(mod) => String(mod.modid)}
-                renderItem={(mod) => (
-                  <ModBrowseRow
-                    installed={mod.modidstrs.some((id) => installedIds.has(id.toLowerCase()))}
-                    mod={mod}
-                    onOpen={() => setDetailMod(mod)}
-                  />
-                )}
+                renderItem={(mod) => {
+                  const installedMod = installedModOf(mod, installedMods);
+                  const updateEntry = updateOf(mod, updateMap);
+                  return (
+                    <ModBrowseRow
+                      activeTag={tag}
+                      installed={installedMod}
+                      mod={mod}
+                      onInstall={() => install.mutate({ modid: String(mod.modid), name: mod.name })}
+                      onOpen={() => setDetailMod(mod)}
+                      onTagClick={(name) => setTag((current) => (current === name ? "" : name))}
+                      onUpdate={() =>
+                        updateEntry &&
+                        installedMod &&
+                        update.mutate({
+                          modid: installedMod.modid,
+                          version: updateEntry.modversion,
+                          file: installedMod.file,
+                          name: installedMod.name,
+                        })
+                      }
+                      tagColorMap={tagColorMap}
+                      update={updateEntry}
+                    />
+                  );
+                }}
                 scrollButtonAlign="center"
               />
             </>

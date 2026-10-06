@@ -318,7 +318,9 @@
     "manager": "Manager",
     "dataDir": "Data directory",
     "gameDataPath": "Game data path",
-    "gamePort": "Game port"
+    "gamePort": "Game port",
+    "backupRetention": "Backups kept per type",
+    "backupRetentionHint": "Older backups are pruned automatically (1–100)."
   },
   "players": {
     "notRunning": "The server is not running — whitelist and moderation commands need a running server.",
@@ -381,5 +383,11 @@
     "created": "Created {{name}}",
     "restored": "Restored {{name}}",
     "deleted": "Deleted {{name}}"
+  },
+  "downloads": {
+    "title": "Downloads",
+    "description": "Mod installs, updates and removals.",
+    "empty": "No downloads yet.",
+    "active": "Downloads ({{count}})"
   }
 }

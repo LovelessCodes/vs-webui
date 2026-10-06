@@ -318,7 +318,9 @@
     "manager": "Gestionnaire",
     "dataDir": "Dossier de données",
     "gameDataPath": "Chemin des données du jeu",
-    "gamePort": "Port du jeu"
+    "gamePort": "Port du jeu",
+    "backupRetention": "Sauvegardes conservées par type",
+    "backupRetentionHint": "Les anciennes sauvegardes sont supprimées automatiquement (1–100)."
   },
   "players": {
     "notRunning": "Le serveur n'est pas en cours — les commandes de liste blanche et de modération l'exigent.",
@@ -381,5 +383,11 @@
     "created": "{{name}} créée",
     "restored": "{{name}} restaurée",
     "deleted": "{{name}} supprimée"
+  },
+  "downloads": {
+    "title": "Téléchargements",
+    "description": "Installations, mises à jour et suppressions de mods.",
+    "empty": "Aucun téléchargement.",
+    "active": "Téléchargements ({{count}})"
   }
 }

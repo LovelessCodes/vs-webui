@@ -34,7 +34,7 @@ export default function Backups() {
   return (
     <ScrollArea className="h-full" scrollFade>
       <div className="flex flex-col gap-4 pb-4 pr-1">
-      <Card className="self-start">
+      <Card>
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="flex items-center gap-2">

@@ -5,6 +5,10 @@ fn default_flavor() -> String {
     "vanilla".into()
 }
 
+fn default_retention() -> u32 {
+    10
+}
+
 fn is_false(v: &bool) -> bool {
     !*v
 }
@@ -34,6 +38,9 @@ pub struct Settings {
     /// Daily restart time as local `HH:MM`; `None` disables scheduled restarts.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub restart_schedule: Option<String>,
+    /// How many backups of each kind to keep.
+    #[serde(default = "default_retention")]
+    pub backup_retention: u32,
 }
 
 /// Parse a 24-hour `HH:MM` time.
@@ -55,6 +62,7 @@ impl Default for Settings {
             start_params: String::new(),
             pinned_mods: Vec::new(),
             restart_schedule: None,
+            backup_retention: default_retention(),
         }
     }
 }

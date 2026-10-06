@@ -211,6 +211,8 @@ struct SettingsReq {
     start_params: String,
     #[serde(default)]
     restart_schedule: Option<String>,
+    #[serde(default)]
+    backup_retention: Option<u32>,
 }
 
 #[derive(Deserialize)]
@@ -556,6 +558,15 @@ async fn put_settings(
             Some(Some(value.trim().to_string()))
         }
     };
+    let retention = match req.backup_retention {
+        None => None,
+        Some(value) if (1..=100).contains(&value) => Some(value),
+        Some(_) => {
+            return Err(ApiError::bad_request(
+                "backup retention must be between 1 and 100",
+            ))
+        }
+    };
     let settings = {
         let mut guard = state.settings.lock().unwrap();
         guard.auto_start = req.auto_start;
@@ -563,6 +574,9 @@ async fn put_settings(
         guard.start_params = req.start_params;
         if let Some(schedule) = schedule {
             guard.restart_schedule = schedule;
+        }
+        if let Some(retention) = retention {
+            guard.backup_retention = retention;
         }
         guard
             .save(&state.layout.settings_path())
@@ -700,7 +714,8 @@ async fn mods_jobs(State(state): State<SharedState>, _authed: Authed) -> Json<Va
 
 async fn create_backup_blocking(state: &SharedState) -> Result<String, ApiError> {
     let layout = state.layout.clone();
-    tokio::task::spawn_blocking(move || mods::create_mods_backup(&layout))
+    let retention = state.settings.lock().unwrap().backup_retention.max(1) as usize;
+    tokio::task::spawn_blocking(move || mods::create_mods_backup(&layout, retention))
         .await
         .map_err(|e| ApiError::internal(format!("backup task failed: {e}")))?
         .map_err(ApiError::internal)
@@ -1138,9 +1153,10 @@ async fn create_backup(
 ) -> Result<Json<Value>, ApiError> {
     let layout = state.layout.clone();
     let kind = req.kind.clone();
+    let retention = state.settings.lock().unwrap().backup_retention.max(1) as usize;
     let name = tokio::task::spawn_blocking(move || match kind.as_str() {
-        "mods" => crate::mods::create_mods_backup(&layout),
-        "server" => crate::backups::create_server_backup(&layout),
+        "mods" => crate::mods::create_mods_backup(&layout, retention),
+        "server" => crate::backups::create_server_backup(&layout, retention),
         other => Err(format!("unknown backup kind: {other}")),
     })
     .await

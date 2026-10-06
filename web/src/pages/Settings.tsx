@@ -25,6 +25,7 @@ export default function Settings() {
   const [autoRestart, setAutoRestart] = useState(false);
   const [startParams, setStartParams] = useState("");
   const [restartSchedule, setRestartSchedule] = useState("");
+  const [backupRetention, setBackupRetention] = useState(10);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -37,6 +38,7 @@ export default function Settings() {
       setAutoRestart(settings.data.auto_restart ?? false);
       setStartParams(settings.data.start_params ?? "");
       setRestartSchedule(settings.data.restart_schedule ?? "");
+      setBackupRetention(settings.data.backup_retention ?? 10);
     }
   }, [settings.data]);
 
@@ -47,6 +49,7 @@ export default function Settings() {
         auto_restart: autoRestart,
         start_params: startParams,
         restart_schedule: restartSchedule,
+        backup_retention: backupRetention,
       }),
     onSuccess: () => {
       toast.success(t("common.saved"));
@@ -148,6 +151,26 @@ export default function Settings() {
               )}
             </div>
             <p className="text-muted-foreground text-[11px]">{t("settings.dailyRestartHint")}</p>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label htmlFor="backup-retention">{t("settings.backupRetention")}</Label>
+            <Input
+              className="w-24"
+              id="backup-retention"
+              max={100}
+              min={1}
+              onChange={(event) =>
+                setBackupRetention(
+                  Math.max(1, Math.min(100, Number(event.target.value) || 10)),
+                )
+              }
+              type="number"
+              value={backupRetention}
+            />
+            <p className="text-muted-foreground text-[11px]">
+              {t("settings.backupRetentionHint")}
+            </p>
           </div>
 
           {saveSettings.isError && (

@@ -318,7 +318,9 @@
     "manager": "管理器",
     "dataDir": "数据目录",
     "gameDataPath": "游戏数据路径",
-    "gamePort": "游戏端口"
+    "gamePort": "游戏端口",
+    "backupRetention": "每类保留的备份数",
+    "backupRetentionHint": "旧备份会自动清理（1–100）。"
   },
   "players": {
     "notRunning": "服务器未运行 — 白名单与管理命令需要服务器处于运行状态。",
@@ -381,5 +383,11 @@
     "created": "已创建 {{name}}",
     "restored": "已恢复 {{name}}",
     "deleted": "已删除 {{name}}"
+  },
+  "downloads": {
+    "title": "下载",
+    "description": "模组安装、更新与移除。",
+    "empty": "暂无下载。",
+    "active": "下载 ({{count}})"
   }
 }
