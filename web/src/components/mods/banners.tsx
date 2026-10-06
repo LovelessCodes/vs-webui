@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { useInstallMod, useModJobs, useRemoveMod } from "@/hooks/use-api";
-import type { ModScanError } from "@/lib/api";
+import type { InstalledMod, ModScanError } from "@/lib/api";
 import { errorMessage } from "@/lib/format";
 import type { MissingDependency } from "@/lib/version";
 
@@ -58,6 +58,73 @@ export function BrokenModsBanner({ errors }: { errors: ModScanError[] }) {
                 <Trash2 />
               </Button>
             )}
+          </div>
+        ))}
+      </div>
+      {remove.isError && (
+        <p className="px-3 py-2 text-error text-[11px]">{errorMessage(remove.error)}</p>
+      )}
+    </div>
+  );
+}
+
+export function DuplicateModsBanner({
+  duplicates,
+}: {
+  duplicates: Array<{ modid: string; mods: InstalledMod[] }>;
+}) {
+  const { t } = useTranslation();
+  const remove = useRemoveMod();
+  const [confirmFile, setConfirmFile] = useState<string | null>(null);
+
+  if (duplicates.length === 0) return null;
+
+  return (
+    <div className="border border-warning/40 bg-warning/5">
+      <div className="flex items-center gap-2 border-b border-warning/30 px-3 py-2 text-xs">
+        <AlertTriangle className="size-3.5 text-warning" />
+        <span className="font-medium text-warning">
+          {t("mods.duplicates", { count: duplicates.length })}
+        </span>
+        <span className="text-muted-foreground">— {t("mods.duplicatesHint")}</span>
+      </div>
+      <div className="divide-y divide-border">
+        {duplicates.map((group) => (
+          <div className="px-3 py-2" key={group.modid}>
+            <p className="mb-1 font-mono text-[11px]">{group.modid}</p>
+            {group.mods.map((mod) => (
+              <div className="flex items-center gap-3 py-0.5" key={mod.file}>
+                <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
+                  {mod.file}
+                  <span className="ml-2 font-mono">{mod.version}</span>
+                </span>
+                {confirmFile === mod.file ? (
+                  <>
+                    <Button
+                      onClick={() =>
+                        remove.mutate(mod.file, { onSuccess: () => setConfirmFile(null) })
+                      }
+                      size="sm"
+                      variant="destructive"
+                    >
+                      {t("common.reallyRemove")}
+                    </Button>
+                    <Button onClick={() => setConfirmFile(null)} size="sm" variant="ghost">
+                      {t("common.cancel")}
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    onClick={() => setConfirmFile(mod.file)}
+                    size="icon-sm"
+                    title={t("mods.duplicateRemove")}
+                    variant="ghost"
+                  >
+                    <Trash2 />
+                  </Button>
+                )}
+              </div>
+            ))}
           </div>
         ))}
       </div>

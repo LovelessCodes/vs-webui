@@ -91,6 +91,12 @@ impl VersionCache {
         Ok(entries)
     }
 
+    /// Cache-only view of a channel's versions (no network).
+    pub async fn cached(&self, channel: &str) -> Option<Vec<VersionEntry>> {
+        let cache = self.cache.lock().await;
+        cache.get(channel).map(|(_, entries)| entries.clone())
+    }
+
     pub async fn fetch(&self, channel: &str) -> Result<Vec<VersionEntry>, String> {
         let url = format!("https://api.vintagestory.at/{channel}.json");
         let response = self

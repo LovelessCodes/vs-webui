@@ -8,7 +8,7 @@ import ModBrowseRow from "@/components/mods/ModBrowseRow";
 import ModDetailSheet from "@/components/mods/ModDetailSheet";
 import ModFiltersBar from "@/components/mods/ModFiltersBar";
 import VersionPickerSheet from "@/components/mods/VersionPickerSheet";
-import { BrokenModsBanner, MissingDepsBanner } from "@/components/mods/banners";
+import { BrokenModsBanner, DuplicateModsBanner, MissingDepsBanner } from "@/components/mods/banners";
 import { useModFilters } from "@/components/mods/use-mod-filters";
 import {
   useFavoriteMod,
@@ -113,6 +113,21 @@ export default function Mods() {
     () => findMissingDependencies(installed.data?.mods),
     [installed.data],
   );
+  const duplicates = useMemo(() => {
+    const byId = new Map<string, InstalledMod[]>();
+    for (const mod of installed.data?.mods ?? []) {
+      const key = mod.modid.toLowerCase();
+      const existing = byId.get(key);
+      if (existing) {
+        existing.push(mod);
+      } else {
+        byId.set(key, [mod]);
+      }
+    }
+    return [...byId.entries()]
+      .filter(([, mods]) => mods.length > 1)
+      .map(([modid, mods]) => ({ modid, mods }));
+  }, [installed.data]);
   const updateMap = updates.data?.updates ?? {};
   const updateCount = Object.keys(updateMap).length;
   const activeJobs = (jobs.data?.jobs ?? []).filter(
@@ -207,6 +222,7 @@ export default function Mods() {
       )}
 
       <BrokenModsBanner errors={installed.data?.errors ?? []} />
+      <DuplicateModsBanner duplicates={duplicates} />
       <MissingDepsBanner missing={missing} />
 
       {modb.isLoading && !modb.data && <ListSkeleton rows={6} />}

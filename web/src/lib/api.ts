@@ -90,6 +90,7 @@ export interface StatusResponse {
   settings: Settings;
   install: InstallStatus | null;
   config: ConfigSummary | null;
+  updates?: { game?: string | null; stratum?: string | null };
   manager: {
     version: string;
     uptime: number;

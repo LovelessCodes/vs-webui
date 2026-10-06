@@ -71,6 +71,7 @@ export default function Versions() {
   const flavor = settings?.flavor ?? "vanilla";
   const stratumTag = settings?.stratum_tag ?? null;
   const running = status.data?.status.status === "running";
+  const updates = status.data?.updates;
   const installState = status.data?.install;
   const installing =
     installState && installState.phase !== "done" && installState.phase !== "error"
@@ -167,6 +168,11 @@ export default function Versions() {
                         <Badge variant="accent">
                           <Check className="size-3" />
                           {t("versions.inUse")}
+                        </Badge>
+                      )}
+                      {isActive && updates?.stratum && (
+                        <Badge variant="amber">
+                          {t("versions.updateAvailable", { version: updates.stratum })}
                         </Badge>
                       )}
                       {isInstalled && !isActive && (
@@ -315,6 +321,11 @@ export default function Versions() {
                         <Badge variant="accent">
                           <Check className="size-3" />
                           {t("versions.active")}
+                        </Badge>
+                      )}
+                      {isActive && updates?.game && (
+                        <Badge variant="amber">
+                          {t("versions.updateAvailable", { version: updates.game })}
                         </Badge>
                       )}
                       {entry.installed && !isActive && (

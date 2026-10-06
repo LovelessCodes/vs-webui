@@ -363,6 +363,31 @@ async fn status(State(state): State<SharedState>) -> Json<Value> {
         }
     }
     let install = state.install.lock().unwrap().clone();
+
+    // Update notices come from the warmed caches only (see `spawn_cache_warmer`);
+    // status stays instant even when the CDN or GitHub is unreachable.
+    let game_update = match settings.version.clone() {
+        Some(current) => state
+            .versions
+            .cached("stable")
+            .await
+            .and_then(|entries| entries.iter().find(|entry| entry.latest).cloned())
+            .and_then(|latest| (latest.version != current).then_some(latest.version)),
+        None => None,
+    };
+    let stratum_update = if settings.flavor == "stratum" {
+        match settings.stratum_tag.clone() {
+            Some(current) => state
+                .stratum
+                .cached_releases()
+                .and_then(|releases| releases.into_iter().find(|release| !release.prerelease))
+                .and_then(|latest| (latest.tag != current).then_some(latest.tag)),
+            None => None,
+        }
+    } else {
+        None
+    };
+
     let config = crate::serverconfig::read(&state.layout)
         .and_then(|raw| serde_json::from_str::<Value>(&raw).ok());
     let config_summary = config.as_ref().map(|config| {
@@ -383,6 +408,10 @@ async fn status(State(state): State<SharedState>) -> Json<Value> {
         "settings": settings,
         "install": install,
         "config": config_summary,
+        "updates": {
+            "game": game_update,
+            "stratum": stratum_update,
+        },
         "manager": {
             "version": env!("CARGO_PKG_VERSION"),
             "uptime": state.started.elapsed().as_secs(),

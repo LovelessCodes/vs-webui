@@ -89,6 +89,7 @@ async fn main() -> anyhow::Result<()> {
     spawn_schedulers(state.clone());
     metrics::spawn_collector(state.clone());
     metrics::spawn_tps_collector(state.clone());
+    spawn_cache_warmer(state.clone());
 
     // Forward supervisor events (starts, stops, crashes, players) to the
     // configured webhook, when one is set.
@@ -322,6 +323,24 @@ async fn run_scheduled_backup(state: &SharedState) {
                 .push(format!("[manager] scheduled backup task failed: {error}"));
         }
     }
+}
+
+/// Keeps the version/Stratum caches warm so `status` can report update notices
+/// without doing network I/O on the request path.
+fn spawn_cache_warmer(state: SharedState) {
+    tokio::spawn(async move {
+        // Give boot a moment before the first refresh.
+        tokio::time::sleep(Duration::from_secs(5)).await;
+        loop {
+            if let Err(error) = state.versions.list("stable").await {
+                tracing::debug!("stable manifest refresh failed: {error}");
+            }
+            if let Err(error) = state.stratum.releases().await {
+                tracing::debug!("stratum release refresh failed: {error}");
+            }
+            tokio::time::sleep(Duration::from_secs(15 * 60)).await;
+        }
+    });
 }
 
 async fn shutdown_signal() {

@@ -21,12 +21,13 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
-import { useStatus } from "@/hooks/use-api";
+import { useModUpdates, useStatus } from "@/hooks/use-api";
 
 interface NavItem {
   to: string;
@@ -50,6 +51,9 @@ export default function Sidebar() {
   const { t } = useTranslation();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { data } = useStatus();
+  const modUpdates = useModUpdates();
+  const updateCount = Object.keys(modUpdates.data?.updates ?? {}).length;
+  const hasVersionUpdate = Boolean(data?.updates?.game || data?.updates?.stratum);
 
   return (
     <SidebarRoot collapsible="icon">
@@ -89,6 +93,12 @@ export default function Sidebar() {
                       <Icon />
                       <span>{t(item.labelKey)}</span>
                     </SidebarMenuButton>
+                    {item.to === "/mods" && updateCount > 0 && (
+                      <SidebarMenuBadge>{updateCount}</SidebarMenuBadge>
+                    )}
+                    {item.to === "/versions" && hasVersionUpdate && (
+                      <SidebarMenuBadge className="text-accent-amber">!</SidebarMenuBadge>
+                    )}
                   </SidebarMenuItem>
                 );
               })}

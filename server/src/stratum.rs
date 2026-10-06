@@ -60,6 +60,15 @@ impl StratumCache {
         Ok(releases)
     }
 
+    /// Cache-only view of the release list (no network).
+    pub fn cached_releases(&self) -> Option<Vec<StratumRelease>> {
+        self.cache
+            .lock()
+            .unwrap()
+            .as_ref()
+            .map(|(_, releases)| releases.clone())
+    }
+
     pub async fn release(&self, tag: &str) -> Result<StratumRelease, String> {
         self.releases()
             .await?

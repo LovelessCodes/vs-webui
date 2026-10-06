@@ -1,4 +1,5 @@
 import { Download, Loader2, Package } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,7 @@ export default function ModDetailSheet({ modid, onClose, installedVersion }: Mod
   const detail = useModDetail(modid);
   const jobs = useModJobs();
   const install = useInstallMod();
+  const [openChangelog, setOpenChangelog] = useState<number | null>(null);
 
   const mod = detail.data?.mod;
   const pending = (jobs.data?.jobs ?? []).some(
@@ -106,6 +108,26 @@ export default function ModDetailSheet({ modid, onClose, installedVersion }: Mod
                           {release.created?.slice(0, 10)} ·{" "}
                           {t("mods.downloads", { count: formatCount(release.downloads) })}
                         </p>
+                        {release.changelog && (
+                          <button
+                            className="text-info mt-0.5 text-[10px] hover:underline"
+                            onClick={() =>
+                              setOpenChangelog(
+                                openChangelog === release.releaseid ? null : release.releaseid,
+                              )
+                            }
+                            type="button"
+                          >
+                            {openChangelog === release.releaseid
+                              ? t("mods.hideChangelog")
+                              : t("mods.showChangelog")}
+                          </button>
+                        )}
+                        {release.changelog && openChangelog === release.releaseid && (
+                          <p className="text-muted-foreground mt-1 max-h-48 overflow-y-auto text-[11px] whitespace-pre-wrap">
+                            {plainText(release.changelog)}
+                          </p>
+                        )}
                       </div>
                       {isInstalled ? (
                         <Badge variant="success">{t("mods.installedBadge")}</Badge>
