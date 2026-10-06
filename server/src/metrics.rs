@@ -121,8 +121,16 @@ pub fn spawn_tps_collector(state: SharedState) {
 }
 
 /// Finds a number following a tick-rate keyword in any of the captured lines.
+/// The real `/stats` output labels it `Last 2s Ticks/s`; the other spellings
+/// are tolerated for older/newer builds.
 fn parse_tps(lines: &[String]) -> Option<f32> {
-    const KEYWORDS: [&str; 4] = ["tick rate", "ticks per second", "ticks/second", "tps"];
+    const KEYWORDS: [&str; 5] = [
+        "ticks/s",
+        "ticks per second",
+        "ticks/second",
+        "tick rate",
+        "tps",
+    ];
     for line in lines {
         let lower = line.to_lowercase();
         for keyword in KEYWORDS {
@@ -161,6 +169,19 @@ mod tests {
 
     #[test]
     fn parses_tick_rate_variants() {
+        // Real `/stats` output: the value follows "Last 2s Ticks/s".
+        assert_eq!(
+            parse_tps(&[
+                "[Notification] Memory usage Managed/Total: 1200/2400 Mb".to_string(),
+                "[Notification] Last 2s Average Tick Time: 12.34ms".to_string(),
+                "[Notification] Last 2s Ticks/s 20".to_string(),
+            ]),
+            Some(20.0)
+        );
+        assert_eq!(
+            parse_tps(&["Last 2s Ticks/s: 19.8 (avg 19.9)".to_string()]),
+            Some(19.8)
+        );
         assert_eq!(
             parse_tps(&["[Notification] Tick rate: 20".to_string()]),
             Some(20.0)
@@ -170,6 +191,11 @@ mod tests {
             Some(19.5)
         );
         assert_eq!(parse_tps(&["TPS: 20".to_string()]), Some(20.0));
+        // Only tick-time lines present: no TPS value.
+        assert_eq!(
+            parse_tps(&["Last 2s Average Tick Time: 12.34ms".to_string()]),
+            None
+        );
         // Timestamps must not be mistaken for the value.
         assert_eq!(
             parse_tps(&["20.9.2026 09:05:02 [Notification] no stats here".to_string()]),
