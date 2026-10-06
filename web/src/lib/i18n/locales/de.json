@@ -59,7 +59,8 @@
     "backups": "Backups",
     "versions": "Versionen",
     "settings": "Einstellungen",
-    "navigation": "Navigation"
+    "navigation": "Navigation",
+    "worlds": "Welten"
   },
   "brand": {
     "name": "VS WEBUI",
@@ -107,6 +108,10 @@
     "settings": {
       "title": "Einstellungen",
       "description": "Manager-Konfiguration und Zugriff"
+    },
+    "worlds": {
+      "title": "Welten",
+      "description": "Spielstände und Welt-Einstellungen"
     }
   },
   "login": {
@@ -492,5 +497,27 @@
     "description": "Mod-Installationen, Updates und Entfernungen.",
     "empty": "Noch keine Downloads.",
     "active": "Downloads ({{count}})"
+  },
+  "worlds": {
+    "title": "Welten",
+    "description": "Spielstände im Saves-Ordner. Die aktive Welt wird über serverconfig.json (WorldName) gewählt.",
+    "stopHint": "Server stoppen, um Welten zu verwalten — Wechseln, Hochladen und Löschen erfordern das.",
+    "loading": "Welten werden geladen…",
+    "empty": "Noch keine Welten",
+    "emptyHint": "Starte den Server einmal, um eine Welt zu erzeugen, oder lade ein Welt-Zip hoch.",
+    "active": "Aktiv",
+    "size": "Größe",
+    "modified": "Geändert",
+    "actions": "Aktionen",
+    "settings": "Welt-Einstellungen",
+    "setActive": "Aktivieren",
+    "deleteTitle": "Welt löschen",
+    "deleteQuestion": "Diese Welt löschen?",
+    "upload": "Welt hochladen",
+    "uploadHint": "Lade ein Zip eines Spielstand-Ordners hoch; ein Zip mit genau einem obersten Ordner wird unter dessen Namen importiert.",
+    "uploaded": "Welt importiert: {{name}}",
+    "configTitle": "Welt-Einstellungen — {{name}}",
+    "configDescription": "worldconfig.json im Spielstand-Ordner.",
+    "configMissing": "worldconfig.json existiert noch nicht — der Server schreibt sie beim ersten Start. Speichern legt sie jetzt an."
   }
 }

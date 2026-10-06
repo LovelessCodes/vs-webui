@@ -14,7 +14,7 @@ import { PASSWORD, seedData, startManager, stopManager, waitForHealth } from "./
 const PORT = 18097;
 const DATA_DIR = join(tmpdir(), "vs-webui-smoke");
 
-const ROUTES = ["/", "/console", "/mods", "/config", "/players", "/backups", "/versions", "/settings"];
+const ROUTES = ["/", "/console", "/mods", "/config", "/players", "/backups", "/worlds", "/versions", "/settings"];
 
 async function main() {
   seedData(DATA_DIR);

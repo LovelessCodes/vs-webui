@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Archive,
   Boxes,
+  Earth,
   FileJson2,
   Gauge,
   Package,
@@ -43,6 +44,7 @@ const navItems: NavItem[] = [
   { to: "/config", labelKey: "nav.configs", icon: FileJson2 },
   { to: "/players", labelKey: "nav.players", icon: Users },
   { to: "/backups", labelKey: "nav.backups", icon: Archive },
+  { to: "/worlds", labelKey: "nav.worlds", icon: Earth },
   { to: "/versions", labelKey: "nav.versions", icon: Boxes },
   { to: "/settings", labelKey: "nav.settings", icon: Settings },
 ];

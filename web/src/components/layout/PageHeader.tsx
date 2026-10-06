@@ -8,6 +8,7 @@ const pageMeta: Record<string, { titleKey: string; descriptionKey?: string }> = 
   "/config": { titleKey: "pages.configs.title", descriptionKey: "pages.configs.description" },
   "/players": { titleKey: "pages.players.title", descriptionKey: "pages.players.description" },
   "/backups": { titleKey: "pages.backups.title", descriptionKey: "pages.backups.description" },
+  "/worlds": { titleKey: "pages.worlds.title", descriptionKey: "pages.worlds.description" },
   "/versions": { titleKey: "pages.versions.title", descriptionKey: "pages.versions.description" },
   "/settings": { titleKey: "pages.settings.title", descriptionKey: "pages.settings.description" },
 };

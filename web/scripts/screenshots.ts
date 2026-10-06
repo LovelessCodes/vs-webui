@@ -26,6 +26,7 @@ const ROUTES: Array<{ path: string; name: string }> = [
   { path: "/config", name: "mod-configs" },
   { path: "/players", name: "players" },
   { path: "/backups", name: "backups" },
+  { path: "/worlds", name: "worlds" },
   { path: "/versions", name: "versions" },
   { path: "/settings", name: "settings" },
 ];

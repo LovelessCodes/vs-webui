@@ -59,7 +59,8 @@
     "backups": "Sauvegardes",
     "versions": "Versions",
     "settings": "Paramètres",
-    "navigation": "Navigation"
+    "navigation": "Navigation",
+    "worlds": "Mondes"
   },
   "brand": {
     "name": "VS WEBUI",
@@ -107,6 +108,10 @@
     "settings": {
       "title": "Paramètres",
       "description": "Configuration du gestionnaire et accès"
+    },
+    "worlds": {
+      "title": "Mondes",
+      "description": "Sauvegardes et réglages du monde"
     }
   },
   "login": {
@@ -492,5 +497,27 @@
     "description": "Installations, mises à jour et suppressions de mods.",
     "empty": "Aucun téléchargement.",
     "active": "Téléchargements ({{count}})"
+  },
+  "worlds": {
+    "title": "Mondes",
+    "description": "Sauvegardes dans le dossier Saves. Le monde actif est choisi dans serverconfig.json (WorldName).",
+    "stopHint": "Arrêtez le serveur pour gérer les mondes — changer, importer et supprimer l'exigent.",
+    "loading": "Chargement des mondes…",
+    "empty": "Aucun monde pour l'instant",
+    "emptyHint": "Démarrez le serveur une fois pour générer un monde, ou importez un zip de monde.",
+    "active": "Actif",
+    "size": "Taille",
+    "modified": "Modifié",
+    "actions": "Actions",
+    "settings": "Réglages du monde",
+    "setActive": "Activer",
+    "deleteTitle": "Supprimer le monde",
+    "deleteQuestion": "Supprimer ce monde ?",
+    "upload": "Importer un monde",
+    "uploadHint": "Importez un zip d'un dossier de sauvegarde ; un zip avec un seul dossier racine est importé sous ce nom.",
+    "uploaded": "Monde importé : {{name}}",
+    "configTitle": "Réglages du monde — {{name}}",
+    "configDescription": "worldconfig.json dans le dossier de la sauvegarde.",
+    "configMissing": "worldconfig.json n'existe pas encore — le serveur l'écrit au premier démarrage. Enregistrer le crée maintenant."
   }
 }

@@ -406,6 +406,80 @@ export function useRemoveWhitelistEntry() {
   });
 }
 
+export function useSaves(enabled = true) {
+  return useQuery({
+    queryKey: ["saves"],
+    queryFn: api.saves,
+    staleTime: 5_000,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useUploadSave() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => api.uploadSave(file),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: (data) => toast.success(i18n.t("worlds.uploaded", { name: data.name })),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["saves"] });
+      void queryClient.invalidateQueries({ queryKey: ["storage"] });
+    },
+  });
+}
+
+export function useActivateSave() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => api.activateSave(name),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: () => toast.success(i18n.t("common.saved")),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["saves"] });
+      void queryClient.invalidateQueries({ queryKey: ["status"] });
+      void queryClient.invalidateQueries({ queryKey: ["serverconfig"] });
+    },
+  });
+}
+
+export function useDeleteSave() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => api.deleteSave(name),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["saves"] });
+      void queryClient.invalidateQueries({ queryKey: ["storage"] });
+    },
+  });
+}
+
+export function useWorldConfig(name: string | null) {
+  return useQuery({
+    queryKey: ["saves", name, "config"],
+    queryFn: () => api.worldConfig(name as string),
+    retry: false,
+    enabled: Boolean(name),
+  });
+}
+
+export function useSaveWorldConfig(name: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (content: string) => api.saveWorldConfig(name, content),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: () => toast.success(i18n.t("common.saved")),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["saves", name, "config"] });
+    },
+  });
+}
+
 export function useSetWhitelistMode() {
   const queryClient = useQueryClient();
   return useMutation({

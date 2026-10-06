@@ -59,7 +59,8 @@
     "backups": "Backups",
     "versions": "Versões",
     "settings": "Configurações",
-    "navigation": "Navegação"
+    "navigation": "Navegação",
+    "worlds": "Mundos"
   },
   "brand": {
     "name": "VS WEBUI",
@@ -107,6 +108,10 @@
     "settings": {
       "title": "Configurações",
       "description": "Configuração do gerenciador e acesso"
+    },
+    "worlds": {
+      "title": "Mundos",
+      "description": "Saves e configurações do mundo"
     }
   },
   "login": {
@@ -492,5 +497,27 @@
     "description": "Instalações, atualizações e remoções de mods.",
     "empty": "Nenhum download ainda.",
     "active": "Downloads ({{count}})"
+  },
+  "worlds": {
+    "title": "Mundos",
+    "description": "Saves na pasta Saves. O mundo ativo é escolhido em serverconfig.json (WorldName).",
+    "stopHint": "Pare o servidor para gerenciar mundos — trocar, enviar e excluir exigem ele parado.",
+    "loading": "Carregando mundos…",
+    "empty": "Ainda não há mundos",
+    "emptyHint": "Inicie o servidor uma vez para gerar um mundo, ou envie um zip de mundo.",
+    "active": "Ativo",
+    "size": "Tamanho",
+    "modified": "Modificado",
+    "actions": "Ações",
+    "settings": "Configurações do mundo",
+    "setActive": "Ativar",
+    "deleteTitle": "Excluir mundo",
+    "deleteQuestion": "Excluir este mundo?",
+    "upload": "Enviar mundo",
+    "uploadHint": "Envie um zip de uma pasta de save; um zip com uma única pasta raiz é importado com esse nome.",
+    "uploaded": "Mundo importado: {{name}}",
+    "configTitle": "Configurações do mundo — {{name}}",
+    "configDescription": "worldconfig.json dentro da pasta do save.",
+    "configMissing": "worldconfig.json ainda não existe — o servidor o cria no primeiro início. Salvar cria agora."
   }
 }

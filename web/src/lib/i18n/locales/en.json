@@ -59,7 +59,8 @@
     "backups": "Backups",
     "versions": "Versions",
     "settings": "Settings",
-    "navigation": "Navigation"
+    "navigation": "Navigation",
+    "worlds": "Worlds"
   },
   "brand": {
     "name": "VS WEBUI",
@@ -107,6 +108,10 @@
     "settings": {
       "title": "Settings",
       "description": "Manager configuration and access"
+    },
+    "worlds": {
+      "title": "Worlds",
+      "description": "Saves and world settings"
     }
   },
   "login": {
@@ -492,5 +497,27 @@
     "description": "Mod installs, updates and removals.",
     "empty": "No downloads yet.",
     "active": "Downloads ({{count}})"
+  },
+  "worlds": {
+    "title": "Worlds",
+    "description": "Saves in the Saves folder. The active world is selected by serverconfig.json (WorldName).",
+    "stopHint": "Stop the server to manage worlds — switching, uploading and deleting need it stopped.",
+    "loading": "Loading worlds…",
+    "empty": "No worlds yet",
+    "emptyHint": "Start the server once to generate a world, or upload a world zip.",
+    "active": "Active",
+    "size": "Size",
+    "modified": "Modified",
+    "actions": "Actions",
+    "settings": "World settings",
+    "setActive": "Set active",
+    "deleteTitle": "Delete world",
+    "deleteQuestion": "Delete this world?",
+    "upload": "Upload world",
+    "uploadHint": "Upload a zip of a save folder; a zip with a single top-level folder is imported under that folder's name.",
+    "uploaded": "World imported: {{name}}",
+    "configTitle": "World settings — {{name}}",
+    "configDescription": "worldconfig.json stored inside the save folder.",
+    "configMissing": "worldconfig.json does not exist yet — the server writes it on first run. Saving creates it now."
   }
 }

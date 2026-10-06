@@ -17,7 +17,9 @@ export function setCsrf(token: string | null) {
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const method = (init.method ?? "GET").toUpperCase();
   const headers = new Headers(init.headers);
-  if (init.body) headers.set("content-type", "application/json");
+  if (init.body && !(init.body instanceof FormData)) {
+    headers.set("content-type", "application/json");
+  }
   if (csrfToken && method !== "GET" && method !== "HEAD") {
     headers.set("x-csrf-token", csrfToken);
   }
@@ -321,6 +323,13 @@ export interface PlayerRecord {
   seconds: number;
 }
 
+export interface SaveEntry {
+  name: string;
+  size: number;
+  modified: number;
+  active: boolean;
+}
+
 export interface StorageView {
   areas: StorageArea[];
   free_bytes: number;
@@ -416,6 +425,32 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+
+  saves: () => request<{ saves: SaveEntry[] }>("/api/saves"),
+  uploadSave: (file: File) => {
+    const body = new FormData();
+    body.append("file", file);
+    return request<{ ok: boolean; name: string }>("/api/saves/upload", {
+      method: "POST",
+      body,
+    });
+  },
+  activateSave: (name: string) =>
+    request<{ ok: boolean; restart_required: boolean }>(
+      `/api/saves/${encodeURIComponent(name)}/activate`,
+      { method: "POST" },
+    ),
+  deleteSave: (name: string) =>
+    request<{ ok: boolean }>(`/api/saves/${encodeURIComponent(name)}`, { method: "DELETE" }),
+  worldConfig: (name: string) =>
+    request<{ content: string; missing: boolean }>(
+      `/api/saves/${encodeURIComponent(name)}/config`,
+    ),
+  saveWorldConfig: (name: string, content: string) =>
+    request<{ ok: boolean; restart_required: boolean }>(
+      `/api/saves/${encodeURIComponent(name)}/config`,
+      { method: "PUT", body: JSON.stringify({ content }) },
+    ),
 
   serverConfig: () => request<ServerConfigResponse>("/api/serverconfig"),
 

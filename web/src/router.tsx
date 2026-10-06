@@ -9,6 +9,7 @@ import Mods from "@/pages/Mods";
 import Players from "@/pages/Players";
 import Settings from "@/pages/Settings";
 import Versions from "@/pages/Versions";
+import Worlds from "@/pages/Worlds";
 
 const rootRoute = createRootRoute({ component: AppShell });
 
@@ -63,6 +64,12 @@ const settingsRoute = createRoute({
   component: Settings,
 });
 
+const worldsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/worlds",
+  component: Worlds,
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   consoleRoute,
@@ -72,6 +79,7 @@ const routeTree = rootRoute.addChildren([
   backupsRoute,
   versionsRoute,
   settingsRoute,
+  worldsRoute,
 ]);
 
 export const router = createRouter({ routeTree });

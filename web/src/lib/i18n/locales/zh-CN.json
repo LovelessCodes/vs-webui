@@ -59,7 +59,8 @@
     "backups": "备份",
     "versions": "版本",
     "settings": "设置",
-    "navigation": "导航"
+    "navigation": "导航",
+    "worlds": "世界"
   },
   "brand": {
     "name": "VS WEBUI",
@@ -107,6 +108,10 @@
     "settings": {
       "title": "设置",
       "description": "管理器配置与访问"
+    },
+    "worlds": {
+      "title": "世界",
+      "description": "存档与世界设置"
     }
   },
   "login": {
@@ -492,5 +497,27 @@
     "description": "模组安装、更新与移除。",
     "empty": "暂无下载。",
     "active": "下载 ({{count}})"
+  },
+  "worlds": {
+    "title": "世界",
+    "description": "Saves 文件夹中的存档。活动世界由 serverconfig.json (WorldName) 指定。",
+    "stopHint": "管理世界需要先停止服务器——切换、上传和删除都要求服务器已停止。",
+    "loading": "正在加载世界…",
+    "empty": "暂无世界",
+    "emptyHint": "启动一次服务器即可生成世界，或上传世界 zip。",
+    "active": "活动",
+    "size": "大小",
+    "modified": "修改时间",
+    "actions": "操作",
+    "settings": "世界设置",
+    "setActive": "设为活动",
+    "deleteTitle": "删除世界",
+    "deleteQuestion": "删除这个世界？",
+    "upload": "上传世界",
+    "uploadHint": "上传存档文件夹的 zip；仅含单个顶层文件夹的压缩包将以该文件夹名导入。",
+    "uploaded": "世界已导入：{{name}}",
+    "configTitle": "世界设置 — {{name}}",
+    "configDescription": "存档文件夹中的 worldconfig.json。",
+    "configMissing": "worldconfig.json 尚不存在——服务器首次启动时会生成。保存将立即创建。"
   }
 }

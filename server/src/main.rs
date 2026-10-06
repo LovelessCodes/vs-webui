@@ -10,6 +10,7 @@ mod notifications;
 mod paths;
 mod playerhistory;
 mod players;
+mod saves;
 mod serverconfig;
 mod settings;
 mod state;

@@ -3,7 +3,7 @@ use std::convert::Infallible;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use axum::extract::{ConnectInfo, FromRequestParts, Path as UrlPath, Query, State};
+use axum::extract::{ConnectInfo, DefaultBodyLimit, FromRequestParts, Multipart, Path as UrlPath, Query, State};
 use axum::http::request::Parts;
 use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::sse::{Event, KeepAlive, Sse};
@@ -79,6 +79,15 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/server/flavor", post(set_flavor))
         .route("/api/players", get(players_view))
         .route("/api/players/history", get(players_history))
+        .route("/api/saves", get(list_saves))
+        .route(
+            "/api/saves/upload",
+            post(upload_save).layer(DefaultBodyLimit::max(2_147_483_648)),
+        )
+        .route("/api/saves/{name}/download", get(download_save))
+        .route("/api/saves/{name}/activate", post(activate_save))
+        .route("/api/saves/{name}/config", get(get_world_config).put(put_world_config))
+        .route("/api/saves/{name}", delete(delete_save))
         .route("/api/whitelist/remove", post(remove_whitelist))
         .route("/api/whitelist/mode", post(set_whitelist_mode))
         .route("/api/backups", get(list_backups).post(create_backup))
@@ -1398,6 +1407,196 @@ async fn set_flavor(
 #[derive(Deserialize)]
 struct WhitelistModeReq {
     enabled: bool,
+}
+
+// ── worlds / saves ──────────────────────────────────────────────────────────
+
+async fn list_saves(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {
+    let layout = state.layout.clone();
+    let saves = tokio::task::spawn_blocking(move || crate::saves::list_saves(&layout))
+        .await
+        .unwrap_or_default();
+    Json(json!({ "saves": saves }))
+}
+
+async fn activate_save(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(name): UrlPath<String>,
+) -> Result<Json<Value>, ApiError> {
+    if state.supervisor.is_running() {
+        return Err(ApiError::bad_request(
+            "stop the server before switching worlds",
+        ));
+    }
+    let layout = state.layout.clone();
+    let save = name.clone();
+    tokio::task::spawn_blocking(move || {
+        let dir = crate::saves::save_path(&layout, &save)?;
+        if !dir.is_dir() {
+            return Err(format!("{save} is not a world"));
+        }
+        crate::saves::activate(&layout, &save)
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("world task failed: {e}")))?
+    .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true, "restart_required": true })))
+}
+
+async fn delete_save(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(name): UrlPath<String>,
+) -> Result<Json<Value>, ApiError> {
+    if state.supervisor.is_running() {
+        return Err(ApiError::bad_request(
+            "stop the server before deleting worlds",
+        ));
+    }
+    let layout = state.layout.clone();
+    let save = name.clone();
+    tokio::task::spawn_blocking(move || {
+        if crate::saves::read_world_name(&layout).as_deref() == Some(save.as_str()) {
+            return Err("this world is active; switch worlds before deleting it".to_string());
+        }
+        crate::saves::delete_save(&layout, &save)
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("world task failed: {e}")))?
+    .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+async fn get_world_config(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(name): UrlPath<String>,
+) -> Result<Json<Value>, ApiError> {
+    let layout = state.layout.clone();
+    let (content, missing) = tokio::task::spawn_blocking(move || {
+        crate::saves::read_world_config(&layout, &name)
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("world task failed: {e}")))?
+    .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "content": content, "missing": missing })))
+}
+
+#[derive(Deserialize)]
+struct WorldConfigReq {
+    content: String,
+}
+
+async fn put_world_config(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(name): UrlPath<String>,
+    Json(req): Json<WorldConfigReq>,
+) -> Result<Json<Value>, ApiError> {
+    let layout = state.layout.clone();
+    tokio::task::spawn_blocking(move || {
+        crate::saves::write_world_config(&layout, &name, &req.content)
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("world task failed: {e}")))?
+    .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({
+        "ok": true,
+        "restart_required": state.supervisor.is_running(),
+    })))
+}
+
+async fn download_save(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(name): UrlPath<String>,
+) -> Result<Response, ApiError> {
+    let layout = state.layout.clone();
+    let (zip_path, filename) = tokio::task::spawn_blocking(move || {
+        crate::saves::zip_save(&layout, &name)
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("world task failed: {e}")))?
+    .map_err(ApiError::bad_request)?;
+
+    let read_path = zip_path.clone();
+    let bytes = tokio::task::spawn_blocking(move || std::fs::read(&read_path))
+        .await
+        .map_err(|e| ApiError::internal(format!("read task failed: {e}")))?
+        .map_err(|e| ApiError::internal(format!("cannot read archive: {e}")))?;
+
+    // The export only exists for this download; clean it up later.
+    tokio::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_secs(600)).await;
+        let _ = std::fs::remove_file(&zip_path);
+    });
+
+    Response::builder()
+        .header(header::CONTENT_TYPE, "application/zip")
+        .header(
+            header::CONTENT_DISPOSITION,
+            format!("attachment; filename=\"{}\"", filename.replace('"', "")),
+        )
+        .body(axum::body::Body::from(bytes))
+        .map_err(|e| ApiError::internal(format!("response error: {e}")))
+}
+
+async fn upload_save(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    mut multipart: Multipart,
+) -> Result<Json<Value>, ApiError> {
+    if state.supervisor.is_running() {
+        return Err(ApiError::bad_request(
+            "stop the server before importing a world",
+        ));
+    }
+    let uploads = state.layout.config_dir().join("uploads");
+    std::fs::create_dir_all(&uploads)
+        .map_err(|e| ApiError::internal(format!("cannot create uploads dir: {e}")))?;
+
+    let mut uploaded: Option<(String, std::path::PathBuf)> = None;
+    while let Some(mut field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| ApiError::bad_request(format!("upload failed: {e}")))?
+    {
+        if field.name() != Some("file") {
+            continue;
+        }
+        let filename = field.file_name().unwrap_or("world.zip").to_string();
+        let temp = uploads.join(format!("upload-{}.zip", crate::console::now_unix()));
+        let mut file = tokio::fs::File::create(&temp)
+            .await
+            .map_err(|e| ApiError::internal(format!("cannot store upload: {e}")))?;
+        while let Some(chunk) = field
+            .chunk()
+            .await
+            .map_err(|e| ApiError::bad_request(format!("upload failed: {e}")))?
+        {
+            tokio::io::AsyncWriteExt::write_all(&mut file, &chunk)
+                .await
+                .map_err(|e| ApiError::internal(format!("cannot store upload: {e}")))?;
+        }
+        let _ = tokio::io::AsyncWriteExt::flush(&mut file).await;
+        uploaded = Some((filename, temp));
+        break;
+    }
+
+    let Some((filename, temp)) = uploaded else {
+        return Err(ApiError::bad_request("missing file field"));
+    };
+    let layout = state.layout.clone();
+    let name = tokio::task::spawn_blocking(move || {
+        let result = crate::saves::import_zip(&layout, &temp, &filename);
+        let _ = std::fs::remove_file(&temp);
+        result
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("import task failed: {e}")))?
+    .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true, "name": name })))
 }
 
 async fn players_history(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {

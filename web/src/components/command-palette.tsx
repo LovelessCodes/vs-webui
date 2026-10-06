@@ -3,6 +3,7 @@ import {
   Archive,
   Boxes,
   CloudDownload,
+  Earth,
   FileJson2,
   FileText,
   Gauge,
@@ -47,6 +48,7 @@ const pages: { to: string; labelKey: string; icon: LucideIcon }[] = [
   { to: "/config", labelKey: "nav.configs", icon: FileJson2 },
   { to: "/players", labelKey: "nav.players", icon: Users },
   { to: "/backups", labelKey: "nav.backups", icon: Archive },
+  { to: "/worlds", labelKey: "nav.worlds", icon: Earth },
   { to: "/versions", labelKey: "nav.versions", icon: Boxes },
   { to: "/settings", labelKey: "nav.settings", icon: Settings },
 ];
