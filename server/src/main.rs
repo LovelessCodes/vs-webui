@@ -8,6 +8,7 @@ mod metrics;
 mod mods;
 mod notifications;
 mod paths;
+mod playerhistory;
 mod players;
 mod serverconfig;
 mod settings;
@@ -81,6 +82,7 @@ async fn main() -> anyhow::Result<()> {
         mods: Arc::new(mods::ModsManager::new()),
         stratum: stratum::StratumCache::new(http_client),
         metrics: metrics::MetricsStore::default(),
+        player_history: playerhistory::PlayerHistory::load(&layout.config_dir()),
         install: Mutex::new(None),
         started: std::time::Instant::now(),
     });
@@ -97,6 +99,13 @@ async fn main() -> anyhow::Result<()> {
         let notify_state = state.clone();
         tokio::spawn(async move {
             while let Some(event) = events_rx.recv().await {
+                if let Some(player) = event.player.as_deref() {
+                    match event.kind {
+                        "player_join" => notify_state.player_history.join(player),
+                        "player_leave" => notify_state.player_history.leave(player),
+                        _ => {}
+                    }
+                }
                 notifications::notify(&notify_state, event.kind, event.text);
             }
         });

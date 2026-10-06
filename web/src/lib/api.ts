@@ -314,6 +314,13 @@ export interface StorageBuild {
   bytes: number;
 }
 
+export interface PlayerRecord {
+  name: string;
+  first_seen: number;
+  last_seen: number;
+  seconds: number;
+}
+
 export interface StorageView {
   areas: StorageArea[];
   free_bytes: number;
@@ -402,6 +409,13 @@ export const api = {
     request<{ ok: boolean }>(`/api/versions/${encodeURIComponent(version)}`, { method: "DELETE" }),
   deleteStratumRelease: (tag: string) =>
     request<{ ok: boolean }>(`/api/stratum/${encodeURIComponent(tag)}`, { method: "DELETE" }),
+
+  playerHistory: () => request<{ players: PlayerRecord[] }>("/api/players/history"),
+  removeWhitelistEntry: (body: { uid?: string; name?: string }) =>
+    request<{ ok: boolean; mode: string; removed?: boolean }>("/api/whitelist/remove", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 
   serverConfig: () => request<ServerConfigResponse>("/api/serverconfig"),
 

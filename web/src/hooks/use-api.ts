@@ -384,6 +384,28 @@ export function usePlayers(enabled = true) {
   });
 }
 
+export function usePlayerHistory(enabled = true) {
+  return useQuery({
+    queryKey: ["players", "history"],
+    queryFn: api.playerHistory,
+    staleTime: 10_000,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useRemoveWhitelistEntry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { uid?: string; name?: string }) => api.removeWhitelistEntry(body),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["players"] });
+    },
+  });
+}
+
 export function useSetWhitelistMode() {
   const queryClient = useQueryClient();
   return useMutation({

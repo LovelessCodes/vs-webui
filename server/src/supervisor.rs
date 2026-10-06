@@ -33,11 +33,13 @@ enum Cmd {
     Shutdown(oneshot::Sender<()>),
 }
 
-/// Events emitted by the supervisor for webhook notifications.
+/// Events emitted by the supervisor for webhook notifications and player
+/// history. `player` is set for join/leave events.
 #[derive(Clone, Debug)]
 pub struct ServerEvent {
     pub kind: &'static str,
     pub text: String,
+    pub player: Option<String>,
 }
 
 struct Running {
@@ -222,6 +224,7 @@ async fn run(
                         let _ = events.send(ServerEvent {
                             kind: "crash",
                             text: format!("Server failed to start: {message}"),
+                            player: None,
                         });
                     }
                 }
@@ -296,6 +299,7 @@ async fn run(
                             code.map(|c| c.to_string()).unwrap_or_else(|| "unknown".into())
                         )
                     },
+                    player: None,
                 });
 
                 if clean {
@@ -555,6 +559,7 @@ fn spawn_reader<R>(
                     let _ = events.send(ServerEvent {
                         kind: "start",
                         text: format!("Server is running ({version})"),
+                        player: None,
                     });
                 }
             }
@@ -588,6 +593,7 @@ fn track_player(
                 let _ = events.send(ServerEvent {
                     kind: "player_join",
                     text: format!("Player {name} joined"),
+                    player: Some(name),
                 });
             }
         }
@@ -598,6 +604,7 @@ fn track_player(
                 let _ = events.send(ServerEvent {
                     kind: "player_leave",
                     text: format!("Player {name} left"),
+                    player: Some(name),
                 });
             }
         }

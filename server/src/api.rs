@@ -78,6 +78,8 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/stratum/configs/{filename}", put(save_stratum_config))
         .route("/api/server/flavor", post(set_flavor))
         .route("/api/players", get(players_view))
+        .route("/api/players/history", get(players_history))
+        .route("/api/whitelist/remove", post(remove_whitelist))
         .route("/api/whitelist/mode", post(set_whitelist_mode))
         .route("/api/backups", get(list_backups).post(create_backup))
         .route("/api/backups/{name}/restore", post(restore_backup))
@@ -1396,6 +1398,59 @@ async fn set_flavor(
 #[derive(Deserialize)]
 struct WhitelistModeReq {
     enabled: bool,
+}
+
+async fn players_history(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {
+    Json(json!({ "players": state.player_history.list() }))
+}
+
+#[derive(Deserialize)]
+struct WhitelistRemoveReq {
+    uid: Option<String>,
+    name: Option<String>,
+}
+
+async fn remove_whitelist(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Json(req): Json<WhitelistRemoveReq>,
+) -> Result<Json<Value>, ApiError> {
+    let name = req
+        .name
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string);
+    let uid = req
+        .uid
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string);
+    if name.is_none() && uid.is_none() {
+        return Err(ApiError::bad_request("provide uid or name"));
+    }
+
+    // A running server owns playerwhitelist.json, so ask it; otherwise edit
+    // the file directly (works while the server is stopped).
+    if state.supervisor.is_running() {
+        if let Some(name) = &name {
+            state
+                .supervisor
+                .command(format!("/player {name} whitelist off"))
+                .await;
+            return Ok(Json(json!({ "ok": true, "mode": "command" })));
+        }
+    }
+
+    let layout = state.layout.clone();
+    let removed = tokio::task::spawn_blocking(move || {
+        crate::players::remove_whitelist_entry(&layout.server_dir(), uid.as_deref(), name.as_deref())
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("whitelist task failed: {e}")))?
+    .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true, "mode": "file", "removed": removed })))
 }
 
 async fn players_view(

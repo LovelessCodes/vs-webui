@@ -3,27 +3,43 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
-import { usePlayers, useServerCommand, useSetWhitelistMode, useStatus } from "@/hooks/use-api";
+import {
+  usePlayerHistory,
+  usePlayers,
+  useRemoveWhitelistEntry,
+  useServerCommand,
+  useSetWhitelistMode,
+  useStatus,
+} from "@/hooks/use-api";
 import { errorMessage, formatDuration } from "@/lib/format";
 
 export default function Players() {
   const { t } = useTranslation();
   const players = usePlayers();
+  const history = usePlayerHistory();
   const status = useStatus();
   const command = useServerCommand();
   const mode = useSetWhitelistMode();
+  const removeEntry = useRemoveWhitelistEntry();
   const [newName, setNewName] = useState("");
   const [target, setTarget] = useState("");
 
   const running = status.data?.status.status === "running";
   const whitelist = players.data?.whitelist;
   const enabled = players.data?.whitelist_enabled ?? null;
+  const known = history.data?.players ?? [];
+  const whitelistedNames = new Set(
+    (whitelist?.entries ?? [])
+      .map((entry) => entry.name?.toLowerCase())
+      .filter((name): name is string => Boolean(name)),
+  );
 
   function send(cmd: string) {
     command.mutate(cmd);
@@ -183,8 +199,13 @@ export default function Players() {
                       {entry.uid ?? ""}
                     </span>
                     <Button
-                      disabled={!running || !entry.name}
-                      onClick={() => send(`/player ${entry.name} whitelist off`)}
+                      disabled={removeEntry.isPending || (!entry.name && !entry.uid)}
+                      onClick={() =>
+                        removeEntry.mutate({
+                          uid: entry.uid ?? undefined,
+                          name: entry.name ?? undefined,
+                        })
+                      }
                       size="sm"
                       variant="ghost"
                     >
@@ -217,6 +238,73 @@ export default function Players() {
                 {t("players.addToWhitelist")}
               </Button>
             </div>
+            {!running && (
+              <p className="text-muted-foreground text-[11px]">
+                {t("players.whitelistAddHint")}
+              </p>
+            )}
+            {removeEntry.isError && (
+              <p className="text-error text-xs">{errorMessage(removeEntry.error)}</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="self-start">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="size-4 text-muted-foreground" />
+              {t("players.knownPlayers")}
+            </CardTitle>
+            <CardDescription>{t("players.knownPlayersDescription")}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            {history.isLoading && !history.data && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+                {t("common.loading")}
+              </div>
+            )}
+            {history.data && known.length === 0 && (
+              <p className="text-xs text-muted-foreground">{t("players.noHistory")}</p>
+            )}
+            {known.length > 0 && (
+              <div className="divide-y divide-border border border-border">
+                {known.map((record) => {
+                  const whitelisted = whitelistedNames.has(record.name.toLowerCase());
+                  return (
+                    <div className="flex items-center gap-3 px-3 py-2" key={record.name}>
+                      <div className="min-w-0 flex-1">
+                        <p className="flex items-center gap-2 truncate text-xs font-medium">
+                          {record.name}
+                          {whitelisted && (
+                            <Badge className="border-success/40 text-success" variant="outline">
+                              {t("players.whitelist")}
+                            </Badge>
+                          )}
+                        </p>
+                        <p className="truncate text-[10px] text-muted-foreground">
+                          {t("players.firstSeen")}:{" "}
+                          {new Date(record.first_seen * 1000).toLocaleDateString()} ·{" "}
+                          {t("players.lastSeen")}:{" "}
+                          {new Date(record.last_seen * 1000).toLocaleString()} ·{" "}
+                          {t("players.playtime")}: {formatDuration(record.seconds)}
+                        </p>
+                      </div>
+                      {!whitelisted && (
+                        <Button
+                          disabled={!running || command.isPending}
+                          onClick={() => send(`/player ${record.name} whitelist on`)}
+                          size="sm"
+                          variant="outline"
+                        >
+                          {t("players.addToWhitelist")}
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

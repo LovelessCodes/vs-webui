@@ -5,6 +5,7 @@ use crate::auth::AuthStore;
 use crate::metrics::MetricsStore;
 use crate::mods::{ModDbCache, ModsManager};
 use crate::paths::Layout;
+use crate::playerhistory::PlayerHistory;
 use crate::settings::Settings;
 use crate::stratum::StratumCache;
 use crate::supervisor::Supervisor;
@@ -20,6 +21,7 @@ pub struct AppState {
     pub mods: Arc<ModsManager>,
     pub stratum: StratumCache,
     pub metrics: MetricsStore,
+    pub player_history: PlayerHistory,
     pub install: Mutex<Option<InstallStatus>>,
     pub started: Instant,
 }

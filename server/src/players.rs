@@ -73,6 +73,61 @@ pub fn read_whitelist(server_dir: &Path) -> WhitelistView {
     }
 }
 
+/// Removes a whitelist entry by uid or name (case-insensitive). Returns
+/// whether an entry was removed. Works while the server is stopped.
+pub fn remove_whitelist_entry(
+    server_dir: &Path,
+    uid: Option<&str>,
+    name: Option<&str>,
+) -> Result<bool, String> {
+    let path = server_dir.join("playerwhitelist.json");
+    if !path.exists() {
+        return Ok(false);
+    }
+    let content = std::fs::read_to_string(&path)
+        .map_err(|e| format!("playerwhitelist.json is not readable: {e}"))?;
+    let mut value: Value = serde_json::from_str(&content)
+        .map_err(|e| format!("playerwhitelist.json is not valid JSON: {e}"))?;
+    let array = value
+        .as_array_mut()
+        .ok_or("playerwhitelist.json is not an array")?;
+
+    let field = |object: &serde_json::Map<String, Value>, keys: &[&str]| -> Option<String> {
+        object
+            .iter()
+            .find(|(key, _)| keys.iter().any(|want| key.eq_ignore_ascii_case(want)))
+            .and_then(|(_, value)| value.as_str())
+            .map(|value| value.to_lowercase())
+    };
+
+    let uid = uid.map(str::to_lowercase);
+    let name = name.map(str::to_lowercase);
+    let before = array.len();
+    array.retain(|item| {
+        let Some(object) = item.as_object() else {
+            return true;
+        };
+        let entry_uid = field(object, &["uid", "playeruid", "uuid"]);
+        let entry_name = field(object, &["name", "playername"]);
+        let uid_match = uid
+            .as_deref()
+            .is_some_and(|want| entry_uid.as_deref() == Some(want));
+        let name_match = name
+            .as_deref()
+            .is_some_and(|want| entry_name.as_deref() == Some(want));
+        !(uid_match || name_match)
+    });
+    if array.len() == before {
+        return Ok(false);
+    }
+
+    let pretty = serde_json::to_string_pretty(&value).map_err(|e| e.to_string())?;
+    let tmp = path.with_extension("json.tmp");
+    std::fs::write(&tmp, pretty).map_err(|e| format!("write failed: {e}"))?;
+    std::fs::rename(&tmp, &path).map_err(|e| format!("replace failed: {e}"))?;
+    Ok(true)
+}
+
 /// `OnlyWhitelisted` (modern configs) or `WhitelistMode` (legacy: 2 = on).
 pub fn whitelist_enabled(server_dir: &Path) -> Option<bool> {
     let content = std::fs::read_to_string(server_dir.join("serverconfig.json")).ok()?;
