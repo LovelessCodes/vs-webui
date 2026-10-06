@@ -50,6 +50,19 @@ pub fn list_backups(layout: &Layout) -> Vec<BackupEntry> {
 
 /// Zip the server data directory (world, mods, configs, player data).
 pub fn create_server_backup(layout: &Layout, retention: usize) -> Result<String, String> {
+    create_server_backup_named(layout, retention, "server")
+}
+
+/// Scheduled backups carry a distinct prefix so the UI can label them.
+pub fn create_scheduled_backup(layout: &Layout, retention: usize) -> Result<String, String> {
+    create_server_backup_named(layout, retention, "server-scheduled")
+}
+
+fn create_server_backup_named(
+    layout: &Layout,
+    retention: usize,
+    prefix: &str,
+) -> Result<String, String> {
     let server_dir = layout.server_dir();
     if !server_dir.exists() {
         return Err("server data directory does not exist".into());
@@ -57,7 +70,7 @@ pub fn create_server_backup(layout: &Layout, retention: usize) -> Result<String,
     std::fs::create_dir_all(layout.backups_dir())
         .map_err(|e| format!("cannot create backups dir: {e}"))?;
 
-    let name = format!("server-{}.zip", timestamp_label());
+    let name = format!("{prefix}-{}.zip", timestamp_label());
     let path = layout.backups_dir().join(&name);
     let file = std::fs::File::create(&path).map_err(|e| format!("cannot create backup: {e}"))?;
     let mut zip = zip::ZipWriter::new(file);

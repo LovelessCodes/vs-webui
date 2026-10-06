@@ -79,7 +79,7 @@ async fn main() -> anyhow::Result<()> {
     });
 
     tokio::spawn(state.mods.clone().run_worker(state.clone()));
-    spawn_restart_scheduler(state.clone());
+    spawn_schedulers(state.clone());
 
     if let Some(version) = state.settings.lock().unwrap().version.clone() {
         if !state.layout.server_exe(&version).exists() {
@@ -181,48 +181,58 @@ fn env_bool(name: &str) -> bool {
 
 /// Daily restart at the configured local `HH:MM`, with 5-minute and 1-minute
 /// announcements through the server console.
-fn spawn_restart_scheduler(state: SharedState) {
-    use chrono::{Local, TimeZone};
-
+fn spawn_schedulers(state: SharedState) {
     tokio::spawn(async move {
-        let mut fired: Option<String> = None;
+        let mut fired_restart: Option<String> = None;
+        let mut fired_backup: Option<String> = None;
         let mut warned5: Option<String> = None;
         let mut warned1: Option<String> = None;
 
         loop {
             tokio::time::sleep(Duration::from_secs(20)).await;
 
-            let schedule = state.settings.lock().unwrap().restart_schedule.clone();
-            let Some(schedule) = schedule else {
-                continue;
-            };
-            let Some((hours, minutes)) = settings::parse_hhmm(&schedule) else {
-                continue;
+            let (restart_schedule, backup_schedule, backup_before_restart) = {
+                let settings = state.settings.lock().unwrap();
+                (
+                    settings.restart_schedule.clone(),
+                    settings.backup_schedule.clone(),
+                    settings.backup_before_restart,
+                )
             };
 
-            let now = Local::now();
-            let Some(naive) = now.date_naive().and_hms_opt(hours, minutes, 0) else {
-                continue;
-            };
-            let Some(mut target) = Local.from_local_datetime(&naive).single() else {
-                continue;
-            };
-            if target <= now {
-                target += chrono::Duration::days(1);
+            // ── scheduled backups ──────────────────────────────────────────
+            if let Some(schedule) = backup_schedule {
+                if let Some((seconds, key)) = next_occurrence(&schedule) {
+                    if seconds <= 25 && fired_backup.as_deref() != Some(&key) {
+                        run_scheduled_backup(&state).await;
+                        fired_backup = Some(key);
+                    }
+                }
             }
-            let seconds = (target - now).num_seconds();
-            let key = target.format("%Y-%m-%d %H:%M").to_string();
+
+            // ── scheduled restarts (with optional pre-restart backup) ──────
+            let Some(schedule) = restart_schedule else {
+                continue;
+            };
+            let Some((seconds, key)) = next_occurrence(&schedule) else {
+                continue;
+            };
             let running = state.supervisor.is_running();
 
             if seconds <= 25 {
-                if running && fired.as_deref() != Some(&key) {
-                    tracing::info!("scheduled restart: restarting the server now");
-                    state
-                        .supervisor
-                        .command("/announce Server restarting now".into())
-                        .await;
-                    state.supervisor.restart().await;
-                    fired = Some(key);
+                if fired_restart.as_deref() != Some(&key) {
+                    if backup_before_restart {
+                        run_scheduled_backup(&state).await;
+                    }
+                    if running {
+                        tracing::info!("scheduled restart: restarting the server now");
+                        state
+                            .supervisor
+                            .command("/announce Server restarting now".into())
+                            .await;
+                        state.supervisor.restart().await;
+                    }
+                    fired_restart = Some(key);
                 }
             } else if seconds <= 90 {
                 if running && warned1.as_deref() != Some(&key) {
@@ -241,6 +251,56 @@ fn spawn_restart_scheduler(state: SharedState) {
             }
         }
     });
+}
+
+/// Seconds until the next local occurrence of `HH:MM`, plus a per-day dedupe key.
+fn next_occurrence(schedule: &str) -> Option<(i64, String)> {
+    use chrono::{Local, TimeZone};
+
+    let (hours, minutes) = settings::parse_hhmm(schedule)?;
+    let now = Local::now();
+    let naive = now.date_naive().and_hms_opt(hours, minutes, 0)?;
+    let mut target = Local.from_local_datetime(&naive).single()?;
+    if target <= now {
+        target += chrono::Duration::days(1);
+    }
+    Some((
+        (target - now).num_seconds(),
+        target.format("%Y-%m-%d %H:%M").to_string(),
+    ))
+}
+
+async fn run_scheduled_backup(state: &SharedState) {
+    let layout = state.layout.clone();
+    let retention = state.settings.lock().unwrap().backup_retention.max(1) as usize;
+    let result = tokio::task::spawn_blocking(move || {
+        backups::create_scheduled_backup(&layout, retention)
+    })
+    .await;
+
+    match result {
+        Ok(Ok(name)) => {
+            tracing::info!("scheduled backup created: {name}");
+            state
+                .supervisor
+                .console
+                .push(format!("[manager] scheduled backup created: {name}"));
+        }
+        Ok(Err(error)) => {
+            tracing::warn!("scheduled backup failed: {error}");
+            state
+                .supervisor
+                .console
+                .push(format!("[manager] scheduled backup failed: {error}"));
+        }
+        Err(error) => {
+            tracing::warn!("scheduled backup task failed: {error}");
+            state
+                .supervisor
+                .console
+                .push(format!("[manager] scheduled backup task failed: {error}"));
+        }
+    }
 }
 
 async fn shutdown_signal() {

@@ -41,6 +41,12 @@ pub struct Settings {
     /// Daily restart time as local `HH:MM`; `None` disables scheduled restarts.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub restart_schedule: Option<String>,
+    /// Daily backup time as local `HH:MM`; `None` disables scheduled backups.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub backup_schedule: Option<String>,
+    /// Create a server backup right before a scheduled restart.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub backup_before_restart: bool,
     /// How many backups of each kind to keep.
     #[serde(default = "default_retention")]
     pub backup_retention: u32,
@@ -66,6 +72,8 @@ impl Default for Settings {
             pinned_mods: Vec::new(),
             favorite_mods: Vec::new(),
             restart_schedule: None,
+            backup_schedule: None,
+            backup_before_restart: false,
             backup_retention: default_retention(),
         }
     }

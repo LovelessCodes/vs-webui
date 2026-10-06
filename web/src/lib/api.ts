@@ -70,6 +70,8 @@ export interface Settings {
   pinned_mods?: string[];
   favorite_mods?: string[];
   restart_schedule?: string | null;
+  backup_schedule?: string | null;
+  backup_before_restart?: boolean;
   backup_retention?: number;
 }
 
@@ -321,6 +323,8 @@ export const api = {
     auto_restart: boolean;
     start_params: string;
     restart_schedule: string;
+    backup_schedule: string;
+    backup_before_restart: boolean;
     backup_retention: number;
   }) =>
     request<Settings>("/api/settings", {

@@ -25,6 +25,8 @@ export default function Settings() {
   const [autoRestart, setAutoRestart] = useState(false);
   const [startParams, setStartParams] = useState("");
   const [restartSchedule, setRestartSchedule] = useState("");
+  const [backupSchedule, setBackupSchedule] = useState("");
+  const [backupBeforeRestart, setBackupBeforeRestart] = useState(false);
   const [backupRetention, setBackupRetention] = useState(10);
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -38,6 +40,8 @@ export default function Settings() {
       setAutoRestart(settings.data.auto_restart ?? false);
       setStartParams(settings.data.start_params ?? "");
       setRestartSchedule(settings.data.restart_schedule ?? "");
+      setBackupSchedule(settings.data.backup_schedule ?? "");
+      setBackupBeforeRestart(settings.data.backup_before_restart ?? false);
       setBackupRetention(settings.data.backup_retention ?? 10);
     }
   }, [settings.data]);
@@ -49,6 +53,8 @@ export default function Settings() {
         auto_restart: autoRestart,
         start_params: startParams,
         restart_schedule: restartSchedule,
+        backup_schedule: backupSchedule,
+        backup_before_restart: backupBeforeRestart,
         backup_retention: backupRetention,
       }),
     onSuccess: () => {
@@ -151,6 +157,39 @@ export default function Settings() {
               )}
             </div>
             <p className="text-muted-foreground text-[11px]">{t("settings.dailyRestartHint")}</p>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label htmlFor="backup-schedule">{t("settings.dailyBackup")}</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                className="w-32"
+                id="backup-schedule"
+                onChange={(event) => setBackupSchedule(event.target.value)}
+                type="time"
+                value={backupSchedule}
+              />
+              {backupSchedule && (
+                <Button onClick={() => setBackupSchedule("")} size="sm" variant="ghost">
+                  {t("common.clear")}
+                </Button>
+              )}
+            </div>
+            <p className="text-muted-foreground text-[11px]">{t("settings.dailyBackupHint")}</p>
+          </div>
+
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <Label htmlFor="backup-before-restart">{t("settings.backupBeforeRestart")}</Label>
+              <p className="text-muted-foreground text-[11px]">
+                {t("settings.backupBeforeRestartHint")}
+              </p>
+            </div>
+            <Switch
+              checked={backupBeforeRestart}
+              id="backup-before-restart"
+              onCheckedChange={setBackupBeforeRestart}
+            />
           </div>
 
           <div className="grid gap-1.5">

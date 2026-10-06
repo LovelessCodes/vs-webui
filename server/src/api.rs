@@ -214,6 +214,10 @@ struct SettingsReq {
     #[serde(default)]
     restart_schedule: Option<String>,
     #[serde(default)]
+    backup_schedule: Option<String>,
+    #[serde(default)]
+    backup_before_restart: Option<bool>,
+    #[serde(default)]
     backup_retention: Option<u32>,
 }
 
@@ -560,6 +564,16 @@ async fn put_settings(
             Some(Some(value.trim().to_string()))
         }
     };
+    let backup_schedule = match req.backup_schedule {
+        None => None,
+        Some(value) if value.trim().is_empty() => Some(None),
+        Some(value) => {
+            if crate::settings::parse_hhmm(&value).is_none() {
+                return Err(ApiError::bad_request("backup time must look like 04:30"));
+            }
+            Some(Some(value.trim().to_string()))
+        }
+    };
     let retention = match req.backup_retention {
         None => None,
         Some(value) if (1..=100).contains(&value) => Some(value),
@@ -576,6 +590,12 @@ async fn put_settings(
         guard.start_params = req.start_params;
         if let Some(schedule) = schedule {
             guard.restart_schedule = schedule;
+        }
+        if let Some(schedule) = backup_schedule {
+            guard.backup_schedule = schedule;
+        }
+        if let Some(before) = req.backup_before_restart {
+            guard.backup_before_restart = before;
         }
         if let Some(retention) = retention {
             guard.backup_retention = retention;

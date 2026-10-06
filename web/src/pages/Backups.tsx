@@ -11,6 +11,7 @@ import {
   useCreateBackup,
   useDeleteBackup,
   useRestoreBackup,
+  useSettings,
   useStatus,
 } from "@/hooks/use-api";
 import { errorMessage, formatBytes } from "@/lib/format";
@@ -20,6 +21,7 @@ export default function Backups() {
   const { t } = useTranslation();
   const backups = useBackups();
   const status = useStatus();
+  const settings = useSettings();
   const create = useCreateBackup();
   const restore = useRestoreBackup();
   const remove = useDeleteBackup();
@@ -63,6 +65,11 @@ export default function Backups() {
             </div>
           </div>
           <CardDescription>{t("backups.description")}</CardDescription>
+          {settings.data?.backup_schedule && (
+            <p className="text-muted-foreground text-[11px]">
+              {t("backups.nextScheduled", { time: settings.data.backup_schedule })}
+            </p>
+          )}
         </CardHeader>
         <CardContent className="grid gap-3">
           {mutationError && <p className="text-error text-xs">{errorMessage(mutationError)}</p>}
@@ -101,6 +108,9 @@ export default function Backups() {
                         <Badge variant={isMods ? "info" : "outline"}>
                           {isMods ? t("backups.modsBadge") : t("backups.serverBadge")}
                         </Badge>
+                        {backup.name.startsWith("server-scheduled-") && (
+                          <Badge variant="accent">{t("backups.scheduledBadge")}</Badge>
+                        )}
                       </div>
                       <span className="hidden w-20 text-right font-mono text-[11px] text-muted-foreground sm:block">
                         {formatBytes(backup.size)}
