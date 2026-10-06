@@ -5,6 +5,7 @@ mod configs;
 mod console;
 mod logfiles;
 mod mods;
+mod notifications;
 mod paths;
 mod players;
 mod serverconfig;
@@ -65,7 +66,9 @@ async fn main() -> anyhow::Result<()> {
         .user_agent(format!("vs-webui/{}", env!("CARGO_PKG_VERSION")))
         .build()?;
 
-    let supervisor = supervisor::Supervisor::spawn(layout.clone(), settings.clone());
+    let (events_tx, mut events_rx) =
+        tokio::sync::mpsc::unbounded_channel::<supervisor::ServerEvent>();
+    let supervisor = supervisor::Supervisor::spawn(layout.clone(), settings.clone(), events_tx);
     let state: SharedState = Arc::new(state::AppState {
         layout: layout.clone(),
         settings: settings.clone(),
@@ -81,6 +84,17 @@ async fn main() -> anyhow::Result<()> {
 
     tokio::spawn(state.mods.clone().run_worker(state.clone()));
     spawn_schedulers(state.clone());
+
+    // Forward supervisor events (starts, stops, crashes, players) to the
+    // configured webhook, when one is set.
+    {
+        let notify_state = state.clone();
+        tokio::spawn(async move {
+            while let Some(event) = events_rx.recv().await {
+                notifications::notify(&notify_state, event.kind, event.text);
+            }
+        });
+    }
 
     if let Some(version) = state.settings.lock().unwrap().version.clone() {
         if !state.layout.server_exe(&version).exists() {
@@ -286,6 +300,7 @@ async fn run_scheduled_backup(state: &SharedState) {
                 .supervisor
                 .console
                 .push(format!("[manager] scheduled backup created: {name}"));
+            notifications::notify(state, "backup", format!("Backup created: {name}"));
         }
         Ok(Err(error)) => {
             tracing::warn!("scheduled backup failed: {error}");

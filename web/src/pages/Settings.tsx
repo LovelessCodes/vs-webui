@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, KeyRound, Loader2, ServerCog } from "lucide-react";
+import { Check, KeyRound, Loader2, ServerCog, Send } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
-import { useSettings, useStatus } from "@/hooks/use-api";
+import { useSettings, useStatus, useTestWebhook } from "@/hooks/use-api";
 import { api, setCsrf } from "@/lib/api";
 import { errorMessage } from "@/lib/format";
 import { toast } from "@/lib/notify";
@@ -28,6 +28,8 @@ export default function Settings() {
   const [backupSchedule, setBackupSchedule] = useState("");
   const [backupBeforeRestart, setBackupBeforeRestart] = useState(false);
   const [backupRetention, setBackupRetention] = useState(10);
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -43,6 +45,8 @@ export default function Settings() {
       setBackupSchedule(settings.data.backup_schedule ?? "");
       setBackupBeforeRestart(settings.data.backup_before_restart ?? false);
       setBackupRetention(settings.data.backup_retention ?? 10);
+      setWebhookUrl(settings.data.webhook_url ?? "");
+      setWebhookEvents(settings.data.webhook_events ?? []);
     }
   }, [settings.data]);
 
@@ -56,6 +60,8 @@ export default function Settings() {
         backup_schedule: backupSchedule,
         backup_before_restart: backupBeforeRestart,
         backup_retention: backupRetention,
+        webhook_url: webhookUrl,
+        webhook_events: webhookEvents,
       }),
     onSuccess: () => {
       toast.success(t("common.saved"));
@@ -75,6 +81,17 @@ export default function Settings() {
       void queryClient.invalidateQueries({ queryKey: ["me"] });
     },
   });
+
+  const testWebhook = useTestWebhook();
+
+  const WEBHOOK_EVENTS: Array<{ event: string; labelKey: string }> = [
+    { event: "start", labelKey: "settings.webhookEventStart" },
+    { event: "stop", labelKey: "settings.webhookEventStop" },
+    { event: "crash", labelKey: "settings.webhookEventCrash" },
+    { event: "player_join", labelKey: "settings.webhookEventPlayerJoin" },
+    { event: "player_leave", labelKey: "settings.webhookEventPlayerLeave" },
+    { event: "backup", labelKey: "settings.webhookEventBackup" },
+  ];
 
   const passwordMismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
   const passwordTooShort = newPassword.length > 0 && newPassword.length < 8;
@@ -215,6 +232,72 @@ export default function Settings() {
           {saveSettings.isError && (
             <p className="text-error text-xs">{errorMessage(saveSettings.error)}</p>
           )}
+
+          <div className="flex items-center gap-3">
+            <Button
+              disabled={saveSettings.isPending || !settings.data}
+              onClick={() => saveSettings.mutate()}
+              variant="accent-primary"
+            >
+              {saveSettings.isPending ? <Loader2 className="animate-spin" /> : <Check />}
+              {t("common.save")}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="self-start lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Send className="size-4 text-muted-foreground" />
+            {t("settings.notificationsTitle")}
+          </CardTitle>
+          <CardDescription>{t("settings.notificationsDescription")}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="grid gap-1.5">
+            <Label htmlFor="webhook-url">{t("settings.webhookUrl")}</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="webhook-url"
+                onChange={(event) => setWebhookUrl(event.target.value)}
+                placeholder={t("settings.webhookUrlPlaceholder")}
+                value={webhookUrl}
+              />
+              <Button
+                disabled={!webhookUrl.trim() || testWebhook.isPending}
+                onClick={() => testWebhook.mutate()}
+                size="sm"
+                variant="outline"
+              >
+                {testWebhook.isPending ? <Loader2 className="animate-spin" /> : <Send />}
+                {t("settings.webhookTest")}
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label>{t("settings.webhookEvents")}</Label>
+            <div className="grid gap-1.5 sm:grid-cols-3">
+              {WEBHOOK_EVENTS.map(({ event, labelKey }) => (
+                <label className="flex items-center gap-2 text-xs" key={event}>
+                  <input
+                    checked={webhookEvents.includes(event)}
+                    className="accent-[#8b5cf6]"
+                    onChange={(changeEvent) =>
+                      setWebhookEvents((previous) =>
+                        changeEvent.target.checked
+                          ? [...previous, event]
+                          : previous.filter((entry) => entry !== event),
+                      )
+                    }
+                    type="checkbox"
+                  />
+                  {t(labelKey)}
+                </label>
+              ))}
+            </div>
+          </div>
 
           <div className="flex items-center gap-3">
             <Button

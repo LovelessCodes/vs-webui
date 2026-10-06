@@ -33,6 +33,13 @@ enum Cmd {
     Shutdown(oneshot::Sender<()>),
 }
 
+/// Events emitted by the supervisor for webhook notifications.
+#[derive(Clone, Debug)]
+pub struct ServerEvent {
+    pub kind: &'static str,
+    pub text: String,
+}
+
 struct Running {
     pid: Option<u32>,
     stdin: tokio::process::ChildStdin,
@@ -52,7 +59,11 @@ pub struct Supervisor {
 }
 
 impl Supervisor {
-    pub fn spawn(layout: Layout, settings: Arc<Mutex<Settings>>) -> Self {
+    pub fn spawn(
+        layout: Layout,
+        settings: Arc<Mutex<Settings>>,
+        events: mpsc::UnboundedSender<ServerEvent>,
+    ) -> Self {
         let (tx, rx) = mpsc::channel(32);
         let notify_tx = tx.clone();
         let console = ConsoleLog::new();
@@ -64,7 +75,7 @@ impl Supervisor {
             let console = console.clone();
             let online = online.clone();
             tokio::spawn(async move {
-                run(rx, notify_tx, status, console, online, layout, settings).await;
+                run(rx, notify_tx, status, console, online, layout, settings, events).await;
             });
         }
 
@@ -177,6 +188,7 @@ async fn run(
     online: Arc<Mutex<HashMap<String, u64>>>,
     layout: Layout,
     settings: Arc<Mutex<Settings>>,
+    events: mpsc::UnboundedSender<ServerEvent>,
 ) {
     let mut running: Option<Running> = None;
     let mut failures: u32 = 0;
@@ -196,6 +208,7 @@ async fn run(
                     &online,
                     &layout,
                     &settings,
+                    &events,
                 )
                 .await
                 {
@@ -205,6 +218,10 @@ async fn run(
                         set_status(&status, |s| {
                             s.status = "crashed".into();
                             s.pid = None;
+                        });
+                        let _ = events.send(ServerEvent {
+                            kind: "crash",
+                            text: format!("Server failed to start: {message}"),
                         });
                     }
                 }
@@ -225,6 +242,7 @@ async fn run(
                         &online,
                         &layout,
                         &settings,
+                        &events,
                     )
                     .await
                     {
@@ -268,6 +286,17 @@ async fn run(
                     s.pid = None;
                     s.exit_code = code;
                 });
+                let _ = events.send(ServerEvent {
+                    kind: if clean { "stop" } else { "crash" },
+                    text: if clean {
+                        format!("Server stopped (uptime {uptime}s)")
+                    } else {
+                        format!(
+                            "Server crashed (code {}, uptime {uptime}s)",
+                            code.map(|c| c.to_string()).unwrap_or_else(|| "unknown".into())
+                        )
+                    },
+                });
 
                 if clean {
                     failures = 0;
@@ -302,6 +331,7 @@ async fn run(
                     &online,
                     &layout,
                     &settings,
+                    &events,
                 )
                 .await
                 {
@@ -325,6 +355,7 @@ async fn start_server(
     online: &Arc<Mutex<HashMap<String, u64>>>,
     layout: &Layout,
     settings: &Arc<Mutex<Settings>>,
+    events: &mpsc::UnboundedSender<ServerEvent>,
 ) -> Result<(), String> {
     online.lock().unwrap().clear();
     let (flavor, version, tag, params) = {
@@ -408,8 +439,20 @@ async fn start_server(
 
     set_status(status, |s| s.pid = pid);
 
-    spawn_reader(stdout, console.clone(), status.clone(), online.clone());
-    spawn_reader(stderr, console.clone(), status.clone(), online.clone());
+    spawn_reader(
+        stdout,
+        console.clone(),
+        status.clone(),
+        online.clone(),
+        events.clone(),
+    );
+    spawn_reader(
+        stderr,
+        console.clone(),
+        status.clone(),
+        online.clone(),
+        events.clone(),
+    );
 
     let (exit_tx, exit_rx) = oneshot::channel();
     let exit_notify = notify_tx.clone();
@@ -490,6 +533,7 @@ fn spawn_reader<R>(
     console: ConsoleLog,
     status: Arc<Mutex<Status>>,
     online: Arc<Mutex<HashMap<String, u64>>>,
+    events: mpsc::UnboundedSender<ServerEvent>,
 ) where
     R: tokio::io::AsyncRead + Unpin + Send + 'static,
 {
@@ -497,13 +541,24 @@ fn spawn_reader<R>(
         let mut lines = BufReader::new(reader).lines();
         while let Ok(Some(line)) = lines.next_line().await {
             if line.contains(STARTUP_MARKER) {
-                set_status(&status, |s| {
-                    if s.status == "starting" {
-                        s.status = "running".into();
+                let became_running = {
+                    let mut guard = status.lock().unwrap();
+                    if guard.status == "starting" {
+                        guard.status = "running".into();
+                        true
+                    } else {
+                        false
                     }
-                });
+                };
+                if became_running {
+                    let version = status.lock().unwrap().version.clone().unwrap_or_default();
+                    let _ = events.send(ServerEvent {
+                        kind: "start",
+                        text: format!("Server is running ({version})"),
+                    });
+                }
             }
-            track_player(&line, &online);
+            track_player(&line, &online, &events);
             console.push(line.clone());
             tracing::info!(target: "server", "{}", line);
         }
@@ -511,7 +566,11 @@ fn spawn_reader<R>(
 }
 
 /// Best-effort online tracking from console join/leave events.
-fn track_player(line: &str, online: &Arc<Mutex<HashMap<String, u64>>>) {
+fn track_player(
+    line: &str,
+    online: &Arc<Mutex<HashMap<String, u64>>>,
+    events: &mpsc::UnboundedSender<ServerEvent>,
+) {
     let lower = line.to_lowercase();
     let extract = |marker: &str| -> Option<String> {
         let start = lower.find("player ")? + "player ".len();
@@ -524,11 +583,23 @@ fn track_player(line: &str, online: &Arc<Mutex<HashMap<String, u64>>>) {
 
     if lower.contains(" joined") {
         if let Some(name) = extract(" joined") {
-            online.lock().unwrap().insert(name, now_unix());
+            let newly = online.lock().unwrap().insert(name.clone(), now_unix()).is_none();
+            if newly {
+                let _ = events.send(ServerEvent {
+                    kind: "player_join",
+                    text: format!("Player {name} joined"),
+                });
+            }
         }
     } else if lower.contains(" left") || lower.contains("disconnected") {
         if let Some(name) = extract(" left").or_else(|| extract(" disconnected")) {
-            online.lock().unwrap().remove(&name);
+            let removed = online.lock().unwrap().remove(&name).is_some();
+            if removed {
+                let _ = events.send(ServerEvent {
+                    kind: "player_leave",
+                    text: format!("Player {name} left"),
+                });
+            }
         }
     }
 }
@@ -618,21 +689,32 @@ mod tests {
     #[test]
     fn tracks_player_join_and_leave() {
         let online = Arc::new(Mutex::new(HashMap::new()));
+        let (events, mut events_rx) = mpsc::unbounded_channel();
         track_player(
             "5.10.2026 20:00:00 [Server Event] Player Alice joined.",
             &online,
+            &events,
         );
         track_player(
             "5.10.2026 20:00:01 [Server Event] Player Bob joined.",
             &online,
+            &events,
         );
         assert_eq!(online.lock().unwrap().len(), 2);
         track_player(
             "5.10.2026 20:05:00 [Server Event] Player Alice left.",
             &online,
+            &events,
         );
         let players = online.lock().unwrap();
         assert_eq!(players.len(), 1);
         assert!(players.contains_key("Bob"));
+        drop(players);
+
+        assert_eq!(events_rx.try_recv().unwrap().kind, "player_join");
+        assert_eq!(events_rx.try_recv().unwrap().kind, "player_join");
+        let leave = events_rx.try_recv().unwrap();
+        assert_eq!(leave.kind, "player_leave");
+        assert!(leave.text.contains("Alice"));
     }
 }

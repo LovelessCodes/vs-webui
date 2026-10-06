@@ -72,6 +72,8 @@ export interface Settings {
   restart_schedule?: string | null;
   backup_schedule?: string | null;
   backup_before_restart?: boolean;
+  webhook_url?: string | null;
+  webhook_events?: string[];
   backup_retention?: number;
 }
 
@@ -332,6 +334,8 @@ export const api = {
     backup_schedule: string;
     backup_before_restart: boolean;
     backup_retention: number;
+    webhook_url: string;
+    webhook_events: string[];
   }) =>
     request<Settings>("/api/settings", {
       method: "PUT",
@@ -346,6 +350,7 @@ export const api = {
     request<{ name: string; content: string; truncated: boolean }>(
       `/api/logs/${encodeURIComponent(name)}?tail=${tail}`,
     ),
+  testWebhook: () => request<{ ok: boolean }>("/api/webhook/test", { method: "POST" }),
 
   serverConfig: () => request<ServerConfigResponse>("/api/serverconfig"),
 

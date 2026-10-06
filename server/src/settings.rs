@@ -47,6 +47,13 @@ pub struct Settings {
     /// Create a server backup right before a scheduled restart.
     #[serde(default, skip_serializing_if = "is_false")]
     pub backup_before_restart: bool,
+    /// Webhook URL notified on `webhook_events` (Discord, Slack or generic JSON).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub webhook_url: Option<String>,
+    /// Event names the webhook fires for: start, stop, crash, player_join,
+    /// player_leave, backup.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub webhook_events: Vec<String>,
     /// How many backups of each kind to keep.
     #[serde(default = "default_retention")]
     pub backup_retention: u32,
@@ -74,6 +81,8 @@ impl Default for Settings {
             restart_schedule: None,
             backup_schedule: None,
             backup_before_restart: false,
+            webhook_url: None,
+            webhook_events: Vec::new(),
             backup_retention: default_retention(),
         }
     }

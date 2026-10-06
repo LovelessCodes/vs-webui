@@ -45,6 +45,7 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/versions", get(list_versions))
         .route("/api/versions/install", post(install_version))
         .route("/api/settings", get(get_settings).put(put_settings))
+        .route("/api/webhook/test", post(test_webhook))
         .route(
             "/api/serverconfig",
             get(get_serverconfig).put(put_serverconfig),
@@ -222,6 +223,10 @@ struct SettingsReq {
     backup_before_restart: Option<bool>,
     #[serde(default)]
     backup_retention: Option<u32>,
+    #[serde(default)]
+    webhook_url: Option<String>,
+    #[serde(default)]
+    webhook_events: Option<Vec<String>>,
 }
 
 #[derive(Deserialize)]
@@ -577,6 +582,24 @@ async fn put_settings(
             Some(Some(value.trim().to_string()))
         }
     };
+    let webhook_url = match req.webhook_url {
+        None => None,
+        Some(value) if value.trim().is_empty() => Some(None),
+        Some(value) => {
+            let parsed = reqwest::Url::parse(value.trim())
+                .map_err(|error| ApiError::bad_request(format!("invalid webhook URL: {error}")))?;
+            if parsed.scheme() != "http" && parsed.scheme() != "https" {
+                return Err(ApiError::bad_request("webhook URL must be http(s)"));
+            }
+            Some(Some(value.trim().to_string()))
+        }
+    };
+    let webhook_events = req.webhook_events.map(|events| {
+        events
+            .into_iter()
+            .filter(|event| crate::notifications::EVENTS.contains(&event.as_str()))
+            .collect::<Vec<_>>()
+    });
     let retention = match req.backup_retention {
         None => None,
         Some(value) if (1..=100).contains(&value) => Some(value),
@@ -600,6 +623,12 @@ async fn put_settings(
         if let Some(before) = req.backup_before_restart {
             guard.backup_before_restart = before;
         }
+        if let Some(url) = webhook_url {
+            guard.webhook_url = url;
+        }
+        if let Some(events) = webhook_events {
+            guard.webhook_events = events;
+        }
         if let Some(retention) = retention {
             guard.backup_retention = retention;
         }
@@ -609,6 +638,23 @@ async fn put_settings(
         guard.clone()
     };
     Ok(Json(json!(settings)))
+}
+
+async fn test_webhook(
+    State(state): State<SharedState>,
+    _authed: Authed,
+) -> Result<Json<Value>, ApiError> {
+    let url = state
+        .settings
+        .lock()
+        .unwrap()
+        .webhook_url
+        .clone()
+        .ok_or_else(|| ApiError::bad_request("no webhook URL configured"))?;
+    crate::notifications::send(&url, "test", "vs-webui test notification")
+        .await
+        .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true })))
 }
 
 async fn get_serverconfig(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {
@@ -1239,6 +1285,7 @@ async fn create_backup(
     .await
     .map_err(|e| ApiError::internal(format!("backup task failed: {e}")))?
     .map_err(ApiError::internal)?;
+    crate::notifications::notify(&state, "backup", format!("Backup created: {name}"));
     Ok(Json(json!({ "ok": true, "name": name })))
 }
 

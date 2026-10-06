@@ -422,6 +422,15 @@ export function useLogFiles(enabled = true) {
   });
 }
 
+export function useTestWebhook() {
+  return useMutation({
+    mutationFn: () => api.testWebhook(),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: () => toast.success(i18n.t("settings.webhookTestSent")),
+  });
+}
+
 export function useCreateBackup() {
   const queryClient = useQueryClient();
   return useMutation({
