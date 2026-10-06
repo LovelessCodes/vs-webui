@@ -280,6 +280,12 @@ export interface BackupEntry {
   modified: number;
 }
 
+export interface LogFileEntry {
+  name: string;
+  size: number;
+  modified: number;
+}
+
 export const api = {
   me: () => request<Me>("/api/me"),
   login: (password: string) =>
@@ -334,6 +340,12 @@ export const api = {
 
   consoleHistory: (limit = 500) =>
     request<{ lines: ConsoleLine[] }>(`/api/console/history?limit=${limit}`),
+
+  logFiles: () => request<{ files: LogFileEntry[] }>("/api/logs"),
+  logTail: (name: string, tail = 2000) =>
+    request<{ name: string; content: string; truncated: boolean }>(
+      `/api/logs/${encodeURIComponent(name)}?tail=${tail}`,
+    ),
 
   serverConfig: () => request<ServerConfigResponse>("/api/serverconfig"),
 

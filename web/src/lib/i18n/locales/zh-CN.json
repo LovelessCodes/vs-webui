@@ -159,7 +159,17 @@
     "placeholderRunning": "输入服务器命令（例如 /time set day）",
     "placeholderStopped": "服务器未运行",
     "send": "发送",
-    "commandFailed": "命令失败：{{message}}"
+    "commandFailed": "命令失败：{{message}}",
+    "filterPlaceholder": "筛选输出…",
+    "noMatches": "没有符合筛选条件的行。",
+    "logFiles": "日志文件",
+    "logFilesDescription": "来自 Logs 文件夹的历史服务器日志。",
+    "noLogs": "暂无日志文件。",
+    "open": "打开",
+    "viewingFile": "正在查看 {{name}}",
+    "backToLive": "返回实时",
+    "export": "导出",
+    "truncated": "已省略更早的行"
   },
   "mods": {
     "updateAll": "全部更新",

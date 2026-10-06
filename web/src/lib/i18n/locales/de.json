@@ -159,7 +159,17 @@
     "placeholderRunning": "Server-Befehl eingeben (z. B. /time set day)",
     "placeholderStopped": "Server läuft nicht",
     "send": "Senden",
-    "commandFailed": "Befehl fehlgeschlagen: {{message}}"
+    "commandFailed": "Befehl fehlgeschlagen: {{message}}",
+    "filterPlaceholder": "Ausgabe filtern…",
+    "noMatches": "Keine Zeilen passen zum Filter.",
+    "logFiles": "Protokolldateien",
+    "logFilesDescription": "Historische Server-Logs aus dem Logs-Ordner.",
+    "noLogs": "Noch keine Logdateien.",
+    "open": "Öffnen",
+    "viewingFile": "Ansicht: {{name}}",
+    "backToLive": "Zurück zu Live",
+    "export": "Exportieren",
+    "truncated": "ältere Zeilen ausgelassen"
   },
   "mods": {
     "updateAll": "Alle aktualisieren",

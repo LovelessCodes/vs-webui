@@ -412,6 +412,16 @@ export function useBackups(enabled = true) {
   });
 }
 
+export function useLogFiles(enabled = true) {
+  return useQuery({
+    queryKey: ["logs"],
+    queryFn: api.logFiles,
+    staleTime: 10_000,
+    retry: false,
+    enabled,
+  });
+}
+
 export function useCreateBackup() {
   const queryClient = useQueryClient();
   return useMutation({

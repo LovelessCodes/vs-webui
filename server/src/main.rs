@@ -3,6 +3,7 @@ mod auth;
 mod backups;
 mod configs;
 mod console;
+mod logfiles;
 mod mods;
 mod paths;
 mod players;

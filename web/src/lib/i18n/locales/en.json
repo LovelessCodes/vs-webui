@@ -159,7 +159,17 @@
     "placeholderRunning": "Type a server command (e.g. /time set day)",
     "placeholderStopped": "Server is not running",
     "send": "Send",
-    "commandFailed": "Command failed: {{message}}"
+    "commandFailed": "Command failed: {{message}}",
+    "filterPlaceholder": "Filter output…",
+    "noMatches": "No lines match the filter.",
+    "logFiles": "Log files",
+    "logFilesDescription": "Historical server logs from the Logs folder.",
+    "noLogs": "No log files yet.",
+    "open": "Open",
+    "viewingFile": "Viewing {{name}}",
+    "backToLive": "Back to live",
+    "export": "Export",
+    "truncated": "older lines omitted"
   },
   "mods": {
     "updateAll": "Update all",

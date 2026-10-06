@@ -159,7 +159,17 @@
     "placeholderRunning": "Введите команду (например, /time set day)",
     "placeholderStopped": "Сервер не запущен",
     "send": "Отправить",
-    "commandFailed": "Ошибка команды: {{message}}"
+    "commandFailed": "Ошибка команды: {{message}}",
+    "filterPlaceholder": "Фильтр вывода…",
+    "noMatches": "Нет строк, соответствующих фильтру.",
+    "logFiles": "Файлы логов",
+    "logFilesDescription": "Исторические логи сервера из папки Logs.",
+    "noLogs": "Логов пока нет.",
+    "open": "Открыть",
+    "viewingFile": "Просмотр {{name}}",
+    "backToLive": "Вернуться к live",
+    "export": "Экспорт",
+    "truncated": "старые строки опущены"
   },
   "mods": {
     "updateAll": "Обновить всё",

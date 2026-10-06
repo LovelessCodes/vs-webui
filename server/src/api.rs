@@ -75,6 +75,9 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/backups/{name}/restore", post(restore_backup))
         .route("/api/backups/{name}/download", get(download_backup))
         .route("/api/backups/{name}", delete(delete_backup))
+        .route("/api/logs", get(list_logs))
+        .route("/api/logs/{name}", get(read_log))
+        .route("/api/logs/{name}/download", get(download_log))
         .fallback_service(ServeDir::new(&dist).fallback(ServeFile::new(&index)))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
@@ -1286,6 +1289,66 @@ async fn download_backup(
         .map_err(|e| ApiError::internal(format!("cannot read backup: {e}")))?;
     Response::builder()
         .header(header::CONTENT_TYPE, "application/zip")
+        .header(
+            header::CONTENT_DISPOSITION,
+            format!("attachment; filename=\"{}\"", name.replace('"', "")),
+        )
+        .body(axum::body::Body::from(bytes))
+        .map_err(|e| ApiError::internal(format!("response error: {e}")))
+}
+
+// ── log files ───────────────────────────────────────────────────────────────
+
+async fn list_logs(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {
+    let layout = state.layout.clone();
+    let files = tokio::task::spawn_blocking(move || crate::logfiles::list_log_files(&layout))
+        .await
+        .unwrap_or_default();
+    Json(json!({ "files": files }))
+}
+
+#[derive(Deserialize)]
+struct LogTailQuery {
+    tail: Option<usize>,
+}
+
+async fn read_log(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(name): UrlPath<String>,
+    Query(query): Query<LogTailQuery>,
+) -> Result<Json<Value>, ApiError> {
+    let max_lines = query.tail.unwrap_or(2000).clamp(1, 20_000);
+    let layout = state.layout.clone();
+    let file = name.clone();
+    let (content, truncated) = tokio::task::spawn_blocking(move || {
+        crate::logfiles::read_log_tail(&layout, &file, max_lines)
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("read task failed: {e}")))?
+    .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({
+        "name": name,
+        "content": content,
+        "truncated": truncated,
+    })))
+}
+
+async fn download_log(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(name): UrlPath<String>,
+) -> Result<Response, ApiError> {
+    let path = crate::logfiles::log_path(&state.layout, &name).map_err(ApiError::bad_request)?;
+    if !path.is_file() {
+        return Err(ApiError::new(StatusCode::NOT_FOUND, "log file not found"));
+    }
+    let bytes = tokio::task::spawn_blocking(move || std::fs::read(&path))
+        .await
+        .map_err(|e| ApiError::internal(format!("read task failed: {e}")))?
+        .map_err(|e| ApiError::internal(format!("cannot read log: {e}")))?;
+    Response::builder()
+        .header(header::CONTENT_TYPE, "text/plain; charset=utf-8")
         .header(
             header::CONTENT_DISPOSITION,
             format!("attachment; filename=\"{}\"", name.replace('"', "")),

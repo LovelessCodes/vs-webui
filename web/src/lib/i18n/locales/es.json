@@ -159,7 +159,17 @@
     "placeholderRunning": "Escribe un comando (p. ej. /time set day)",
     "placeholderStopped": "El servidor no está en ejecución",
     "send": "Enviar",
-    "commandFailed": "Comando fallido: {{message}}"
+    "commandFailed": "Comando fallido: {{message}}",
+    "filterPlaceholder": "Filtrar salida…",
+    "noMatches": "Ninguna línea coincide con el filtro.",
+    "logFiles": "Archivos de registro",
+    "logFilesDescription": "Registros históricos del servidor en la carpeta Logs.",
+    "noLogs": "Aún no hay registros.",
+    "open": "Abrir",
+    "viewingFile": "Viendo {{name}}",
+    "backToLive": "Volver en vivo",
+    "export": "Exportar",
+    "truncated": "se omitieron líneas anteriores"
   },
   "mods": {
     "updateAll": "Actualizar todo",

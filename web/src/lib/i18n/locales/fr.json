@@ -159,7 +159,17 @@
     "placeholderRunning": "Saisir une commande (ex. /time set day)",
     "placeholderStopped": "Le serveur n'est pas en cours",
     "send": "Envoyer",
-    "commandFailed": "Échec de la commande : {{message}}"
+    "commandFailed": "Échec de la commande : {{message}}",
+    "filterPlaceholder": "Filtrer la sortie…",
+    "noMatches": "Aucune ligne ne correspond au filtre.",
+    "logFiles": "Fichiers journaux",
+    "logFilesDescription": "Journaux serveur historiques dans le dossier Logs.",
+    "noLogs": "Aucun journal pour l'instant.",
+    "open": "Ouvrir",
+    "viewingFile": "Affichage de {{name}}",
+    "backToLive": "Retour au direct",
+    "export": "Exporter",
+    "truncated": "lignes plus anciennes omises"
   },
   "mods": {
     "updateAll": "Tout mettre à jour",
