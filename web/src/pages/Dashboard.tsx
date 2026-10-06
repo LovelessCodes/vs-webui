@@ -420,6 +420,7 @@ export default function Dashboard() {
             </CardTitle>
             <Link
               className="text-accent-primary text-xs underline-offset-4 hover:underline"
+              search={{ logs: undefined }}
               to="/console"
             >
               {t("dashboard.openConsole")}

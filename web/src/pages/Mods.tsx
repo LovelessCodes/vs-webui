@@ -139,17 +139,13 @@ export default function Mods() {
       Object.fromEntries((tags.data?.tags ?? []).map((entry) => [entry.name, entry.color])),
     [tags.data],
   );
-  const tagByName = useMemo(
-    () => new Map((tags.data?.tags ?? []).map((entry) => [entry.name, entry])),
-    [tags.data],
-  );
 
   const filtered = useMemo(() => {
     const mods = modb.data?.mods ?? [];
     const list = mods.filter((mod) => {
       if (
-        filters.selectedModTags.length > 0 &&
-        !filters.selectedModTags.every((tag) => mod.tags.includes(tag.name))
+        filters.selectedTagNames.length > 0 &&
+        !filters.selectedTagNames.every((name) => mod.tags.includes(name))
       ) {
         return false;
       }
@@ -173,7 +169,7 @@ export default function Mods() {
     modb.data,
     installedMods,
     favorites,
-    filters.selectedModTags,
+    filters.selectedTagNames,
     filters.author,
     filters.side,
     filters.category,
@@ -279,7 +275,7 @@ export default function Mods() {
             );
             return (
               <ModBrowseRow
-                activeTags={filters.selectedTagNames}
+                activeTags={filters.selectedTagSet}
                 favorited={favorited}
                 installed={installedMod}
                 mod={mod}
@@ -293,10 +289,7 @@ export default function Mods() {
                   installedMod && pin.mutate({ modid: installedMod.modid, pinned: !isPinned })
                 }
                 onRemove={() => installedMod && remove.mutate(installedMod.file)}
-                onTagClick={(name) => {
-                  const tag = tagByName.get(name);
-                  if (tag) filters.handleTagClick(tag, filters.selectedTagNames.has(name));
-                }}
+                onTagClick={(name) => filters.toggleTag(name)}
                 onUpdate={() =>
                   updateEntry &&
                   installedMod &&

@@ -1,3 +1,4 @@
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   Download,
   Eraser,
@@ -146,6 +147,8 @@ function renderAnsi(text: string): ReactNode {
 
 export default function Console() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const search = useSearch({ from: "/console" });
   const [lines, setLines] = useState<ConsoleLine[]>([]);
   const [connected, setConnected] = useState(false);
   const [follow, setFollow] = useState(true);
@@ -211,6 +214,15 @@ export default function Console() {
   useEffect(() => {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 100)));
   }, [history]);
+
+  // Deep link from the command palette: /console?logs=1 opens the log sheet.
+  useEffect(() => {
+    if (search.logs === "1") {
+      setFilesOpen(true);
+      void navigate({ to: "/console", search: { logs: undefined }, replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.logs]);
 
   const q = query.trim().toLowerCase();
   const visible = useMemo(

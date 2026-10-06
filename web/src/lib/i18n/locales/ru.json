@@ -46,6 +46,8 @@
     "empty": "Нет результатов.",
     "navigation": "Навигация",
     "server": "Сервер",
+    "actions": "Действия",
+    "reloadStratum": "Перезагрузить конфиги Stratum",
     "search": "Поиск"
   },
   "nav": {

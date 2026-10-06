@@ -75,14 +75,14 @@ export default function ModFiltersBar({
     orderDirection,
     searchText,
     selectedGameVersions,
-    selectedModTags,
+    selectedTagNames,
     setAuthor,
     setCategory,
     setFavoritesOnly,
     setOrderDirection,
     setSearchText,
     setSelectedGameVersions,
-    setSelectedModTags,
+    setSelectedTagNames,
     setSide,
     setSortBy,
     side,
@@ -97,24 +97,13 @@ export default function ModFiltersBar({
     () => [...modTags].sort((a, b) => stripped(a.name).localeCompare(stripped(b.name))),
     [modTags],
   );
-  const tagByName = useMemo(() => {
-    const map: Record<string, ModTag> = {};
-    for (const tag of modTags) map[tag.name] = tag;
-    return map;
-  }, [modTags]);
   const tagColorMap = useMemo(() => {
     const map: Record<string, string> = {};
     for (const tag of modTags) map[tag.name] = tag.color;
     return map;
   }, [modTags]);
 
-  const selectedTagNames = useMemo(() => selectedModTags.map((tag) => tag.name), [selectedModTags]);
   const tagNames = useMemo(() => sortedTags.map((tag) => tag.name), [sortedTags]);
-  const handleTagNamesChange = (names: string[]) => {
-    setSelectedModTags(
-      names.map((name) => tagByName[name]).filter((tag): tag is ModTag => tag !== undefined),
-    );
-  };
 
   const sortItems = useMemo(
     () => Object.entries(sortOptions).map(([value, labelKey]) => ({ label: t(labelKey), value })),
@@ -179,7 +168,7 @@ export default function ModFiltersBar({
           items={tagNames}
           multiple
           onValueChange={(value) =>
-            handleTagNamesChange(Array.isArray(value) ? (value as string[]) : [])
+            setSelectedTagNames(Array.isArray(value) ? (value as string[]) : [])
           }
           value={selectedTagNames}
         >

@@ -46,6 +46,8 @@
     "empty": "Nenhum resultado.",
     "navigation": "Navegação",
     "server": "Servidor",
+    "actions": "Ações",
+    "reloadStratum": "Recarregar configurações do Stratum",
     "search": "Pesquisar"
   },
   "nav": {

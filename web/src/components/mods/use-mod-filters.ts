@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import type { ModTag } from "@/lib/api";
 import type { OrderDirection, SortBy } from "@/lib/mod-sort";
 
 export type Side = "any" | "client" | "server" | "both" | "installed";
@@ -23,68 +22,116 @@ export const sideLabelKeys: Record<Side, string> = {
   server: "mods.sideServer",
 };
 
-/** Filter state shared by the filter bar and the browser list (Story Forge parity). */
-export function useModFilters(defaultVersion?: string) {
-  const [searchText, setSearchText] = useState("");
-  const [selectedModTags, setSelectedModTags] = useState<ModTag[]>([]);
-  const [selectedGameVersions, setSelectedGameVersions] = useState<string[]>([]);
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<SortBy>("trending");
-  const [orderDirection, setOrderDirection] = useState<OrderDirection>("ascending");
-  const [author, setAuthor] = useState("");
-  const [side, setSide] = useState<Side>("any");
-  const [category, setCategory] = useState<Category>("mod");
+const SIDE_VALUES: Side[] = ["any", "client", "server", "both", "installed"];
+const CATEGORY_VALUES: Category[] = ["mod", "externaltool", "other"];
+const SORT_VALUES: SortBy[] = [
+  "relevance",
+  "name",
+  "trending",
+  "downloads",
+  "follows",
+  "comments",
+  "updated",
+];
 
-  // Seed the version filter with the active server version once it is known;
-  // the user can then add or remove versions freely.
+/**
+ * Filter state shared by the filter bar and the browser list.
+ * Initialized from and mirrored into the URL so filtered views are
+ * shareable and survive reloads (Story Forge parity for filters).
+ */
+export function useModFilters(defaultVersion?: string) {
+  const initial = useRef(new URLSearchParams(window.location.search)).current;
+  const [searchText, setSearchText] = useState(initial.get("q") ?? "");
+  const [selectedTagNames, setSelectedTagNames] = useState<string[]>(
+    (initial.get("tags") ?? "").split(",").filter(Boolean),
+  );
+  const [selectedGameVersions, setSelectedGameVersions] = useState<string[]>(
+    (initial.get("versions") ?? "").split(",").filter(Boolean),
+  );
+  const [favoritesOnly, setFavoritesOnly] = useState(initial.get("fav") === "1");
+  const [sortBy, setSortBy] = useState<SortBy>(() => {
+    const value = initial.get("sort") as SortBy | null;
+    return value && SORT_VALUES.includes(value) ? value : "trending";
+  });
+  const [orderDirection, setOrderDirection] = useState<OrderDirection>(
+    initial.get("dir") === "desc" ? "descending" : "ascending",
+  );
+  const [author, setAuthor] = useState(initial.get("author") ?? "");
+  const [side, setSide] = useState<Side>(() => {
+    const value = initial.get("side") as Side | null;
+    return value && SIDE_VALUES.includes(value) ? value : "any";
+  });
+  const [category, setCategory] = useState<Category>(() => {
+    const value = initial.get("category") as Category | null;
+    return value && CATEGORY_VALUES.includes(value) ? value : "mod";
+  });
+
+  // Seed the version filter with the active server version only when the URL
+  // did not select versions explicitly.
   const versionSeeded = useRef(false);
   useEffect(() => {
-    if (!versionSeeded.current && defaultVersion) {
+    if (!versionSeeded.current && defaultVersion && !initial.get("versions")) {
       versionSeeded.current = true;
       setSelectedGameVersions([defaultVersion]);
     }
-  }, [defaultVersion]);
+  }, [defaultVersion, initial]);
 
-  const selectedTagNames = useMemo(
-    () => new Set(selectedModTags.map((tag) => tag.name)),
-    [selectedModTags],
-  );
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (searchText) params.set("q", searchText);
+    if (selectedGameVersions.length > 0) params.set("versions", selectedGameVersions.join(","));
+    if (selectedTagNames.length > 0) params.set("tags", selectedTagNames.join(","));
+    if (author) params.set("author", author);
+    if (side !== "any") params.set("side", side);
+    if (category !== "mod") params.set("category", category);
+    if (sortBy !== "trending") params.set("sort", sortBy);
+    if (orderDirection !== "ascending") params.set("dir", "desc");
+    if (favoritesOnly) params.set("fav", "1");
+    const query = params.toString();
+    const url = `${window.location.pathname}${query ? `?${query}` : ""}`;
+    window.history.replaceState(null, "", url);
+  }, [
+    searchText,
+    selectedGameVersions,
+    selectedTagNames,
+    author,
+    side,
+    category,
+    sortBy,
+    orderDirection,
+    favoritesOnly,
+  ]);
 
-  const addModTag = (tag: ModTag) =>
-    setSelectedModTags((prev) => (prev.some((t) => t.tagid === tag.tagid) ? prev : [...prev, tag]));
-  const removeModTag = (tag: ModTag) =>
-    setSelectedModTags((prev) => prev.filter((t) => t.tagid !== tag.tagid));
-  const handleTagClick = (tag: ModTag, isActive: boolean) => {
-    if (isActive) {
-      removeModTag(tag);
-    } else {
-      addModTag(tag);
-    }
-  };
+  const selectedTagSet = useMemo(() => new Set(selectedTagNames), [selectedTagNames]);
+
+  const toggleTag = (name: string) =>
+    setSelectedTagNames((previous) =>
+      previous.includes(name)
+        ? previous.filter((entry) => entry !== name)
+        : [...previous, name],
+    );
 
   return {
-    addModTag,
     author,
     category,
     favoritesOnly,
-    handleTagClick,
     orderDirection,
-    removeModTag,
     searchText,
     selectedGameVersions,
-    selectedModTags,
     selectedTagNames,
+    selectedTagSet,
     setAuthor,
     setCategory,
     setFavoritesOnly,
     setOrderDirection,
     setSearchText,
     setSelectedGameVersions,
-    setSelectedModTags,
+    setSelectedTagNames,
     setSide,
     setSortBy,
     side,
     sortBy,
+    toggleTag,
   };
 }
 

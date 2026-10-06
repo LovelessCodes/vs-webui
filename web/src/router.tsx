@@ -21,6 +21,9 @@ const indexRoute = createRoute({
 const consoleRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/console",
+  validateSearch: (search: Record<string, unknown>) => ({
+    logs: search.logs === "1" || search.logs === 1 ? ("1" as const) : undefined,
+  }),
   component: Console,
 });
 

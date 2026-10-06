@@ -46,6 +46,8 @@
     "empty": "无结果。",
     "navigation": "导航",
     "server": "服务器",
+    "actions": "操作",
+    "reloadStratum": "重新加载 Stratum 配置",
     "search": "搜索"
   },
   "nav": {

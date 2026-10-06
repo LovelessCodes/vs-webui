@@ -2,19 +2,24 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   Archive,
   Boxes,
+  CloudDownload,
   FileJson2,
+  FileText,
   Gauge,
   Package,
+  PackagePlus,
   Play,
   RotateCw,
   Settings,
   Square,
   Terminal,
   Users,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { useDownloadsSheet } from "@/components/downloads/downloads-sheet";
 import {
   Command,
   CommandDialog,
@@ -26,10 +31,13 @@ import {
   CommandShortcut,
 } from "@/components/ui/command";
 import {
+  useCreateBackup,
+  useServerCommand,
   useServerRestart,
   useServerStart,
   useServerStop,
   useStatus,
+  useUpdateAllMods,
 } from "@/hooks/use-api";
 
 const pages: { to: string; labelKey: string; icon: LucideIcon }[] = [
@@ -56,10 +64,15 @@ export default function CommandPalette({
   const start = useServerStart();
   const stop = useServerStop();
   const restart = useServerRestart();
+  const createBackup = useCreateBackup();
+  const updateAllMods = useUpdateAllMods();
+  const command = useServerCommand();
+  const downloads = useDownloadsSheet();
 
   const serverStatus = status.data?.status.status;
   const canStart = serverStatus === "stopped" || serverStatus === "crashed";
   const canStop = serverStatus === "running" || serverStatus === "starting";
+  const stratum = status.data?.settings.flavor === "stratum";
 
   function run(action: () => void) {
     onOpenChange(false);
@@ -100,6 +113,43 @@ export default function CommandPalette({
             <CommandItem disabled={!canStop} onSelect={() => run(() => restart.mutate())}>
               <RotateCw />
               <span>{t("dashboard.restart")}</span>
+            </CommandItem>
+            {stratum && (
+              <CommandItem
+                disabled={!canStop}
+                onSelect={() => run(() => command.mutate("/stratum reload"))}
+              >
+                <Zap />
+                <span>{t("command.reloadStratum")}</span>
+              </CommandItem>
+            )}
+          </CommandGroup>
+          <CommandGroup heading={t("command.actions")}>
+            <CommandItem
+              disabled={createBackup.isPending}
+              onSelect={() => run(() => createBackup.mutate("server"))}
+            >
+              <CloudDownload />
+              <span>{t("backups.backupServer")}</span>
+            </CommandItem>
+            <CommandItem
+              disabled={updateAllMods.isPending}
+              onSelect={() => run(() => updateAllMods.mutate())}
+            >
+              <PackagePlus />
+              <span>{t("mods.updateAll")}</span>
+            </CommandItem>
+            <CommandItem onSelect={() => run(() => downloads.setOpen(true))}>
+              <Archive />
+              <span>{t("downloads.title")}</span>
+            </CommandItem>
+            <CommandItem
+              onSelect={() =>
+                run(() => void navigate({ to: "/console", search: { logs: "1" } }))
+              }
+            >
+              <FileText />
+              <span>{t("console.logFiles")}</span>
             </CommandItem>
           </CommandGroup>
         </CommandList>
