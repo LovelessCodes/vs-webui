@@ -60,6 +60,7 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/mods/update", post(mods_update))
         .route("/api/mods/update-all", post(mods_update_all))
         .route("/api/mods/pin", post(mods_pin))
+        .route("/api/mods/favorite", post(mods_favorite))
         .route("/api/configs", get(list_configs))
         .route("/api/configs/{filename}", put(save_config))
         .route("/api/stratum/releases", get(stratum_releases))
@@ -640,6 +641,12 @@ struct ModPinReq {
     pinned: bool,
 }
 
+#[derive(Deserialize)]
+struct ModFavoriteReq {
+    modid: String,
+    favorite: bool,
+}
+
 async fn modb_mods(
     State(state): State<SharedState>,
     _authed: Authed,
@@ -896,6 +903,32 @@ async fn mods_pin(
             }
         } else {
             guard.pinned_mods.retain(|pinned| pinned != &id);
+        }
+        guard
+            .save(&state.layout.settings_path())
+            .map_err(|e| ApiError::internal(format!("cannot save settings: {e}")))?;
+        guard.clone()
+    };
+    Ok(Json(json!(settings)))
+}
+
+async fn mods_favorite(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Json(req): Json<ModFavoriteReq>,
+) -> Result<Json<Value>, ApiError> {
+    let id = req.modid.trim().to_lowercase();
+    if id.is_empty() {
+        return Err(ApiError::bad_request("missing mod id"));
+    }
+    let settings = {
+        let mut guard = state.settings.lock().unwrap();
+        if req.favorite {
+            if !guard.favorite_mods.contains(&id) {
+                guard.favorite_mods.push(id);
+            }
+        } else {
+            guard.favorite_mods.retain(|favorite| favorite != &id);
         }
         guard
             .save(&state.layout.settings_path())

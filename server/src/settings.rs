@@ -35,6 +35,9 @@ pub struct Settings {
     /// Mods excluded from update checks and "Update All" (lowercased modids).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub pinned_mods: Vec<String>,
+    /// Mods starred in the browser (lowercased mod keys).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub favorite_mods: Vec<String>,
     /// Daily restart time as local `HH:MM`; `None` disables scheduled restarts.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub restart_schedule: Option<String>,
@@ -61,6 +64,7 @@ impl Default for Settings {
             auto_restart: false,
             start_params: String::new(),
             pinned_mods: Vec::new(),
+            favorite_mods: Vec::new(),
             restart_schedule: None,
             backup_retention: default_retention(),
         }

@@ -32,6 +32,8 @@ const buttonVariants = cva(
           "border-warning/40 bg-transparent text-warning hover:bg-warning/10 hover:text-warning aria-expanded:bg-warning/10 aria-expanded:text-warning",
         "outline-info":
           "border-info/40 bg-transparent text-info hover:bg-info/10 hover:text-info aria-expanded:bg-info/10 aria-expanded:text-info",
+        "outline-amber":
+          "border-accent-amber/40 bg-transparent text-accent-amber hover:bg-accent-amber/10 hover:text-accent-amber aria-expanded:bg-accent-amber/10 aria-expanded:text-accent-amber",
         "outline-accent-primary":
           "border-accent-primary/40 bg-transparent text-accent-primary hover:bg-accent-primary/10 hover:text-accent-primary aria-expanded:bg-accent-primary/10 aria-expanded:text-accent-primary",
         link: "text-primary underline-offset-4 hover:underline",

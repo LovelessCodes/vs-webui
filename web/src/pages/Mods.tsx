@@ -1,4 +1,4 @@
-import { Loader2, RefreshCw, Search } from "lucide-react";
+import { Loader2, RefreshCw, Search, Star } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -20,7 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
+  useFavoriteMod,
   useInstalledMods,
   useInstallMod,
   useModDb,
@@ -94,6 +96,17 @@ function updateOf(
   return mod.modidstrs.map((id) => updates[id.toLowerCase()]).find(Boolean);
 }
 
+/** Stable key for favorites, mirroring Story Forge (primary modidstr first). */
+function favoriteKeyOf(mod: ModSummary): string {
+  return (mod.modidstrs[0] ?? mod.urlalias ?? String(mod.modid)).toLowerCase();
+}
+
+function isFavorite(mod: ModSummary, favorites: Set<string>): boolean {
+  const keys = mod.modidstrs.map((id) => id.toLowerCase());
+  if (mod.urlalias) keys.push(mod.urlalias.toLowerCase());
+  return keys.some((key) => favorites.has(key));
+}
+
 export default function Mods() {
   const { t } = useTranslation();
   const status = useStatus();
@@ -103,6 +116,7 @@ export default function Mods() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounced(search);
   const [compatibleOnly, setCompatibleOnly] = useState(true);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [side, setSide] = useState<Side>("any");
   const [tag, setTag] = useState("");
   const [sort, setSort] = useState<SortBy>("downloads");
@@ -121,9 +135,14 @@ export default function Mods() {
   const update = useUpdateMod();
   const updateAll = useUpdateAllMods();
   const pin = usePinMod();
+  const favorite = useFavoriteMod();
 
   const pinned = useMemo(
     () => new Set((status.data?.settings.pinned_mods ?? []).map((id) => id.toLowerCase())),
+    [status.data],
+  );
+  const favorites = useMemo(
+    () => new Set((status.data?.settings.favorite_mods ?? []).map((id) => id.toLowerCase())),
     [status.data],
   );
   const installedMods = installed.data?.mods;
@@ -145,8 +164,11 @@ export default function Mods() {
     if (tag) {
       list = list.filter((mod) => mod.tags.includes(tag));
     }
+    if (favoritesOnly) {
+      list = list.filter((mod) => isFavorite(mod, favorites));
+    }
     return sortMods(list, sort);
-  }, [modb.data, side, tag, sort]);
+  }, [modb.data, side, tag, sort, favoritesOnly, favorites]);
 
   const tagNames = useMemo(
     () => [...new Set((tags.data?.tags ?? []).map((entry) => entry.name))].sort(),
@@ -159,7 +181,7 @@ export default function Mods() {
   );
 
   const mutationError =
-    install.error ?? update.error ?? remove.error ?? updateAll.error ?? pin.error;
+    install.error ?? update.error ?? remove.error ?? updateAll.error ?? pin.error ?? favorite.error;
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
@@ -301,6 +323,21 @@ export default function Mods() {
                 <SelectItem value="recent">{t("mods.sortRecent")}</SelectItem>
               </SelectContent>
             </Select>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    aria-label={t("mods.favoritesAria")}
+                    onClick={() => setFavoritesOnly((value) => !value)}
+                    size="icon-sm"
+                    variant={favoritesOnly ? "outline-amber" : "outline"}
+                  />
+                }
+              >
+                <Star className={favoritesOnly ? "fill-current" : undefined} />
+              </TooltipTrigger>
+              <TooltipContent>{t("mods.favoritesLabel")}</TooltipContent>
+            </Tooltip>
           </div>
 
           {modb.isLoading && !modb.data && <ListSkeleton rows={6} />}
@@ -328,13 +365,33 @@ export default function Mods() {
                 renderItem={(mod) => {
                   const installedMod = installedModOf(mod, installedMods);
                   const updateEntry = updateOf(mod, updateMap);
+                  const isPinned = installedMod
+                    ? pinned.has(installedMod.modid.toLowerCase())
+                    : false;
+                  const favorited = favorites.has(favoriteKeyOf(mod));
+                  const pending = activeJobs.some(
+                    (job) =>
+                      job.modid.toLowerCase() === String(mod.modid) ||
+                      (installedMod !== undefined &&
+                        job.modid.toLowerCase() === installedMod.modid.toLowerCase()),
+                  );
                   return (
                     <ModBrowseRow
                       activeTag={tag}
+                      favorited={favorited}
                       installed={installedMod}
                       mod={mod}
+                      onFavorite={() =>
+                        favorite.mutate({ modid: favoriteKeyOf(mod), favorite: !favorited })
+                      }
                       onInstall={() => install.mutate({ modid: String(mod.modid), name: mod.name })}
                       onOpen={() => setDetailMod(mod)}
+                      onPickVersion={() => installedMod && setVersionPicker(installedMod)}
+                      onPin={() =>
+                        installedMod &&
+                        pin.mutate({ modid: installedMod.modid, pinned: !isPinned })
+                      }
+                      onRemove={() => installedMod && remove.mutate(installedMod.file)}
                       onTagClick={(name) => setTag((current) => (current === name ? "" : name))}
                       onUpdate={() =>
                         updateEntry &&
@@ -346,6 +403,8 @@ export default function Mods() {
                           name: installedMod.name,
                         })
                       }
+                      pending={pending}
+                      pinned={isPinned}
                       tagColorMap={tagColorMap}
                       update={updateEntry}
                     />

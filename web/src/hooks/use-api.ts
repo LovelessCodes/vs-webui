@@ -229,6 +229,18 @@ export function usePinMod() {
   });
 }
 
+export function useFavoriteMod() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ modid, favorite }: { modid: string; favorite: boolean }) =>
+      api.favoriteMod(modid, favorite),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["settings"] });
+      void queryClient.invalidateQueries({ queryKey: ["status"] });
+    },
+  });
+}
+
 // ── configs ─────────────────────────────────────────────────────────────────
 
 export function useModConfigs(enabled = true) {

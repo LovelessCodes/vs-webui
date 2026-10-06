@@ -68,6 +68,7 @@ export interface Settings {
   auto_restart?: boolean;
   start_params?: string;
   pinned_mods?: string[];
+  favorite_mods?: string[];
   restart_schedule?: string | null;
   backup_retention?: number;
 }
@@ -369,6 +370,11 @@ export const api = {
     request<Settings>("/api/mods/pin", {
       method: "POST",
       body: JSON.stringify({ modid, pinned }),
+    }),
+  favoriteMod: (modid: string, favorite: boolean) =>
+    request<Settings>("/api/mods/favorite", {
+      method: "POST",
+      body: JSON.stringify({ modid, favorite }),
     }),
 
   configs: () => request<ModConfigList>("/api/configs"),
