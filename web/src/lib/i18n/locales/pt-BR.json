@@ -500,7 +500,7 @@
   },
   "worlds": {
     "title": "Mundos",
-    "description": "Saves na pasta Saves. O mundo ativo é escolhido em serverconfig.json (WorldName).",
+    "description": "Saves de mundo (.vcdbs) na pasta Saves. O mundo ativo é escolhido em serverconfig.json (WorldConfig).",
     "stopHint": "Pare o servidor para gerenciar mundos — trocar, enviar e excluir exigem ele parado.",
     "loading": "Carregando mundos…",
     "empty": "Ainda não há mundos",
@@ -514,10 +514,11 @@
     "deleteTitle": "Excluir mundo",
     "deleteQuestion": "Excluir este mundo?",
     "upload": "Enviar mundo",
-    "uploadHint": "Envie um zip de uma pasta de save; um zip com uma única pasta raiz é importado com esse nome.",
+    "uploadHint": "Envie um arquivo de mundo .vcdbs ou um zip contendo um; mundos antigos em pasta também funcionam.",
     "uploaded": "Mundo importado: {{name}}",
     "configTitle": "Configurações do mundo — {{name}}",
-    "configDescription": "worldconfig.json dentro da pasta do save.",
-    "configMissing": "worldconfig.json ainda não existe — o servidor o cria no primeiro início. Salvar cria agora."
+    "configDescription": "Configurações do mundo do serverconfig.json (WorldConfig); valem no próximo início do servidor.",
+    "configMissing": "serverconfig.json ainda não existe — ele é gerado no primeiro início do servidor.",
+    "legacy": "Antigo"
   }
 }

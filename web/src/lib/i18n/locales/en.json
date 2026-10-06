@@ -500,7 +500,7 @@
   },
   "worlds": {
     "title": "Worlds",
-    "description": "Saves in the Saves folder. The active world is selected by serverconfig.json (WorldName).",
+    "description": "World saves (.vcdbs) in the Saves folder. The active world is selected via serverconfig.json (WorldConfig).",
     "stopHint": "Stop the server to manage worlds — switching, uploading and deleting need it stopped.",
     "loading": "Loading worlds…",
     "empty": "No worlds yet",
@@ -514,10 +514,11 @@
     "deleteTitle": "Delete world",
     "deleteQuestion": "Delete this world?",
     "upload": "Upload world",
-    "uploadHint": "Upload a zip of a save folder; a zip with a single top-level folder is imported under that folder's name.",
+    "uploadHint": "Upload a .vcdbs world file or a zip archive containing one; legacy folder-style worlds work too.",
     "uploaded": "World imported: {{name}}",
     "configTitle": "World settings — {{name}}",
-    "configDescription": "worldconfig.json stored inside the save folder.",
-    "configMissing": "worldconfig.json does not exist yet — the server writes it on first run. Saving creates it now."
+    "configDescription": "World settings from serverconfig.json (WorldConfig); changes take effect on the next server start.",
+    "configMissing": "serverconfig.json does not exist yet — it is generated when the server first starts.",
+    "legacy": "Legacy"
   }
 }

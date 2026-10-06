@@ -500,7 +500,7 @@
   },
   "worlds": {
     "title": "世界",
-    "description": "Saves 文件夹中的存档。活动世界由 serverconfig.json (WorldName) 指定。",
+    "description": "Saves 文件夹中的世界存档（.vcdbs）。活动世界由 serverconfig.json (WorldConfig) 指定。",
     "stopHint": "管理世界需要先停止服务器——切换、上传和删除都要求服务器已停止。",
     "loading": "正在加载世界…",
     "empty": "暂无世界",
@@ -514,10 +514,11 @@
     "deleteTitle": "删除世界",
     "deleteQuestion": "删除这个世界？",
     "upload": "上传世界",
-    "uploadHint": "上传存档文件夹的 zip；仅含单个顶层文件夹的压缩包将以该文件夹名导入。",
+    "uploadHint": "上传 .vcdbs 世界文件或包含它的 zip 压缩包；旧式文件夹世界同样支持。",
     "uploaded": "世界已导入：{{name}}",
     "configTitle": "世界设置 — {{name}}",
-    "configDescription": "存档文件夹中的 worldconfig.json。",
-    "configMissing": "worldconfig.json 尚不存在——服务器首次启动时会生成。保存将立即创建。"
+    "configDescription": "世界设置来自 serverconfig.json (WorldConfig)；下次启动服务器时生效。",
+    "configMissing": "serverconfig.json 尚不存在——服务器首次启动时会生成。",
+    "legacy": "旧格式"
   }
 }

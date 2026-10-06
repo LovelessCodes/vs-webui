@@ -500,7 +500,7 @@
   },
   "worlds": {
     "title": "Welten",
-    "description": "Spielstände im Saves-Ordner. Die aktive Welt wird über serverconfig.json (WorldName) gewählt.",
+    "description": "Welt-Spielstände (.vcdbs) im Saves-Ordner. Die aktive Welt wird über serverconfig.json (WorldConfig) gewählt.",
     "stopHint": "Server stoppen, um Welten zu verwalten — Wechseln, Hochladen und Löschen erfordern das.",
     "loading": "Welten werden geladen…",
     "empty": "Noch keine Welten",
@@ -514,10 +514,11 @@
     "deleteTitle": "Welt löschen",
     "deleteQuestion": "Diese Welt löschen?",
     "upload": "Welt hochladen",
-    "uploadHint": "Lade ein Zip eines Spielstand-Ordners hoch; ein Zip mit genau einem obersten Ordner wird unter dessen Namen importiert.",
+    "uploadHint": "Lade eine .vcdbs-Weltdatei oder ein Zip-Archiv damit hoch; alte Ordner-Welten funktionieren ebenfalls.",
     "uploaded": "Welt importiert: {{name}}",
     "configTitle": "Welt-Einstellungen — {{name}}",
-    "configDescription": "worldconfig.json im Spielstand-Ordner.",
-    "configMissing": "worldconfig.json existiert noch nicht — der Server schreibt sie beim ersten Start. Speichern legt sie jetzt an."
+    "configDescription": "Welt-Einstellungen aus serverconfig.json (WorldConfig); Änderungen greifen beim nächsten Serverstart.",
+    "configMissing": "serverconfig.json existiert noch nicht — sie entsteht beim ersten Serverstart.",
+    "legacy": "Legacy"
   }
 }

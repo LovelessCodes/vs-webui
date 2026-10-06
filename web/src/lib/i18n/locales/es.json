@@ -500,7 +500,7 @@
   },
   "worlds": {
     "title": "Mundos",
-    "description": "Partidas en la carpeta Saves. El mundo activo se elige en serverconfig.json (WorldName).",
+    "description": "Partidas del mundo (.vcdbs) en la carpeta Saves. El mundo activo se elige en serverconfig.json (WorldConfig).",
     "stopHint": "Detén el servidor para gestionar mundos: cambiar, subir y borrar lo requieren detenido.",
     "loading": "Cargando mundos…",
     "empty": "Aún no hay mundos",
@@ -514,10 +514,11 @@
     "deleteTitle": "Eliminar mundo",
     "deleteQuestion": "¿Eliminar este mundo?",
     "upload": "Subir mundo",
-    "uploadHint": "Sube un zip de una carpeta de partida; un zip con una única carpeta superior se importa con ese nombre.",
+    "uploadHint": "Sube un archivo de mundo .vcdbs o un zip que lo contenga; los mundos antiguos en carpeta también funcionan.",
     "uploaded": "Mundo importado: {{name}}",
     "configTitle": "Ajustes del mundo — {{name}}",
-    "configDescription": "worldconfig.json dentro de la carpeta de la partida.",
-    "configMissing": "worldconfig.json aún no existe — el servidor lo escribe en el primer arranque. Guardar lo crea ahora."
+    "configDescription": "Ajustes del mundo desde serverconfig.json (WorldConfig); se aplican en el próximo inicio del servidor.",
+    "configMissing": "serverconfig.json aún no existe — se genera en el primer inicio del servidor.",
+    "legacy": "Antiguo"
   }
 }

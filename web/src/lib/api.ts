@@ -330,6 +330,7 @@ export interface SaveEntry {
   size: number;
   modified: number;
   active: boolean;
+  legacy: boolean;
 }
 
 export interface StorageView {

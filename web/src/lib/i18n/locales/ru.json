@@ -500,7 +500,7 @@
   },
   "worlds": {
     "title": "Миры",
-    "description": "Сохранения в папке Saves. Активный мир задаётся в serverconfig.json (WorldName).",
+    "description": "Сохранения мира (.vcdbs) в папке Saves. Активный мир задаётся в serverconfig.json (WorldConfig).",
     "stopHint": "Остановите сервер для управления мирами — переключение, загрузка и удаление требуют этого.",
     "loading": "Загрузка миров…",
     "empty": "Миров пока нет",
@@ -514,10 +514,11 @@
     "deleteTitle": "Удалить мир",
     "deleteQuestion": "Удалить этот мир?",
     "upload": "Загрузить мир",
-    "uploadHint": "Загрузите zip папки сохранения; архив с единственной папкой верхнего уровня импортируется под её именем.",
+    "uploadHint": "Загрузите файл мира .vcdbs или zip-архив с ним; старые миры-папки тоже поддерживаются.",
     "uploaded": "Мир импортирован: {{name}}",
     "configTitle": "Настройки мира — {{name}}",
-    "configDescription": "worldconfig.json в папке сохранения.",
-    "configMissing": "worldconfig.json ещё нет — сервер создаст его при первом запуске. Сохранение создаст его сейчас."
+    "configDescription": "Настройки мира из serverconfig.json (WorldConfig); применяются при следующем запуске сервера.",
+    "configMissing": "serverconfig.json ещё нет — он создаётся при первом запуске сервера.",
+    "legacy": "Старый"
   }
 }

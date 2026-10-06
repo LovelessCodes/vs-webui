@@ -31,19 +31,19 @@ pub fn storage_view(layout: &Layout) -> StorageView {
     let areas = vec![
         StorageArea {
             name: "runtime",
-            bytes: subdir_sizes(&layout.root.join("runtime")),
+            bytes: dir_size(&layout.root.join("runtime")),
         },
         StorageArea {
             name: "saves",
-            bytes: subdir_sizes(&server_dir.join("Saves")),
+            bytes: dir_size(&server_dir.join("Saves")),
         },
         StorageArea {
             name: "mods",
-            bytes: subdir_sizes(&server_dir.join("Mods")),
+            bytes: dir_size(&server_dir.join("Mods")),
         },
         StorageArea {
             name: "logs",
-            bytes: subdir_sizes(&server_dir.join("Logs")),
+            bytes: dir_size(&server_dir.join("Logs")),
         },
         StorageArea {
             name: "backups",
@@ -70,17 +70,6 @@ pub fn storage_view(layout: &Layout) -> StorageView {
 }
 
 /// Sizes of each direct child directory (used where subfolders are the units).
-fn subdir_sizes(dir: &Path) -> u64 {
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return 0;
-    };
-    entries
-        .flatten()
-        .filter(|entry| entry.path().is_dir())
-        .map(|entry| dir_size(&entry.path()))
-        .sum()
-}
-
 fn build_sizes(dir: &Path) -> Vec<BuildSize> {
     let Ok(entries) = std::fs::read_dir(dir) else {
         return Vec::new();

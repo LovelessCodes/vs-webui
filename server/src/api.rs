@@ -1431,16 +1431,10 @@ async fn activate_save(
     }
     let layout = state.layout.clone();
     let save = name.clone();
-    tokio::task::spawn_blocking(move || {
-        let dir = crate::saves::save_path(&layout, &save)?;
-        if !dir.is_dir() {
-            return Err(format!("{save} is not a world"));
-        }
-        crate::saves::activate(&layout, &save)
-    })
-    .await
-    .map_err(|e| ApiError::internal(format!("world task failed: {e}")))?
-    .map_err(ApiError::bad_request)?;
+    tokio::task::spawn_blocking(move || crate::saves::activate(&layout, &save))
+        .await
+        .map_err(|e| ApiError::internal(format!("world task failed: {e}")))?
+        .map_err(ApiError::bad_request)?;
     Ok(Json(json!({ "ok": true, "restart_required": true })))
 }
 
@@ -1457,7 +1451,10 @@ async fn delete_save(
     let layout = state.layout.clone();
     let save = name.clone();
     tokio::task::spawn_blocking(move || {
-        if crate::saves::read_world_name(&layout).as_deref() == Some(save.as_str()) {
+        if crate::saves::active_world(&layout)
+            .as_deref()
+            .is_some_and(|active| active.eq_ignore_ascii_case(&save))
+        {
             return Err("this world is active; switch worlds before deleting it".to_string());
         }
         crate::saves::delete_save(&layout, &save)
@@ -1589,7 +1586,7 @@ async fn upload_save(
     };
     let layout = state.layout.clone();
     let name = tokio::task::spawn_blocking(move || {
-        let result = crate::saves::import_zip(&layout, &temp, &filename);
+        let result = crate::saves::import_world(&layout, &temp, &filename);
         let _ = std::fs::remove_file(&temp);
         result
     })

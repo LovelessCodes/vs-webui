@@ -59,7 +59,7 @@ export default function Worlds() {
               </CardTitle>
               <div className="flex flex-wrap items-center gap-2">
                 <input
-                  accept=".zip"
+                  accept=".vcdbs,.zip"
                   className="hidden"
                   onChange={(event) => {
                     const file = event.target.files?.[0];
@@ -122,6 +122,9 @@ export default function Worlds() {
                           {save.active && (
                             <Badge variant="accent">{t("worlds.active")}</Badge>
                           )}
+                          {save.legacy && (
+                            <Badge variant="outline">{t("worlds.legacy")}</Badge>
+                          )}
                         </div>
                         <span className="hidden w-20 text-right font-mono text-[11px] text-muted-foreground sm:block">
                           {formatBytes(save.size)}
@@ -153,14 +156,16 @@ export default function Worlds() {
                             </>
                           ) : (
                             <>
-                              <Button
-                                onClick={() => setConfigFor(save.name)}
-                                size="icon-sm"
-                                title={t("worlds.settings")}
-                                variant="ghost"
-                              >
-                                <FileJson2 />
-                              </Button>
+                              {save.active && (
+                                <Button
+                                  onClick={() => setConfigFor(save.name)}
+                                  size="icon-sm"
+                                  title={t("worlds.settings")}
+                                  variant="ghost"
+                                >
+                                  <FileJson2 />
+                                </Button>
+                              )}
                               <a
                                 className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
                                 href={`/api/saves/${encodeURIComponent(save.name)}/download`}

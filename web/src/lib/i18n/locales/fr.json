@@ -500,7 +500,7 @@
   },
   "worlds": {
     "title": "Mondes",
-    "description": "Sauvegardes dans le dossier Saves. Le monde actif est choisi dans serverconfig.json (WorldName).",
+    "description": "Sauvegardes de monde (.vcdbs) dans le dossier Saves. Le monde actif est choisi via serverconfig.json (WorldConfig).",
     "stopHint": "Arrêtez le serveur pour gérer les mondes — changer, importer et supprimer l'exigent.",
     "loading": "Chargement des mondes…",
     "empty": "Aucun monde pour l'instant",
@@ -514,10 +514,11 @@
     "deleteTitle": "Supprimer le monde",
     "deleteQuestion": "Supprimer ce monde ?",
     "upload": "Importer un monde",
-    "uploadHint": "Importez un zip d'un dossier de sauvegarde ; un zip avec un seul dossier racine est importé sous ce nom.",
+    "uploadHint": "Importez un fichier de monde .vcdbs ou un zip qui en contient un ; les anciens mondes en dossier fonctionnent aussi.",
     "uploaded": "Monde importé : {{name}}",
     "configTitle": "Réglages du monde — {{name}}",
-    "configDescription": "worldconfig.json dans le dossier de la sauvegarde.",
-    "configMissing": "worldconfig.json n'existe pas encore — le serveur l'écrit au premier démarrage. Enregistrer le crée maintenant."
+    "configDescription": "Réglages du monde issus de serverconfig.json (WorldConfig) ; appliqués au prochain démarrage du serveur.",
+    "configMissing": "serverconfig.json n'existe pas encore — il est généré au premier démarrage du serveur.",
+    "legacy": "Ancien"
   }
 }
