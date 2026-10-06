@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { useSettings, useStatus } from "@/hooks/use-api";
 import { api, setCsrf } from "@/lib/api";
 import { errorMessage } from "@/lib/format";
+import { toast } from "@/lib/notify";
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -24,7 +25,6 @@ export default function Settings() {
   const [autoRestart, setAutoRestart] = useState(false);
   const [startParams, setStartParams] = useState("");
   const [restartSchedule, setRestartSchedule] = useState("");
-  const [saved, setSaved] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -49,8 +49,7 @@ export default function Settings() {
         restart_schedule: restartSchedule,
       }),
     onSuccess: () => {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      toast.success(t("common.saved"));
       void queryClient.invalidateQueries({ queryKey: ["settings"] });
       void queryClient.invalidateQueries({ queryKey: ["status"] });
     },
@@ -86,7 +85,7 @@ export default function Settings() {
       <Card className="self-start lg:col-span-2">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ServerCog className="size-4 text-text-secondary" />
+            <ServerCog className="size-4 text-muted-foreground" />
             {t("settings.serverConfigTitle")}
           </CardTitle>
           <CardDescription>{t("settings.serverConfigDescription")}</CardDescription>
@@ -99,7 +98,7 @@ export default function Settings() {
       <Card className="self-start">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ServerCog className="size-4 text-text-secondary" />
+            <ServerCog className="size-4 text-muted-foreground" />
             {t("settings.behaviorTitle")}
           </CardTitle>
           <CardDescription>{t("settings.behaviorDescription")}</CardDescription>
@@ -108,7 +107,7 @@ export default function Settings() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <Label htmlFor="auto-start">{t("settings.autoStart")}</Label>
-              <p className="text-text-muted text-[11px]">{t("settings.autoStartHint")}</p>
+              <p className="text-muted-foreground text-[11px]">{t("settings.autoStartHint")}</p>
             </div>
             <Switch checked={autoStart} id="auto-start" onCheckedChange={setAutoStart} />
           </div>
@@ -116,7 +115,7 @@ export default function Settings() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <Label htmlFor="auto-restart">{t("settings.autoRestart")}</Label>
-              <p className="text-text-muted text-[11px]">{t("settings.autoRestartHint")}</p>
+              <p className="text-muted-foreground text-[11px]">{t("settings.autoRestartHint")}</p>
             </div>
             <Switch checked={autoRestart} id="auto-restart" onCheckedChange={setAutoRestart} />
           </div>
@@ -129,7 +128,7 @@ export default function Settings() {
               placeholder={t("settings.startParamsPlaceholder")}
               value={startParams}
             />
-            <p className="text-text-muted text-[11px]">{t("settings.startParamsHint")}</p>
+            <p className="text-muted-foreground text-[11px]">{t("settings.startParamsHint")}</p>
           </div>
 
           <div className="grid gap-1.5">
@@ -148,7 +147,7 @@ export default function Settings() {
                 </Button>
               )}
             </div>
-            <p className="text-text-muted text-[11px]">{t("settings.dailyRestartHint")}</p>
+            <p className="text-muted-foreground text-[11px]">{t("settings.dailyRestartHint")}</p>
           </div>
 
           {saveSettings.isError && (
@@ -164,7 +163,6 @@ export default function Settings() {
               {saveSettings.isPending ? <Loader2 className="animate-spin" /> : <Check />}
               {t("common.save")}
             </Button>
-            {saved && <span className="text-success text-xs">{t("common.saved")}</span>}
           </div>
         </CardContent>
       </Card>
@@ -172,7 +170,7 @@ export default function Settings() {
       <Card className="self-start">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <KeyRound className="size-4 text-text-secondary" />
+            <KeyRound className="size-4 text-muted-foreground" />
             {t("settings.accessTitle")}
           </CardTitle>
           <CardDescription>
@@ -248,21 +246,21 @@ export default function Settings() {
         </CardHeader>
         <CardContent className="grid gap-2 text-xs sm:grid-cols-2">
           <div className="flex justify-between gap-4 sm:col-span-2">
-            <span className="text-text-muted">{t("settings.manager")}</span>
+            <span className="text-muted-foreground">{t("settings.manager")}</span>
             <span className="font-mono">vs-webui {status.data?.manager.version ?? "?"}</span>
           </div>
           <div className="flex justify-between gap-4 sm:col-span-2">
-            <span className="text-text-muted">{t("settings.dataDir")}</span>
+            <span className="text-muted-foreground">{t("settings.dataDir")}</span>
             <span className="truncate font-mono">{status.data?.manager.data_dir ?? "—"}</span>
           </div>
           <div className="flex justify-between gap-4 sm:col-span-2">
-            <span className="text-text-muted">{t("settings.gameDataPath")}</span>
+            <span className="text-muted-foreground">{t("settings.gameDataPath")}</span>
             <span className="truncate font-mono">
               {status.data?.manager.data_dir ?? "/data"}/server
             </span>
           </div>
           <div className="flex justify-between gap-4 sm:col-span-2">
-            <span className="text-text-muted">{t("settings.gamePort")}</span>
+            <span className="text-muted-foreground">{t("settings.gamePort")}</span>
             <span className="font-mono">{status.data?.config?.port ?? 42420}</span>
           </div>
         </CardContent>

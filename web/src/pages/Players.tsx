@@ -1,7 +1,8 @@
-import { Loader2, ShieldCheck, Users, Wrench } from "lucide-react";
+import { AlertTriangle, Loader2, ShieldCheck, Users, Wrench } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,9 +33,10 @@ export default function Players() {
     <ScrollArea className="h-full" scrollFade>
       <div className="flex flex-col gap-4 pb-4 pr-1">
       {!running && (
-        <p className="border border-warning/40 bg-warning/5 px-3 py-2 text-[11px] text-warning">
-          {t("players.notRunning")}
-        </p>
+        <Alert>
+          <AlertTriangle />
+          <AlertDescription>{t("players.notRunning")}</AlertDescription>
+        </Alert>
       )}
       {command.isError && <p className="text-error text-xs">{errorMessage(command.error)}</p>}
       {!command.isError && command.isSuccess && (
@@ -45,25 +47,25 @@ export default function Players() {
         <Card className="self-start">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Users className="size-4 text-text-secondary" />
+              <Users className="size-4 text-muted-foreground" />
               {t("players.online")}
             </CardTitle>
             <CardDescription>{t("players.onlineDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             {players.isLoading && !players.data ? (
-              <div className="flex items-center gap-2 text-xs text-text-muted">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" />
                 {t("common.loading")}
               </div>
             ) : (players.data?.online.length ?? 0) === 0 ? (
-              <p className="text-xs text-text-muted">{t("players.noPlayers")}</p>
+              <p className="text-xs text-muted-foreground">{t("players.noPlayers")}</p>
             ) : (
-              <ul className="divide-y divide-border-subtle">
+              <ul className="divide-y divide-border">
                 {players.data?.online.map((player) => (
                   <li className="flex items-center justify-between gap-3 py-1.5" key={player.name}>
                     <span className="text-xs">{player.name}</span>
-                    <span className="font-mono text-[11px] text-text-muted">
+                    <span className="font-mono text-[11px] text-muted-foreground">
                       {formatDuration(Math.max(0, Math.floor(Date.now() / 1000) - player.since))}
                     </span>
                   </li>
@@ -76,7 +78,7 @@ export default function Players() {
         <Card className="self-start">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Wrench className="size-4 text-text-secondary" />
+              <Wrench className="size-4 text-muted-foreground" />
               {t("players.moderation")}
             </CardTitle>
             <CardDescription>{t("players.moderationDescription")}</CardDescription>
@@ -140,11 +142,11 @@ export default function Players() {
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle className="flex items-center gap-2">
-                <ShieldCheck className="size-4 text-text-secondary" />
+                <ShieldCheck className="size-4 text-muted-foreground" />
                 {t("players.whitelist")}
               </CardTitle>
               {enabled !== null && (
-                <label className="flex items-center gap-2 text-xs text-text-secondary">
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
                   {enabled ? t("players.whitelistOnly") : t("players.openServer")}
                   <Switch
                     checked={enabled}
@@ -158,7 +160,7 @@ export default function Players() {
           </CardHeader>
           <CardContent className="grid gap-3">
             {enabled === null && (
-              <p className="text-xs text-text-muted">{t("players.whitelistModeNote")}</p>
+              <p className="text-xs text-muted-foreground">{t("players.whitelistModeNote")}</p>
             )}
             {mode.isSuccess && mode.data?.restart_required && (
               <p className="text-warning text-xs">{t("configs.savedRestart")}</p>
@@ -171,13 +173,13 @@ export default function Players() {
             )}
 
             {(whitelist?.entries.length ?? 0) > 0 && (
-              <div className="divide-y divide-border-subtle border border-border-default">
+              <div className="divide-y divide-border border border-border">
                 {whitelist?.entries.map((entry, index) => (
                   <div className="flex items-center gap-3 px-3 py-2" key={`${entry.uid}-${index}`}>
                     <span className="min-w-0 flex-1 truncate text-xs">
                       {entry.name ?? t("players.unknownName")}
                     </span>
-                    <span className="hidden truncate font-mono text-[10px] text-text-muted sm:block">
+                    <span className="hidden truncate font-mono text-[10px] text-muted-foreground sm:block">
                       {entry.uid ?? ""}
                     </span>
                     <Button

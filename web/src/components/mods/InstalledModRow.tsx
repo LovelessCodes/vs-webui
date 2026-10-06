@@ -32,7 +32,7 @@ export default function InstalledModRow({
   const dependencyCount = Object.keys(mod.dependencies).length;
 
   return (
-    <div className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-bg-card-hover">
+    <div className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-muted/40">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="truncate text-xs font-medium">{mod.name}</span>
@@ -41,7 +41,7 @@ export default function InstalledModRow({
             <Badge variant="accent">{t("mods.updateBadge", { version: update.modversion })}</Badge>
           )}
         </div>
-        <p className="truncate text-[11px] text-text-muted">
+        <p className="truncate text-[11px] text-muted-foreground">
           {mod.authors.join(", ")} · <span className="font-mono">{mod.version}</span>
           {dependencyCount > 0 && (
             <span> · {t("mods.dependencyCount", { count: dependencyCount })}</span>
@@ -51,7 +51,7 @@ export default function InstalledModRow({
 
       <div className="flex shrink-0 items-center gap-1.5">
         {pending ? (
-          <span className="flex items-center gap-1.5 text-xs text-text-secondary">
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Loader2 className="size-3.5 animate-spin" />
             {t("common.working")}
           </span>

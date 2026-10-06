@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useInstallMod, useModDetail, useModJobs } from "@/hooks/use-api";
 import { errorMessage, formatCount } from "@/lib/format";
@@ -33,37 +34,40 @@ export default function ModDetailSheet({ modid, onClose, installedVersion }: Mod
 
   return (
     <Sheet onOpenChange={(open) => !open && onClose()} open={Boolean(modid)}>
-      <SheetHeader onClose={onClose}>
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center border border-border-default bg-bg-input">
-            {mod?.logo ? (
-              <img alt="" className="size-full object-cover" src={mod.logo} />
-            ) : (
-              <Package className="size-4 text-text-muted" />
-            )}
+      <SheetContent className="w-full gap-0 p-0 sm:max-w-lg" side="right">
+        <SheetHeader className="border-b border-border">
+          <div className="flex items-center gap-3 pr-8">
+            <div className="flex size-10 shrink-0 items-center justify-center border border-border bg-input/30">
+              {mod?.logo ? (
+                <img alt="" className="size-full object-cover" src={mod.logo} />
+              ) : (
+                <Package className="size-4 text-muted-foreground" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <SheetTitle>{mod?.name ?? t("common.loading")}</SheetTitle>
+              <SheetDescription>
+                {mod
+                  ? t("mods.byAuthor", {
+                      author: mod.author,
+                      downloads: formatCount(mod.downloads),
+                    })
+                  : ""}
+              </SheetDescription>
+            </div>
           </div>
-          <div className="min-w-0">
-            <SheetTitle>{mod?.name ?? t("common.loading")}</SheetTitle>
-            <SheetDescription>
-              {mod
-                ? t("mods.byAuthor", {
-                    author: mod.author,
-                    downloads: formatCount(mod.downloads),
-                  })
-                : ""}
-            </SheetDescription>
-          </div>
-        </div>
-      </SheetHeader>
+        </SheetHeader>
 
-      <SheetContent>
-        {detail.isLoading && (
-          <div className="flex items-center gap-2 p-4 text-xs text-text-muted">
-            <Loader2 className="size-4 animate-spin" />
-            {t("mods.loadingDetails")}
-          </div>
-        )}
-        {detail.isError && <p className="p-4 text-error text-xs">{errorMessage(detail.error)}</p>}
+        <ScrollArea className="min-h-0 flex-1" scrollFade>
+          {detail.isLoading && (
+            <div className="flex items-center gap-2 p-4 text-xs text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" />
+              {t("mods.loadingDetails")}
+            </div>
+          )}
+          {detail.isError && (
+            <p className="p-4 text-xs text-error">{errorMessage(detail.error)}</p>
+          )}
 
         {mod && (
           <div className="grid gap-4 p-4">
@@ -80,25 +84,25 @@ export default function ModDetailSheet({ modid, onClose, installedVersion }: Mod
             </div>
 
             {description && (
-              <p className="max-h-40 overflow-y-auto text-text-secondary text-xs leading-relaxed">
+              <p className="max-h-40 overflow-y-auto text-muted-foreground text-xs leading-relaxed">
                 {description}
               </p>
             )}
 
             {install.isError && <p className="text-error text-xs">{errorMessage(install.error)}</p>}
 
-            <div className="border border-border-default">
-              <div className="border-b border-border-default bg-bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
+            <div className="border border-border">
+              <div className="border-b border-border bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-muted-foreground uppercase">
                 {t("mods.releases", { count: releases.length })}
               </div>
-              <div className="max-h-96 divide-y divide-border-subtle overflow-y-auto">
+              <div className="max-h-96 divide-y divide-border overflow-y-auto">
                 {releases.slice(0, 40).map((release) => {
                   const isInstalled = installedVersion === release.modversion;
                   return (
                     <div className="flex items-center gap-3 px-3 py-2" key={release.releaseid}>
                       <div className="min-w-0 flex-1">
                         <p className="font-mono text-xs">{release.modversion}</p>
-                        <p className="text-[10px] text-text-muted">
+                        <p className="text-[10px] text-muted-foreground">
                           {release.created?.slice(0, 10)} ·{" "}
                           {t("mods.downloads", { count: formatCount(release.downloads) })}
                         </p>
@@ -132,6 +136,7 @@ export default function ModDetailSheet({ modid, onClose, installedVersion }: Mod
             </div>
           </div>
         )}
+        </ScrollArea>
       </SheetContent>
     </Sheet>
   );

@@ -17,15 +17,15 @@ export default function ModBrowseRow({ mod, installed, onOpen }: ModBrowseRowPro
   const { t } = useTranslation();
   return (
     <button
-      className="flex w-full items-start gap-3 border-b border-border-subtle px-3 py-2.5 text-left transition-colors last:border-b-0 hover:bg-bg-card-hover"
+      className="flex w-full items-start gap-3 border-b border-border px-3 py-2.5 text-left transition-colors last:border-b-0 hover:bg-muted/40"
       onClick={onOpen}
       type="button"
     >
-      <div className="flex size-10 shrink-0 items-center justify-center border border-border-default bg-bg-input">
+      <div className="flex size-10 shrink-0 items-center justify-center border border-border bg-input/30">
         {mod.logo ? (
           <img alt="" className="size-full object-cover" loading="lazy" src={mod.logo} />
         ) : (
-          <Package className="size-4 text-text-muted" />
+          <Package className="size-4 text-muted-foreground" />
         )}
       </div>
       <div className="min-w-0 flex-1">
@@ -36,7 +36,7 @@ export default function ModBrowseRow({ mod, installed, onOpen }: ModBrowseRowPro
             {t(sideKey(mod.side))}
           </Badge>
         </div>
-        <p className="truncate text-[11px] text-text-secondary">
+        <p className="truncate text-[11px] text-muted-foreground">
           {mod.author} — {mod.summary}
         </p>
         {mod.tags.length > 0 && (
@@ -50,7 +50,7 @@ export default function ModBrowseRow({ mod, installed, onOpen }: ModBrowseRowPro
         )}
       </div>
       <div className="shrink-0 text-right">
-        <p className="text-[10px] text-text-muted">
+        <p className="text-[10px] text-muted-foreground">
           {t("mods.downloads", { count: formatCount(mod.downloads) })}
         </p>
       </div>

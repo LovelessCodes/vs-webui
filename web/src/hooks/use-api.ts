@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api, setCsrf } from "@/lib/api";
+import { errorMessage } from "@/lib/format";
+import i18n from "@/lib/i18n";
+import { toast } from "@/lib/notify";
 
 export function useMe() {
   return useQuery({
@@ -59,6 +62,8 @@ function useServerAction<TArgs>(mutationFn: (args: TArgs) => Promise<unknown>) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn,
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["status"] });
     },
@@ -82,9 +87,17 @@ export function useServerCommand() {
 }
 
 export function useInstallVersion() {
-  return useServerAction<{ version: string; channel: string }>(({ version, channel }) =>
-    api.install(version, channel),
-  );
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ version, channel }: { version: string; channel: string }) =>
+      api.install(version, channel),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["status"] });
+    },
+    onSuccess: (_data, args) => toast.success(i18n.t("toasts.queued", { name: args.version })),
+  });
 }
 
 export function useSetActiveVersion() {
@@ -159,12 +172,21 @@ export function useModJobs(enabled = true) {
 }
 
 /** Mod mutations refresh the job list; the page invalidates the rest on completion. */
-function useModMutation<TArgs>(mutationFn: (args: TArgs) => Promise<unknown>) {
+function useModMutation<TArgs>(
+  mutationFn: (args: TArgs) => Promise<unknown>,
+  successMessage?: (args: TArgs) => string | null,
+) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn,
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["mods", "jobs"] });
+    },
+    onSuccess: (_data, args) => {
+      const message = successMessage?.(args);
+      if (message) toast.success(message);
     },
   });
 }
@@ -172,21 +194,26 @@ function useModMutation<TArgs>(mutationFn: (args: TArgs) => Promise<unknown>) {
 export function useInstallMod() {
   return useModMutation<{ modid: string; version?: string; constraint?: string; name?: string }>(
     (body) => api.installMod(body),
+    (body) => i18n.t("toasts.queued", { name: body.name ?? body.modid }),
   );
 }
 
 export function useRemoveMod() {
-  return useModMutation<string>((file) => api.removeMod(file));
+  return useModMutation<string>(
+    (file) => api.removeMod(file),
+    (file) => i18n.t("toasts.queued", { name: file }),
+  );
 }
 
 export function useUpdateMod() {
-  return useModMutation<{ modid: string; version: string; file: string; name?: string }>((body) =>
-    api.updateMod(body),
+  return useModMutation<{ modid: string; version: string; file: string; name?: string }>(
+    (body) => api.updateMod(body),
+    (body) => i18n.t("toasts.queued", { name: body.name ?? body.modid }),
   );
 }
 
 export function useUpdateAllMods() {
-  return useModMutation<void>(() => api.updateAllMods());
+  return useModMutation<void>(() => api.updateAllMods(), () => null);
 }
 
 export function usePinMod() {
@@ -219,7 +246,10 @@ export function useSaveModConfig() {
   return useMutation({
     mutationFn: ({ file, newCode }: { file: string; newCode: string }) =>
       api.saveConfig(file, newCode),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
     onSuccess: () => {
+      toast.success(i18n.t("common.saved"));
       void queryClient.invalidateQueries({ queryKey: ["configs"] });
     },
   });
@@ -239,7 +269,12 @@ export function useSaveServerConfig() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (content: string) => api.saveServerConfig(content),
-    onSuccess: () => {
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: (data) => {
+      toast.success(
+        data.restart_required ? i18n.t("configs.savedRestart") : i18n.t("common.saved"),
+      );
       void queryClient.invalidateQueries({ queryKey: ["serverconfig"] });
       void queryClient.invalidateQueries({ queryKey: ["status"] });
     },
@@ -262,9 +297,12 @@ export function useInstallStratum() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (tag: string) => api.installStratum(tag),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["status"] });
     },
+    onSuccess: (_data, tag) => toast.success(i18n.t("toasts.queued", { name: tag })),
   });
 }
 
@@ -283,7 +321,12 @@ export function useSaveStratumConfig() {
   return useMutation({
     mutationFn: ({ file, newCode }: { file: string; newCode: string }) =>
       api.saveStratumConfig(file, newCode),
-    onSuccess: () => {
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: (data) => {
+      toast.success(
+        data.restart_required ? i18n.t("configs.savedRestart") : i18n.t("configs.savedReload"),
+      );
       void queryClient.invalidateQueries({ queryKey: ["stratum", "configs"] });
     },
   });
@@ -293,10 +336,13 @@ export function useSetFlavor() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (flavor: "vanilla" | "stratum") => api.setFlavor(flavor),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["status"] });
       void queryClient.invalidateQueries({ queryKey: ["settings"] });
     },
+    onSuccess: () => toast.success(i18n.t("common.saved")),
   });
 }
 
@@ -316,11 +362,17 @@ export function useSetWhitelistMode() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (enabled: boolean) => api.setWhitelistMode(enabled),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["players"] });
       void queryClient.invalidateQueries({ queryKey: ["status"] });
       void queryClient.invalidateQueries({ queryKey: ["serverconfig"] });
     },
+    onSuccess: (data) =>
+      toast.success(
+        data.restart_required ? i18n.t("configs.savedRestart") : i18n.t("common.saved"),
+      ),
   });
 }
 
@@ -338,9 +390,12 @@ export function useCreateBackup() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (kind: "server" | "mods") => api.createBackup(kind),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["backups"] });
     },
+    onSuccess: (data) => toast.success(i18n.t("toasts.created", { name: data.name })),
   });
 }
 
@@ -348,6 +403,8 @@ export function useRestoreBackup() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (name: string) => api.restoreBackup(name),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["backups"] });
       void queryClient.invalidateQueries({ queryKey: ["mods"] });
@@ -356,6 +413,7 @@ export function useRestoreBackup() {
       void queryClient.invalidateQueries({ queryKey: ["serverconfig"] });
       void queryClient.invalidateQueries({ queryKey: ["status"] });
     },
+    onSuccess: (_data, name) => toast.success(i18n.t("toasts.restored", { name })),
   });
 }
 
@@ -363,8 +421,11 @@ export function useDeleteBackup() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (name: string) => api.deleteBackup(name),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["backups"] });
     },
+    onSuccess: (_data, name) => toast.success(i18n.t("toasts.deleted", { name })),
   });
 }

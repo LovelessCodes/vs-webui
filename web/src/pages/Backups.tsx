@@ -14,7 +14,7 @@ import {
   useStatus,
 } from "@/hooks/use-api";
 import { errorMessage, formatBytes } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 export default function Backups() {
   const { t } = useTranslation();
@@ -38,7 +38,7 @@ export default function Backups() {
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="flex items-center gap-2">
-              <Archive className="size-4 text-text-secondary" />
+              <Archive className="size-4 text-muted-foreground" />
               {t("backups.title")}
             </CardTitle>
             <div className="flex flex-wrap gap-2">
@@ -65,15 +65,10 @@ export default function Backups() {
           <CardDescription>{t("backups.description")}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3">
-          {create.isSuccess && (
-            <p className="text-success text-xs">
-              {t("backups.created", { name: create.data.name })}
-            </p>
-          )}
           {mutationError && <p className="text-error text-xs">{errorMessage(mutationError)}</p>}
 
           {backups.isLoading && !backups.data && (
-            <div className="flex items-center gap-2 text-xs text-text-muted">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="size-4 animate-spin" />
               {t("backups.loading")}
             </div>
@@ -81,24 +76,24 @@ export default function Backups() {
           {backups.isError && <p className="text-error text-xs">{errorMessage(backups.error)}</p>}
 
           {backups.data && backups.data.backups.length === 0 && (
-            <p className="text-xs text-text-muted">{t("backups.noBackups")}</p>
+            <p className="text-xs text-muted-foreground">{t("backups.noBackups")}</p>
           )}
 
           {backups.data && backups.data.backups.length > 0 && (
-            <div className="border border-border-default">
-              <div className="flex items-center gap-3 border-b border-border-default bg-bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
+            <div className="border border-border">
+              <div className="flex items-center gap-3 border-b border-border bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-muted-foreground uppercase">
                 <span className="flex-1">{t("backups.backup")}</span>
                 <span className="hidden w-20 text-right sm:block">{t("backups.size")}</span>
                 <span className="hidden w-40 sm:block">{t("backups.createdAt")}</span>
                 <span className="w-56 text-right">{t("backups.actions")}</span>
               </div>
-              <div className="divide-y divide-border-subtle">
+              <div className="divide-y divide-border">
                 {backups.data.backups.map((backup) => {
                   const isMods = backup.name.startsWith("mods-");
                   const confirming = confirm?.name === backup.name;
                   return (
                     <div
-                      className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-bg-card-hover"
+                      className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-muted/40"
                       key={backup.name}
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -107,16 +102,16 @@ export default function Backups() {
                           {isMods ? t("backups.modsBadge") : t("backups.serverBadge")}
                         </Badge>
                       </div>
-                      <span className="hidden w-20 text-right font-mono text-[11px] text-text-muted sm:block">
+                      <span className="hidden w-20 text-right font-mono text-[11px] text-muted-foreground sm:block">
                         {formatBytes(backup.size)}
                       </span>
-                      <span className="hidden w-40 font-mono text-[11px] text-text-muted sm:block">
+                      <span className="hidden w-40 font-mono text-[11px] text-muted-foreground sm:block">
                         {new Date(backup.modified * 1000).toLocaleString()}
                       </span>
                       <div className="flex w-56 shrink-0 items-center justify-end gap-1.5">
                         {confirming ? (
                           <>
-                            <span className="text-[11px] text-text-secondary">
+                            <span className="text-[11px] text-muted-foreground">
                               {confirm?.action === "restore"
                                 ? t("backups.restoreQuestion")
                                 : t("backups.deleteQuestion")}
@@ -183,7 +178,7 @@ export default function Backups() {
             </div>
           )}
 
-          <p className="text-[11px] text-text-muted">{t("backups.footer")}</p>
+          <p className="text-[11px] text-muted-foreground">{t("backups.footer")}</p>
         </CardContent>
       </Card>
       </div>

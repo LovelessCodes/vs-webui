@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useSaveServerConfig, useServerConfig } from "@/hooks/use-api";
 import { errorMessage } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 interface Field {
   key: string;
@@ -95,7 +95,7 @@ export default function ServerConfigForm() {
 
   if (config.isLoading && !config.data) {
     return (
-      <div className="flex items-center gap-2 p-4 text-xs text-text-muted">
+      <div className="flex items-center gap-2 p-4 text-xs text-muted-foreground">
         <Loader2 className="size-4 animate-spin" />
         {t("settings.loadingConfig")}
       </div>
@@ -104,20 +104,20 @@ export default function ServerConfigForm() {
 
   const data = config.data;
   if (!data || data.missing || !original) {
-    return <p className="p-4 text-xs text-text-secondary">{t("settings.missingConfig")}</p>;
+    return <p className="p-4 text-xs text-muted-foreground">{t("settings.missingConfig")}</p>;
   }
 
   return (
     <div className="grid gap-4 p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex border border-border-default">
+        <div className="flex border border-border">
           {(["form", "json"] as const).map((option) => (
             <button
               className={cn(
                 "px-3 py-1.5 text-xs font-medium transition-colors",
                 mode === option
                   ? "bg-accent-primary text-white"
-                  : "text-text-secondary hover:bg-bg-card-hover hover:text-text-primary",
+                  : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
               )}
               key={option}
               onClick={() => setMode(option)}
@@ -167,7 +167,7 @@ export default function ServerConfigForm() {
                   <div>
                     <Label htmlFor={`field-${field.key}`}>{t(field.labelKey)}</Label>
                     {field.hintKey && (
-                      <p className="text-[11px] text-text-muted">{t(field.hintKey)}</p>
+                      <p className="text-[11px] text-muted-foreground">{t(field.hintKey)}</p>
                     )}
                   </div>
                   <Switch
@@ -195,15 +195,15 @@ export default function ServerConfigForm() {
                   value={value === null ? "" : String(value)}
                 />
                 {field.hintKey && (
-                  <p className="text-[11px] text-text-muted">{t(field.hintKey)}</p>
+                  <p className="text-[11px] text-muted-foreground">{t(field.hintKey)}</p>
                 )}
               </div>
             );
           })}
-          <p className="text-[11px] text-text-muted lg:col-span-2">{t("settings.formNote")}</p>
+          <p className="text-[11px] text-muted-foreground lg:col-span-2">{t("settings.formNote")}</p>
         </div>
       ) : (
-        <div className="h-[480px] border border-border-default">
+        <div className="h-[480px] border border-border">
           <CodeEditor
             code={data.content}
             file="serverconfig.json"

@@ -25,13 +25,13 @@ export default function CodeEditor({
   return (
     <div className="relative h-full">
       <Suspense
-        fallback={<p className="p-4 text-xs text-text-muted">{t("configs.loadingEditor")}</p>}
+        fallback={<p className="p-4 text-xs text-muted-foreground">{t("configs.loadingEditor")}</p>}
       >
         <MonacoEditor onChange={(value) => setEditableCode(value ?? "")} value={editableCode} />
       </Suspense>
 
-      <div className="absolute top-2 right-3 z-10 flex items-center gap-3 border border-border-default bg-bg-primary/90 px-2 py-1 text-[11px]">
-        <span className={canSave ? "text-warning" : "text-text-muted"}>
+      <div className="absolute top-2 right-3 z-10 flex items-center gap-3 border border-border bg-background/90 px-2 py-1 text-[11px]">
+        <span className={canSave ? "text-warning" : "text-muted-foreground"}>
           {canSave ? t("common.unsaved") : t("common.saved")}
         </span>
         <Button

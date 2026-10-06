@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 import type { ServerStatus } from "@/lib/api";
 
 export function statusMeta(status: ServerStatus["status"] | undefined): {
@@ -19,12 +19,12 @@ export function statusMeta(status: ServerStatus["status"] | undefined): {
       return {
         labelKey: "status.notInstalled",
         dot: "bg-text-muted",
-        text: "text-text-muted",
+        text: "text-muted-foreground",
       };
     case "stopped":
-      return { labelKey: "status.stopped", dot: "bg-text-muted", text: "text-text-secondary" };
+      return { labelKey: "status.stopped", dot: "bg-text-muted", text: "text-muted-foreground" };
     default:
-      return { labelKey: "status.unknown", dot: "bg-text-muted", text: "text-text-muted" };
+      return { labelKey: "status.unknown", dot: "bg-text-muted", text: "text-muted-foreground" };
   }
 }
 

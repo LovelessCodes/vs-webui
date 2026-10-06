@@ -22,14 +22,14 @@ export function BrokenModsBanner({ errors }: { errors: ModScanError[] }) {
         <span className="font-medium text-warning">
           {t("mods.brokenMods", { count: errors.length })}
         </span>
-        <span className="text-text-secondary">— {t("mods.brokenHint")}</span>
+        <span className="text-muted-foreground">— {t("mods.brokenHint")}</span>
       </div>
-      <div className="divide-y divide-border-subtle">
+      <div className="divide-y divide-border">
         {errors.map((error) => (
           <div className="flex items-center gap-3 px-3 py-2" key={error.file}>
             <div className="min-w-0 flex-1">
               <p className="truncate font-mono text-[11px]">{error.file}</p>
-              <p className="truncate text-[10px] text-text-muted">
+              <p className="truncate text-[10px] text-muted-foreground">
                 {error.stage}: {error.message}
               </p>
             </div>
@@ -104,17 +104,17 @@ export function MissingDepsBanner({ missing }: { missing: MissingDependency[] })
           {t("mods.installAll")}
         </Button>
       </div>
-      <div className="divide-y divide-border-subtle">
+      <div className="divide-y divide-border">
         {missing.map((dep) => (
           <div className="flex items-center gap-3 px-3 py-2" key={dep.modid}>
             <div className="min-w-0 flex-1">
               <p className="text-xs">
                 <span className="font-mono">{dep.modid}</span>
                 {dep.constraint && (
-                  <span className="text-text-muted"> (≥ {dep.constraint})</span>
+                  <span className="text-muted-foreground"> (≥ {dep.constraint})</span>
                 )}
               </p>
-              <p className="truncate text-[10px] text-text-muted">
+              <p className="truncate text-[10px] text-muted-foreground">
                 {t("mods.requiredBy", { names: dep.requiredBy.join(", ") })}
               </p>
             </div>

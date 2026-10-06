@@ -24,10 +24,10 @@ export default function Header() {
   const meta = pageMeta[pathname] ?? { titleKey: "brand.name" };
 
   return (
-    <header className="flex h-11 shrink-0 items-center gap-3 border-b border-border-default px-4">
+    <header className="flex h-11 shrink-0 items-center gap-3 border-b border-border px-4">
       <h2 className="text-sm font-semibold whitespace-nowrap">{t(meta.titleKey)}</h2>
       {meta.descriptionKey && (
-        <p className="truncate text-xs text-text-secondary">{t(meta.descriptionKey)}</p>
+        <p className="truncate text-xs text-muted-foreground">{t(meta.descriptionKey)}</p>
       )}
       <div className="flex-1" />
       <Button

@@ -22,7 +22,7 @@ function lineClass(line: string): string {
   if (line.startsWith("[manager]") || line.startsWith("»")) {
     return "text-info";
   }
-  return "text-text-secondary";
+  return "text-muted-foreground";
 }
 
 export default function Console() {
@@ -111,20 +111,20 @@ export default function Console() {
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-2 text-xs">
           <StatusDot status={serverStatus} />
-          <span className="text-text-secondary">
+          <span className="text-muted-foreground">
             {connected ? (
               <span className="flex items-center gap-1.5">
                 <Wifi className="size-3.5 text-success" /> {t("console.live")}
               </span>
             ) : (
               <span className="flex items-center gap-1.5">
-                <WifiOff className="size-3.5 text-text-muted" /> {t("console.reconnecting")}
+                <WifiOff className="size-3.5 text-muted-foreground" /> {t("console.reconnecting")}
               </span>
             )}
           </span>
         </div>
         <div className="flex-1" />
-        <label className="flex items-center gap-1.5 text-xs text-text-secondary">
+        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <input
             checked={follow}
             className="accent-[#8b5cf6]"
@@ -165,16 +165,16 @@ export default function Console() {
         )}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col border border-border-default bg-bg-input">
+      <div className="flex min-h-0 flex-1 flex-col border border-border bg-input/30">
         <VirtualList
-          empty={<p className="px-3 py-2 text-text-muted">{t("console.empty")}</p>}
+          empty={<p className="px-3 py-2 text-muted-foreground">{t("console.empty")}</p>}
           estimateRowHeight={18}
           items={lines}
           keyOf={(line, index) => `${line.ts}-${index}`}
           onStickChange={setFollow}
           renderItem={(line) => (
             <div className="px-3 py-0.5 font-mono text-[11px] leading-relaxed whitespace-pre-wrap">
-              <span className="text-text-muted">{line.ts}</span>{" "}
+              <span className="text-muted-foreground">{line.ts}</span>{" "}
               <span className={lineClass(line.line)}>{line.line}</span>
             </div>
           )}

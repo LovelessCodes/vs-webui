@@ -29,14 +29,14 @@ export default function Login() {
   }
 
   return (
-    <div className="flex h-screen items-center justify-center bg-bg-primary p-6">
-      <div className="w-full max-w-sm border border-border-default bg-bg-card">
-        <div className="flex flex-col items-center gap-2 border-b border-border-subtle px-6 py-8">
+    <div className="flex h-screen items-center justify-center bg-background p-6">
+      <div className="w-full max-w-sm border border-border bg-card">
+        <div className="flex flex-col items-center gap-2 border-b border-border px-6 py-8">
           <div className="flex size-10 items-center justify-center border border-accent-primary/40 bg-accent-primary/10">
             <Lock className="size-5 text-accent-primary" />
           </div>
           <h1 className="text-base font-bold tracking-wide">{t("brand.name")}</h1>
-          <p className="text-text-secondary text-xs">{t("login.subtitle")}</p>
+          <p className="text-muted-foreground text-xs">{t("login.subtitle")}</p>
         </div>
 
         <form className="grid gap-4 p-6" onSubmit={onSubmit}>
@@ -64,7 +64,7 @@ export default function Login() {
             {t("login.signIn")}
           </Button>
 
-          <p className="text-text-muted text-[11px] leading-relaxed">{t("login.hint")}</p>
+          <p className="text-muted-foreground text-[11px] leading-relaxed">{t("login.hint")}</p>
         </form>
       </div>
     </div>

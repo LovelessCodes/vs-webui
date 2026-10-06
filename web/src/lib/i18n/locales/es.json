@@ -21,7 +21,31 @@
     "reset": "Restablecer",
     "switch": "Cambiar",
     "close": "Cerrar",
-    "scrollToTop": "Ir arriba"
+    "scrollToTop": "Ir arriba",
+    "actions": {
+      "close": "Cerrar"
+    }
+  },
+  "layout": {
+    "sidebar": {
+      "title": "VS WebUI",
+      "description": "Gestor de servidor",
+      "toggle": "Alternar barra lateral"
+    },
+    "theme": {
+      "toggle": "Cambiar tema",
+      "switchToLight": "Cambiar al tema claro",
+      "switchToDark": "Cambiar al tema oscuro"
+    },
+    "toast": {
+      "close": "Cerrar"
+    }
+  },
+  "command": {
+    "placeholder": "Escribe un comando o busca…",
+    "empty": "Sin resultados.",
+    "navigation": "Navegación",
+    "server": "Servidor"
   },
   "nav": {
     "dashboard": "Panel",
@@ -34,7 +58,10 @@
     "settings": "Ajustes",
     "navigation": "Navegación"
   },
-  "brand": { "name": "VS WEBUI", "tagline": "Gestor de servidor" },
+  "brand": {
+    "name": "VS WEBUI",
+    "tagline": "Gestor de servidor"
+  },
   "status": {
     "running": "En ejecución",
     "starting": "Iniciando",
@@ -46,14 +73,38 @@
     "noVersion": "ninguna versión seleccionada"
   },
   "pages": {
-    "dashboard": { "title": "Panel", "description": "Estado del servidor y acciones rápidas" },
-    "console": { "title": "Consola", "description": "Salida en vivo y comandos" },
-    "mods": { "title": "Mods", "description": "Explora la base de mods y gestiona los instalados" },
-    "configs": { "title": "Configs de mods", "description": "Edita archivos ModConfig con el editor visual o de código" },
-    "players": { "title": "Jugadores", "description": "Jugadores en línea, lista blanca y moderación" },
-    "backups": { "title": "Copias", "description": "Crea, descarga, restaura y borra copias de seguridad" },
-    "versions": { "title": "Versiones", "description": "Instala y cambia builds de Vintage Story" },
-    "settings": { "title": "Ajustes", "description": "Configuración del gestor y acceso" }
+    "dashboard": {
+      "title": "Panel",
+      "description": "Estado del servidor y acciones rápidas"
+    },
+    "console": {
+      "title": "Consola",
+      "description": "Salida en vivo y comandos"
+    },
+    "mods": {
+      "title": "Mods",
+      "description": "Explora la base de mods y gestiona los instalados"
+    },
+    "configs": {
+      "title": "Configs de mods",
+      "description": "Edita archivos ModConfig con el editor visual o de código"
+    },
+    "players": {
+      "title": "Jugadores",
+      "description": "Jugadores en línea, lista blanca y moderación"
+    },
+    "backups": {
+      "title": "Copias",
+      "description": "Crea, descarga, restaura y borra copias de seguridad"
+    },
+    "versions": {
+      "title": "Versiones",
+      "description": "Instala y cambia builds de Vintage Story"
+    },
+    "settings": {
+      "title": "Ajustes",
+      "description": "Configuración del gestor y acceso"
+    }
   },
   "login": {
     "subtitle": "Gestor de servidor Vintage Story",
@@ -322,5 +373,13 @@
     "pt-BR": "Português (Brasil)",
     "ru": "Русский",
     "zh-CN": "简体中文"
+  },
+  "toasts": {
+    "queued": "En cola: {{name}}",
+    "queuedUpdates": "{{count}} actualizaciones en cola",
+    "failed": "Error: {{message}}",
+    "created": "Creada {{name}}",
+    "restored": "Restaurada {{name}}",
+    "deleted": "Eliminada {{name}}"
   }
 }

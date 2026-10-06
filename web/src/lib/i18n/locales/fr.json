@@ -21,7 +21,31 @@
     "reset": "Réinitialiser",
     "switch": "Changer",
     "close": "Fermer",
-    "scrollToTop": "Remonter en haut"
+    "scrollToTop": "Remonter en haut",
+    "actions": {
+      "close": "Fermer"
+    }
+  },
+  "layout": {
+    "sidebar": {
+      "title": "VS WebUI",
+      "description": "Gestionnaire de serveur",
+      "toggle": "Afficher/masquer la barre latérale"
+    },
+    "theme": {
+      "toggle": "Changer de thème",
+      "switchToLight": "Passer au thème clair",
+      "switchToDark": "Passer au thème sombre"
+    },
+    "toast": {
+      "close": "Fermer"
+    }
+  },
+  "command": {
+    "placeholder": "Saisir une commande ou rechercher…",
+    "empty": "Aucun résultat.",
+    "navigation": "Navigation",
+    "server": "Serveur"
   },
   "nav": {
     "dashboard": "Tableau de bord",
@@ -34,7 +58,10 @@
     "settings": "Paramètres",
     "navigation": "Navigation"
   },
-  "brand": { "name": "VS WEBUI", "tagline": "Gestionnaire de serveur" },
+  "brand": {
+    "name": "VS WEBUI",
+    "tagline": "Gestionnaire de serveur"
+  },
   "status": {
     "running": "En cours",
     "starting": "Démarrage",
@@ -46,14 +73,38 @@
     "noVersion": "aucune version sélectionnée"
   },
   "pages": {
-    "dashboard": { "title": "Tableau de bord", "description": "État du serveur et actions rapides" },
-    "console": { "title": "Console", "description": "Sortie en direct et commandes" },
-    "mods": { "title": "Mods", "description": "Parcourir la base de mods et gérer les mods installés" },
-    "configs": { "title": "Configs de mods", "description": "Modifier les fichiers ModConfig avec l'éditeur visuel ou de code" },
-    "players": { "title": "Joueurs", "description": "Joueurs en ligne, liste blanche et modération" },
-    "backups": { "title": "Sauvegardes", "description": "Créer, télécharger, restaurer et supprimer des sauvegardes" },
-    "versions": { "title": "Versions", "description": "Installer et changer les builds Vintage Story" },
-    "settings": { "title": "Paramètres", "description": "Configuration du gestionnaire et accès" }
+    "dashboard": {
+      "title": "Tableau de bord",
+      "description": "État du serveur et actions rapides"
+    },
+    "console": {
+      "title": "Console",
+      "description": "Sortie en direct et commandes"
+    },
+    "mods": {
+      "title": "Mods",
+      "description": "Parcourir la base de mods et gérer les mods installés"
+    },
+    "configs": {
+      "title": "Configs de mods",
+      "description": "Modifier les fichiers ModConfig avec l'éditeur visuel ou de code"
+    },
+    "players": {
+      "title": "Joueurs",
+      "description": "Joueurs en ligne, liste blanche et modération"
+    },
+    "backups": {
+      "title": "Sauvegardes",
+      "description": "Créer, télécharger, restaurer et supprimer des sauvegardes"
+    },
+    "versions": {
+      "title": "Versions",
+      "description": "Installer et changer les builds Vintage Story"
+    },
+    "settings": {
+      "title": "Paramètres",
+      "description": "Configuration du gestionnaire et accès"
+    }
   },
   "login": {
     "subtitle": "Gestionnaire de serveur Vintage Story",
@@ -322,5 +373,13 @@
     "pt-BR": "Português (Brasil)",
     "ru": "Русский",
     "zh-CN": "简体中文"
+  },
+  "toasts": {
+    "queued": "En attente : {{name}}",
+    "queuedUpdates": "{{count}} mises à jour en attente",
+    "failed": "Échec : {{message}}",
+    "created": "{{name}} créée",
+    "restored": "{{name}} restaurée",
+    "deleted": "{{name}} supprimée"
   }
 }

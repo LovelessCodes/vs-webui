@@ -3,6 +3,7 @@ import { Loader2, RefreshCw, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { ListSkeleton } from "@/components/common/LoadingSkeleton";
 import VirtualList from "@/components/common/VirtualList";
 import { BrokenModsBanner, MissingDepsBanner } from "@/components/mods/banners";
 import InstalledModRow from "@/components/mods/InstalledModRow";
@@ -13,6 +14,14 @@ import VersionPickerSheet from "@/components/mods/VersionPickerSheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   useInstalledMods,
   useInstallMod,
@@ -28,7 +37,6 @@ import {
 } from "@/hooks/use-api";
 import type { InstalledMod, ModSummary } from "@/lib/api";
 import { errorMessage } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import { findMissingDependencies } from "@/lib/version";
 
 type Tab = "browse" | "installed";
@@ -150,25 +158,20 @@ export default function Mods() {
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex border border-border-default">
-          {(["browse", "installed"] as const).map((option) => (
-            <button
-              className={cn(
-                "px-3 py-1.5 text-xs font-medium transition-colors",
-                tab === option
-                  ? "bg-accent-primary text-white"
-                  : "text-text-secondary hover:bg-bg-card-hover hover:text-text-primary",
-              )}
-              key={option}
-              onClick={() => setTab(option)}
-              type="button"
-            >
-              {option === "browse"
-                ? t("mods.browse")
-                : t("mods.installed", { count: installed.data?.mods.length ?? 0 })}
-            </button>
-          ))}
-        </div>
+        <ToggleGroup
+          onValueChange={(value) => {
+            const next = value[0];
+            if (next === "browse" || next === "installed") setTab(next);
+          }}
+          size="sm"
+          value={[tab]}
+          variant="outline"
+        >
+          <ToggleGroupItem value="browse">{t("mods.browse")}</ToggleGroupItem>
+          <ToggleGroupItem value="installed">
+            {t("mods.installed", { count: installed.data?.mods.length ?? 0 })}
+          </ToggleGroupItem>
+        </ToggleGroup>
         <div className="flex-1" />
         {tab === "installed" && (
           <>
@@ -210,7 +213,7 @@ export default function Mods() {
         <>
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative min-w-56 flex-1">
-              <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-text-muted" />
+              <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 className="pl-7"
                 onChange={(event) => setSearch(event.target.value)}
@@ -218,7 +221,7 @@ export default function Mods() {
                 value={search}
               />
             </div>
-            <label className="flex items-center gap-1.5 text-xs text-text-secondary">
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <input
                 checked={compatibleOnly}
                 className="accent-[#8b5cf6]"
@@ -230,45 +233,73 @@ export default function Mods() {
                 ? t("mods.compatibleWith", { version: activeVersion })
                 : t("mods.noVersionSelected")}
             </label>
-            <select
-              className="h-8 border border-border-default bg-bg-input px-2 text-xs text-text-secondary focus:outline-none"
-              onChange={(event) => setSide(event.target.value as Side)}
+            <Select
+              items={[
+                { label: t("mods.anySide"), value: "any" },
+                { label: t("mods.server"), value: "server" },
+                { label: t("mods.client"), value: "client" },
+              ]}
+              onValueChange={(value) => {
+                if (typeof value === "string") setSide(value as Side);
+              }}
               value={side}
             >
-              <option value="any">{t("mods.anySide")}</option>
-              <option value="server">{t("mods.server")}</option>
-              <option value="client">{t("mods.client")}</option>
-            </select>
-            <select
-              className="h-8 max-w-40 border border-border-default bg-bg-input px-2 text-xs text-text-secondary focus:outline-none"
-              onChange={(event) => setTag(event.target.value)}
+              <SelectTrigger aria-label={t("mods.anySide")} size="sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">{t("mods.anySide")}</SelectItem>
+                <SelectItem value="server">{t("mods.server")}</SelectItem>
+                <SelectItem value="client">{t("mods.client")}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              items={[
+                { label: t("mods.allTags"), value: "" },
+                ...tagNames.map((name) => ({ label: name, value: name })),
+              ]}
+              onValueChange={(value) => {
+                if (typeof value === "string") setTag(value);
+              }}
               value={tag}
             >
-              <option value="">{t("mods.allTags")}</option>
-              {tagNames.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-            <select
-              className="h-8 border border-border-default bg-bg-input px-2 text-xs text-text-secondary focus:outline-none"
-              onChange={(event) => setSort(event.target.value as SortBy)}
+              <SelectTrigger aria-label={t("mods.allTags")} size="sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">{t("mods.allTags")}</SelectItem>
+                {tagNames.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              items={[
+                { label: t("mods.sortDownloads"), value: "downloads" },
+                { label: t("mods.sortTrending"), value: "trending" },
+                { label: t("mods.sortName"), value: "name" },
+                { label: t("mods.sortRecent"), value: "recent" },
+              ]}
+              onValueChange={(value) => {
+                if (typeof value === "string") setSort(value as SortBy);
+              }}
               value={sort}
             >
-              <option value="downloads">{t("mods.sortDownloads")}</option>
-              <option value="trending">{t("mods.sortTrending")}</option>
-              <option value="name">{t("mods.sortName")}</option>
-              <option value="recent">{t("mods.sortRecent")}</option>
-            </select>
+              <SelectTrigger aria-label={t("mods.sortName")} size="sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="downloads">{t("mods.sortDownloads")}</SelectItem>
+                <SelectItem value="trending">{t("mods.sortTrending")}</SelectItem>
+                <SelectItem value="name">{t("mods.sortName")}</SelectItem>
+                <SelectItem value="recent">{t("mods.sortRecent")}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {modb.isLoading && !modb.data && (
-            <div className="flex items-center gap-2 text-xs text-text-muted">
-              <Loader2 className="size-4 animate-spin" />
-              {t("mods.fetching")}
-            </div>
-          )}
+          {modb.isLoading && !modb.data && <ListSkeleton rows={6} />}
           {modb.isError && (
             <p className="border border-error/40 bg-error/5 p-3 text-xs text-error">
               {errorMessage(modb.error)}
@@ -277,13 +308,13 @@ export default function Mods() {
 
           {modb.data && (
             <>
-              <p className="text-text-muted text-[11px]">
+              <p className="text-muted-foreground text-[11px]">
                 {t("mods.count", { count: filtered.length })}
                 {modb.isFetching ? ` · ${t("mods.updating")}` : ""}
               </p>
               <VirtualList
                 empty={
-                  <p className="p-6 text-center text-xs text-text-muted">{t("mods.noMatch")}</p>
+                  <p className="p-6 text-center text-xs text-muted-foreground">{t("mods.noMatch")}</p>
                 }
                 estimateRowHeight={96}
                 items={filtered}
@@ -306,7 +337,7 @@ export default function Mods() {
           <MissingDepsBanner missing={missing} />
 
           {installed.isLoading && !installed.data && (
-            <div className="flex items-center gap-2 text-xs text-text-muted">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="size-4 animate-spin" />
               {t("mods.scanning")}
             </div>
@@ -320,7 +351,7 @@ export default function Mods() {
           {installed.data && installed.data.mods.length === 0 && (
             <div className="flex flex-col items-center justify-center gap-3 border border-dashed p-10 text-center">
               <p className="text-sm font-medium">{t("mods.noMods")}</p>
-              <p className="text-text-muted text-xs">{t("mods.noModsHint")}</p>
+              <p className="text-muted-foreground text-xs">{t("mods.noModsHint")}</p>
               <Button onClick={() => setTab("browse")} size="sm" variant="accent-primary">
                 {t("mods.browse")}
               </Button>
@@ -328,8 +359,8 @@ export default function Mods() {
           )}
 
           {installed.data && installed.data.mods.length > 0 && (
-            <div className="flex min-h-0 flex-1 flex-col border border-border-default">
-              <div className="flex shrink-0 items-center gap-2 border-b border-border-default bg-bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
+            <div className="flex min-h-0 flex-1 flex-col border border-border">
+              <div className="flex shrink-0 items-center gap-2 border-b border-border bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-muted-foreground uppercase">
                 <span className="flex-1">{t("mods.installedHeader")}</span>
                 {updateCount > 0 && (
                   <Badge variant="accent">{t("mods.updates", { count: updateCount })}</Badge>

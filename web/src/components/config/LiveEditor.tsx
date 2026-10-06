@@ -4,6 +4,13 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  NumberField,
+  NumberFieldDecrement,
+  NumberFieldGroup,
+  NumberFieldIncrement,
+  NumberFieldInput,
+} from "@/components/ui/number-field";
 import { Switch } from "@/components/ui/switch";
 
 import { deepSet, getAtPath, isObject, pathKey, safeInitialParse, type JSONValue } from "./json-utils";
@@ -109,7 +116,7 @@ export default function LiveEditor({
               {isCollapsed ? <ChevronRight /> : <ChevronDown />}
             </Button>
             <span className="truncate font-mono text-xs">{keyLabel}</span>
-            <span className="text-[10px] tracking-wide text-text-muted uppercase">[array]</span>
+            <span className="text-[10px] tracking-wide text-muted-foreground uppercase">[array]</span>
             <Button
               className="ml-auto"
               onClick={() => addArrayItem(path)}
@@ -121,7 +128,7 @@ export default function LiveEditor({
             </Button>
           </div>
           {!isCollapsed && (
-            <div className="ml-3 grid gap-2 border-l border-border-subtle pl-3">
+            <div className="ml-3 grid gap-2 border-l border-border pl-3">
               {value.map((item, index) => (
                 <div className="flex items-start gap-2" key={`${key}:${index}`}>
                   <div className="min-w-0 flex-1">{renderValue(item, [...path, index], index)}</div>
@@ -135,7 +142,7 @@ export default function LiveEditor({
                 </div>
               ))}
               {value.length === 0 && (
-                <p className="text-[11px] text-text-muted">{t("configs.emptyArray")}</p>
+                <p className="text-[11px] text-muted-foreground">{t("configs.emptyArray")}</p>
               )}
             </div>
           )}
@@ -157,10 +164,10 @@ export default function LiveEditor({
               {isCollapsed ? <ChevronRight /> : <ChevronDown />}
             </Button>
             <span className="truncate font-mono text-xs">{keyLabel}</span>
-            <span className="text-[10px] tracking-wide text-text-muted uppercase">{"{ }"}</span>
+            <span className="text-[10px] tracking-wide text-muted-foreground uppercase">{"{ }"}</span>
           </div>
           {!isCollapsed && (
-            <div className="ml-3 grid gap-2 border-l border-border-subtle pl-3">
+            <div className="ml-3 grid gap-2 border-l border-border pl-3">
               {Object.entries(value).map(([childKey, childValue]) =>
                 renderValue(childValue, [...path, childKey], childKey),
               )}
@@ -174,7 +181,7 @@ export default function LiveEditor({
       return (
         <div className="flex items-center gap-3" key={key}>
           <label
-            className="min-w-0 flex-1 truncate font-mono text-xs text-text-secondary"
+            className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground"
             htmlFor={`bool-${key}`}
           >
             {keyLabel}
@@ -192,18 +199,23 @@ export default function LiveEditor({
       return (
         <div className="flex items-center gap-3" key={key}>
           <label
-            className="min-w-0 flex-1 truncate font-mono text-xs text-text-secondary"
+            className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground"
             htmlFor={`num-${key}`}
           >
             {keyLabel}
           </label>
-          <Input
-            className="h-7 w-40 shrink-0 font-mono text-xs"
+          <NumberField
+            className="w-40 shrink-0"
             id={`num-${key}`}
-            onChange={(event) => handlePrimitiveChange(path, event.target.value, value)}
-            type="number"
+            onValueChange={(next) => handlePrimitiveChange(path, next?.toString() ?? "0", value)}
             value={value}
-          />
+          >
+            <NumberFieldGroup>
+              <NumberFieldDecrement />
+              <NumberFieldInput />
+              <NumberFieldIncrement />
+            </NumberFieldGroup>
+          </NumberField>
         </div>
       );
     }
@@ -211,7 +223,7 @@ export default function LiveEditor({
     return (
       <div className="flex items-center gap-3" key={key}>
         <label
-          className="min-w-0 flex-1 truncate font-mono text-xs text-text-secondary"
+          className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground"
           htmlFor={`str-${key}`}
         >
           {keyLabel}
@@ -234,7 +246,7 @@ export default function LiveEditor({
         </div>
       )}
 
-      <p className="text-[10px] font-medium tracking-widest text-text-muted uppercase">
+      <p className="text-[10px] font-medium tracking-widest text-muted-foreground uppercase">
         {t("configs.liveEditor")} · {file}
       </p>
 
@@ -249,10 +261,10 @@ export default function LiveEditor({
           {data.map((value, index) => renderValue(value, [index], index))}
         </div>
       ) : (
-        <p className="text-xs text-text-muted">{t("configs.rootPrimitive")}</p>
+        <p className="text-xs text-muted-foreground">{t("configs.rootPrimitive")}</p>
       )}
 
-      <p className="text-right text-[11px] text-text-muted">{t("configs.autoSave")}</p>
+      <p className="text-right text-[11px] text-muted-foreground">{t("configs.autoSave")}</p>
     </div>
   );
 }

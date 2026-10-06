@@ -4,8 +4,10 @@ import { useTranslation } from "react-i18next";
 
 import CodeEditor from "@/components/config/CodeEditor";
 import LiveEditor from "@/components/config/LiveEditor";
+import { ListSkeleton } from "@/components/common/LoadingSkeleton";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   useModConfigs,
   useSaveModConfig,
@@ -15,7 +17,7 @@ import {
   useStratumConfigs,
 } from "@/hooks/use-api";
 import { errorMessage } from "@/lib/format";
-import { cn } from "@/lib/utils";
+import { cn } from "cn";
 
 type Mode = "live" | "code";
 type Source = "mods" | "stratum";
@@ -60,49 +62,26 @@ export default function Configs() {
   return (
     <div className="flex h-full min-h-0 flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex border border-border-default">
-          <button
-            className={cn(
-              "px-3 py-1.5 text-xs font-medium transition-colors",
-              source === "mods"
-                ? "bg-accent-primary text-white"
-                : "text-text-secondary hover:bg-bg-card-hover hover:text-text-primary",
-            )}
-            onClick={() => switchSource("mods")}
-            type="button"
-          >
-            {t("configs.modConfig")}
-          </button>
+        <ToggleGroup
+          onValueChange={(value) => {
+            const next = value[0];
+            if (next === "mods" || next === "stratum") switchSource(next);
+          }}
+          size="sm"
+          value={[source]}
+          variant="outline"
+        >
+          <ToggleGroupItem value="mods">{t("configs.modConfig")}</ToggleGroupItem>
           {flavor === "stratum" && (
-            <button
-              className={cn(
-                "px-3 py-1.5 text-xs font-medium transition-colors",
-                source === "stratum"
-                  ? "bg-accent-primary text-white"
-                  : "text-text-secondary hover:bg-bg-card-hover hover:text-text-primary",
-              )}
-              onClick={() => switchSource("stratum")}
-              type="button"
-            >
-              {t("configs.stratum")}
-            </button>
+            <ToggleGroupItem value="stratum">{t("configs.stratum")}</ToggleGroupItem>
           )}
-        </div>
-        <p className="text-xs text-text-muted">
+        </ToggleGroup>
+        <p className="text-xs text-muted-foreground">
           {source === "mods" ? t("configs.modConfigHint") : t("configs.stratumHint")}
         </p>
         <div className="flex-1" />
         {save.isError && <span className="text-error text-xs">{errorMessage(save.error)}</span>}
-        {save.isPending && <Loader2 className="size-3.5 animate-spin text-text-muted" />}
-        {!save.isPending && save.isSuccess && (
-          <span className="text-success text-xs">
-            {save.data?.restart_required
-              ? t("configs.savedRestart")
-              : source === "stratum"
-                ? t("configs.savedReload")
-                : t("common.saved")}
-          </span>
-        )}
+        {save.isPending && <Loader2 className="size-3.5 animate-spin text-muted-foreground" />}
         {source === "stratum" && (
           <Button
             disabled={!serverRunning || command.isPending}
@@ -114,23 +93,18 @@ export default function Configs() {
             {t("configs.reloadConfigs")}
           </Button>
         )}
-        <div className="flex border border-border-default">
-          {(["live", "code"] as const).map((option) => (
-            <button
-              className={cn(
-                "px-3 py-1.5 text-xs font-medium transition-colors",
-                mode === option
-                  ? "bg-accent-primary text-white"
-                  : "text-text-secondary hover:bg-bg-card-hover hover:text-text-primary",
-              )}
-              key={option}
-              onClick={() => setMode(option)}
-              type="button"
-            >
-              {option === "live" ? t("configs.liveEditor") : t("configs.codeEditor")}
-            </button>
-          ))}
-        </div>
+        <ToggleGroup
+          onValueChange={(value) => {
+            const next = value[0];
+            if (next === "live" || next === "code") setMode(next);
+          }}
+          size="sm"
+          value={[mode]}
+          variant="outline"
+        >
+          <ToggleGroupItem value="live">{t("configs.liveEditor")}</ToggleGroupItem>
+          <ToggleGroupItem value="code">{t("configs.codeEditor")}</ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       {command.isError && <p className="text-error text-xs">{errorMessage(command.error)}</p>}
@@ -144,12 +118,7 @@ export default function Configs() {
         </p>
       )}
 
-      {configs.isLoading && !configs.data && (
-        <div className="flex items-center gap-2 text-xs text-text-muted">
-          <Loader2 className="size-4 animate-spin" />
-          {t("configs.scanning")}
-        </div>
-      )}
+      {configs.isLoading && !configs.data && <ListSkeleton rows={5} />}
 
       {configs.isError && (
         <p className="border border-error/40 bg-error/5 p-3 text-xs text-error">
@@ -159,10 +128,10 @@ export default function Configs() {
 
       {configs.data && files.length === 0 && (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 border border-dashed p-10 text-center">
-          <FileJson2 className="size-6 text-text-muted" />
+          <FileJson2 className="size-6 text-muted-foreground" />
           <div>
             <p className="text-sm font-medium">{t("configs.noFiles")}</p>
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-muted-foreground">
               {source === "mods" ? t("configs.noFilesMods") : t("configs.noFilesStratum")}
             </p>
           </div>
@@ -170,22 +139,22 @@ export default function Configs() {
       )}
 
       {active && (
-        <div className="flex min-h-0 flex-1 border border-border-default">
-          <div className="flex w-56 shrink-0 flex-col border-r border-border-default">
-            <div className="border-b border-border-subtle px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
+        <div className="flex min-h-0 flex-1 border border-border">
+          <div className="flex w-56 shrink-0 flex-col border-r border-border">
+            <div className="border-b border-border px-3 py-2 text-[10px] font-medium tracking-widest text-muted-foreground uppercase">
               {t("configs.files")}
             </div>
             <ScrollArea className="min-h-0 flex-1">
-              <div className="divide-y divide-border-subtle">
+              <div className="divide-y divide-border">
                 {files.map((file) => {
                   const isActive = file.filename === active.filename;
                   return (
                     <button
                       className={cn(
-                        "flex w-full items-center gap-2 border-l-2 border-transparent px-3 py-2 text-left transition-colors hover:bg-bg-card-hover",
+                        "flex w-full items-center gap-2 border-l-2 border-transparent px-3 py-2 text-left transition-colors hover:bg-muted/40",
                         isActive
-                          ? "border-l-accent-primary bg-bg-card text-text-primary"
-                          : "text-text-secondary",
+                          ? "border-l-accent-primary bg-card text-foreground"
+                          : "text-muted-foreground",
                       )}
                       key={file.filename}
                       onClick={() => {

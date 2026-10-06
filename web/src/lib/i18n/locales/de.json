@@ -21,7 +21,31 @@
     "reset": "Zurücksetzen",
     "switch": "Wechseln",
     "close": "Schließen",
-    "scrollToTop": "Nach oben scrollen"
+    "scrollToTop": "Nach oben scrollen",
+    "actions": {
+      "close": "Schließen"
+    }
+  },
+  "layout": {
+    "sidebar": {
+      "title": "VS WebUI",
+      "description": "Server-Manager",
+      "toggle": "Seitenleiste umschalten"
+    },
+    "theme": {
+      "toggle": "Design umschalten",
+      "switchToLight": "Zum hellen Design wechseln",
+      "switchToDark": "Zum dunklen Design wechseln"
+    },
+    "toast": {
+      "close": "Schließen"
+    }
+  },
+  "command": {
+    "placeholder": "Befehl eingeben oder suchen…",
+    "empty": "Keine Ergebnisse.",
+    "navigation": "Navigation",
+    "server": "Server"
   },
   "nav": {
     "dashboard": "Übersicht",
@@ -49,14 +73,38 @@
     "noVersion": "keine Version ausgewählt"
   },
   "pages": {
-    "dashboard": { "title": "Übersicht", "description": "Serverstatus und Schnellaktionen" },
-    "console": { "title": "Konsole", "description": "Live-Ausgabe und Befehle" },
-    "mods": { "title": "Mods", "description": "Mod-Datenbank durchsuchen und installierte Mods verwalten" },
-    "configs": { "title": "Mod-Konfigs", "description": "ModConfig-Dateien im Live- oder Code-Editor bearbeiten" },
-    "players": { "title": "Spieler", "description": "Online-Spieler, Whitelist und Moderation" },
-    "backups": { "title": "Backups", "description": "Backups erstellen, herunterladen, wiederherstellen und löschen" },
-    "versions": { "title": "Versionen", "description": "Vintage-Story-Builds installieren und wechseln" },
-    "settings": { "title": "Einstellungen", "description": "Manager-Konfiguration und Zugriff" }
+    "dashboard": {
+      "title": "Übersicht",
+      "description": "Serverstatus und Schnellaktionen"
+    },
+    "console": {
+      "title": "Konsole",
+      "description": "Live-Ausgabe und Befehle"
+    },
+    "mods": {
+      "title": "Mods",
+      "description": "Mod-Datenbank durchsuchen und installierte Mods verwalten"
+    },
+    "configs": {
+      "title": "Mod-Konfigs",
+      "description": "ModConfig-Dateien im Live- oder Code-Editor bearbeiten"
+    },
+    "players": {
+      "title": "Spieler",
+      "description": "Online-Spieler, Whitelist und Moderation"
+    },
+    "backups": {
+      "title": "Backups",
+      "description": "Backups erstellen, herunterladen, wiederherstellen und löschen"
+    },
+    "versions": {
+      "title": "Versionen",
+      "description": "Vintage-Story-Builds installieren und wechseln"
+    },
+    "settings": {
+      "title": "Einstellungen",
+      "description": "Manager-Konfiguration und Zugriff"
+    }
   },
   "login": {
     "subtitle": "Vintage-Story-Server-Manager",
@@ -325,5 +373,13 @@
     "pt-BR": "Português (Brasil)",
     "ru": "Русский",
     "zh-CN": "简体中文"
+  },
+  "toasts": {
+    "queued": "Eingereiht: {{name}}",
+    "queuedUpdates": "{{count}} Updates eingereiht",
+    "failed": "Fehlgeschlagen: {{message}}",
+    "created": "Erstellt: {{name}}",
+    "restored": "Wiederhergestellt: {{name}}",
+    "deleted": "Gelöscht: {{name}}"
   }
 }

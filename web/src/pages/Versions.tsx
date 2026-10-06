@@ -2,9 +2,11 @@ import { Boxes, Check, Download, Loader2, Zap } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import ProgressBar from "@/components/common/ProgressBar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   useInstallStratum,
   useInstallVersion,
@@ -15,7 +17,6 @@ import {
   useVersions,
 } from "@/hooks/use-api";
 import { errorMessage, formatBytes } from "@/lib/format";
-import { cn } from "@/lib/utils";
 
 type Channel = "stable" | "unstable";
 
@@ -32,23 +33,16 @@ function InstallProgress({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="border border-accent-primary/40 bg-accent-primary/5 p-3">
+    <div className="grid gap-2 border border-border bg-card p-3">
       <div className="flex items-center justify-between text-xs">
         <span className="flex items-center gap-2">
           <Loader2 className="size-3.5 animate-spin text-accent-primary" />
           {t("versions.installing")} <span className="font-mono">{version}</span>
         </span>
-        <span className="text-text-secondary capitalize">{phase}</span>
+        <span className="text-muted-foreground capitalize">{phase}</span>
       </div>
-      <div className="mt-2 h-1.5 w-full bg-bg-input">
-        <div
-          className="h-full bg-accent-primary transition-all"
-          style={{
-            width: total ? `${Math.min(100, Math.round((downloaded / total) * 100))}%` : "100%",
-          }}
-        />
-      </div>
-      <p className="mt-1 text-[11px] text-text-muted">
+      <ProgressBar max={total || 1} showPercentage={total > 0} value={downloaded} />
+      <p className="text-[11px] text-muted-foreground">
         {formatBytes(downloaded)}
         {total ? ` / ${formatBytes(total)}` : ""}
       </p>
@@ -82,32 +76,26 @@ export default function Versions() {
   return (
     <ScrollArea className="h-full" scrollFade>
       <div className="flex flex-col gap-4 pb-4 pr-1">
-      <div className="flex flex-wrap items-center gap-3 border border-border-default bg-bg-card px-3 py-2.5">
-        <span className="text-[10px] font-medium tracking-widest text-text-muted uppercase">
+      <div className="flex flex-wrap items-center gap-3 border border-border bg-card px-3 py-2.5">
+        <span className="text-[10px] font-medium tracking-widest text-muted-foreground uppercase">
           {t("versions.flavor")}
         </span>
-        <div className="flex border border-border-default">
-          {(["vanilla", "stratum"] as const).map((option) => (
-            <button
-              className={cn(
-                "px-3 py-1.5 text-xs font-medium transition-colors",
-                flavor === option
-                  ? "bg-accent-primary text-white"
-                  : "text-text-secondary hover:bg-bg-card-hover hover:text-text-primary",
-              )}
-              disabled={setFlavor.isPending || flavor === option}
-              key={option}
-              onClick={() => setFlavor.mutate(option)}
-              type="button"
-            >
-              {option === "vanilla" ? t("versions.vanilla") : t("versions.stratum")}
-            </button>
-          ))}
-        </div>
+        <ToggleGroup
+          onValueChange={(value) => {
+            const next = value[0];
+            if (next === "vanilla" || next === "stratum") setFlavor.mutate(next);
+          }}
+          size="sm"
+          value={[flavor]}
+          variant="outline"
+        >
+          <ToggleGroupItem value="vanilla">{t("versions.vanilla")}</ToggleGroupItem>
+          <ToggleGroupItem value="stratum">{t("versions.stratum")}</ToggleGroupItem>
+        </ToggleGroup>
         {flavor === "stratum" && stratumTag && (
           <span className="font-mono text-xs text-accent-amber">{stratumTag}</span>
         )}
-        <span className="text-[11px] text-text-muted">{t("versions.switchNote")}</span>
+        <span className="text-[11px] text-muted-foreground">{t("versions.switchNote")}</span>
       </div>
 
       {installing && (
@@ -131,11 +119,11 @@ export default function Versions() {
         <div className="flex items-center gap-2">
           <Zap className="size-3.5 text-accent-amber" />
           <h3 className="text-xs font-semibold">{t("versions.stratumRuntime")}</h3>
-          <p className="text-[11px] text-text-muted">{t("versions.stratumDescription")}</p>
+          <p className="text-[11px] text-muted-foreground">{t("versions.stratumDescription")}</p>
         </div>
 
         {stratum.isLoading && !stratum.data && (
-          <div className="flex items-center gap-2 text-xs text-text-muted">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
             {t("versions.fetchingStratum")}
           </div>
@@ -147,21 +135,21 @@ export default function Versions() {
         )}
 
         {stratum.data && (
-          <div className="border border-border-default">
-            <div className="flex items-center gap-3 border-b border-border-default bg-bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
+          <div className="border border-border">
+            <div className="flex items-center gap-3 border-b border-border bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-muted-foreground uppercase">
               <span className="flex-1">{t("versions.release")}</span>
               <span className="hidden w-28 sm:block">{t("versions.baseVs")}</span>
               <span className="hidden w-24 sm:block">{t("versions.published")}</span>
               <span className="w-32 text-right">{t("versions.action")}</span>
             </div>
-            <div className="divide-y divide-border-subtle">
+            <div className="divide-y divide-border">
               {stratum.data.releases.slice(0, 12).map((release) => {
                 const isInstalling = installing?.version === release.tag;
                 const isActive = flavor === "stratum" && stratumTag === release.tag;
                 const isInstalled = stratumTag === release.tag;
                 return (
                   <div
-                    className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-bg-card-hover"
+                    className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-muted/40"
                     key={release.tag}
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -179,23 +167,23 @@ export default function Versions() {
                         <Badge variant="success">{t("versions.installed")}</Badge>
                       )}
                     </div>
-                    <span className="hidden w-28 font-mono text-[11px] text-text-muted sm:block">
+                    <span className="hidden w-28 font-mono text-[11px] text-muted-foreground sm:block">
                       {release.vs_version}
                       {release.stratum_version && (
-                        <span className="text-text-secondary"> / {release.stratum_version}</span>
+                        <span className="text-muted-foreground"> / {release.stratum_version}</span>
                       )}
                     </span>
-                    <span className="hidden w-24 font-mono text-[11px] text-text-muted sm:block">
+                    <span className="hidden w-24 font-mono text-[11px] text-muted-foreground sm:block">
                       {release.published_at.slice(0, 10)}
                     </span>
                     <div className="flex w-32 justify-end">
                       {isInstalling ? (
-                        <span className="flex items-center gap-1.5 text-xs text-text-secondary">
+                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Loader2 className="size-3.5 animate-spin" />
                           {t("versions.installing")}
                         </span>
                       ) : isActive ? (
-                        <span className="text-xs text-text-muted">{t("versions.inUse")}</span>
+                        <span className="text-xs text-muted-foreground">{t("versions.inUse")}</span>
                       ) : (
                         <Button
                           disabled={installStratum.isPending || Boolean(installing)}
@@ -228,30 +216,25 @@ export default function Versions() {
 
       <section className="grid gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <Boxes className="size-3.5 text-text-secondary" />
+          <Boxes className="size-3.5 text-muted-foreground" />
           <h3 className="text-xs font-semibold">{t("versions.vanillaBuilds")}</h3>
-          <div className="flex border border-border-default">
-            {(["stable", "unstable"] as const).map((option) => (
-              <button
-                className={cn(
-                  "px-3 py-1.5 text-xs font-medium capitalize transition-colors",
-                  channel === option
-                    ? "bg-accent-primary text-white"
-                    : "text-text-secondary hover:bg-bg-card-hover hover:text-text-primary",
-                )}
-                key={option}
-                onClick={() => setChannel(option)}
-                type="button"
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-          <p className="text-[11px] text-text-muted">{t("versions.vanillaNote")}</p>
+          <ToggleGroup
+            onValueChange={(value) => {
+              const next = value[0];
+              if (next === "stable" || next === "unstable") setChannel(next);
+            }}
+            size="sm"
+            value={[channel]}
+            variant="outline"
+          >
+            <ToggleGroupItem value="stable">stable</ToggleGroupItem>
+            <ToggleGroupItem value="unstable">unstable</ToggleGroupItem>
+          </ToggleGroup>
+          <p className="text-[11px] text-muted-foreground">{t("versions.vanillaNote")}</p>
         </div>
 
         {versions.isLoading && !versions.data && (
-          <div className="flex items-center gap-2 text-xs text-text-muted">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
             {t("versions.fetching")}
           </div>
@@ -264,23 +247,23 @@ export default function Versions() {
         )}
 
         {versions.data && (
-          <div className="border border-border-default">
-            <div className="flex items-center gap-3 border-b border-border-default bg-bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
+          <div className="border border-border">
+            <div className="flex items-center gap-3 border-b border-border bg-card px-3 py-2 text-[10px] font-medium tracking-widest text-muted-foreground uppercase">
               <span className="flex-1">{t("dashboard.version")}</span>
               <span className="hidden w-24 text-right sm:block">{t("versions.size")}</span>
               <span className="w-40 text-right">{t("versions.action")}</span>
             </div>
-            <div className="divide-y divide-border-subtle">
+            <div className="divide-y divide-border">
               {versions.data.versions.map((entry) => {
                 const isInstalling = installing?.version === entry.version;
                 const isActive = flavor === "vanilla" && settings?.version === entry.version;
                 return (
                   <div
-                    className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-bg-card-hover"
+                    className="flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-muted/40"
                     key={entry.version}
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <Boxes className="size-3.5 shrink-0 text-text-muted" />
+                      <Boxes className="size-3.5 shrink-0 text-muted-foreground" />
                       <span className="font-mono text-xs">{entry.version}</span>
                       {entry.latest && <Badge variant="amber">{t("versions.latest")}</Badge>}
                       {isActive && (
@@ -293,17 +276,17 @@ export default function Versions() {
                         <Badge variant="success">{t("versions.installed")}</Badge>
                       )}
                     </div>
-                    <span className="hidden w-24 text-right font-mono text-[11px] text-text-muted sm:block">
+                    <span className="hidden w-24 text-right font-mono text-[11px] text-muted-foreground sm:block">
                       {entry.size}
                     </span>
                     <div className="flex w-40 justify-end">
                       {isInstalling ? (
-                        <span className="flex items-center gap-1.5 text-xs text-text-secondary">
+                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Loader2 className="size-3.5 animate-spin" />
                           {t("versions.installing")}
                         </span>
                       ) : entry.active ? (
-                        <span className="text-xs text-text-muted">{t("versions.inUse")}</span>
+                        <span className="text-xs text-muted-foreground">{t("versions.inUse")}</span>
                       ) : entry.installed ? (
                         <Button
                           disabled={setActive.isPending}
@@ -333,7 +316,7 @@ export default function Versions() {
         )}
       </section>
 
-      <p className="text-[11px] text-text-muted">{t("versions.footer")}</p>
+      <p className="text-[11px] text-muted-foreground">{t("versions.footer")}</p>
       </div>
     </ScrollArea>
   );

@@ -21,7 +21,31 @@
     "reset": "Сбросить",
     "switch": "Сменить",
     "close": "Закрыть",
-    "scrollToTop": "Наверх"
+    "scrollToTop": "Наверх",
+    "actions": {
+      "close": "Закрыть"
+    }
+  },
+  "layout": {
+    "sidebar": {
+      "title": "VS WebUI",
+      "description": "Менеджер сервера",
+      "toggle": "Переключить боковую панель"
+    },
+    "theme": {
+      "toggle": "Переключить тему",
+      "switchToLight": "Светлая тема",
+      "switchToDark": "Тёмная тема"
+    },
+    "toast": {
+      "close": "Закрыть"
+    }
+  },
+  "command": {
+    "placeholder": "Введите команду или поиск…",
+    "empty": "Нет результатов.",
+    "navigation": "Навигация",
+    "server": "Сервер"
   },
   "nav": {
     "dashboard": "Обзор",
@@ -34,7 +58,10 @@
     "settings": "Настройки",
     "navigation": "Навигация"
   },
-  "brand": { "name": "VS WEBUI", "tagline": "Менеджер сервера" },
+  "brand": {
+    "name": "VS WEBUI",
+    "tagline": "Менеджер сервера"
+  },
   "status": {
     "running": "Работает",
     "starting": "Запускается",
@@ -46,14 +73,38 @@
     "noVersion": "версия не выбрана"
   },
   "pages": {
-    "dashboard": { "title": "Обзор", "description": "Состояние сервера и быстрые действия" },
-    "console": { "title": "Консоль", "description": "Живой вывод и команды" },
-    "mods": { "title": "Моды", "description": "Поиск в базе модов и управление установленными" },
-    "configs": { "title": "Конфиги модов", "description": "Редактирование ModConfig визуальным или кодовым редактором" },
-    "players": { "title": "Игроки", "description": "Игроки онлайн, белый список и модерация" },
-    "backups": { "title": "Бэкапы", "description": "Создание, скачивание, восстановление и удаление бэкапов" },
-    "versions": { "title": "Версии", "description": "Установка и переключение сборок Vintage Story" },
-    "settings": { "title": "Настройки", "description": "Конфигурация менеджера и доступ" }
+    "dashboard": {
+      "title": "Обзор",
+      "description": "Состояние сервера и быстрые действия"
+    },
+    "console": {
+      "title": "Консоль",
+      "description": "Живой вывод и команды"
+    },
+    "mods": {
+      "title": "Моды",
+      "description": "Поиск в базе модов и управление установленными"
+    },
+    "configs": {
+      "title": "Конфиги модов",
+      "description": "Редактирование ModConfig визуальным или кодовым редактором"
+    },
+    "players": {
+      "title": "Игроки",
+      "description": "Игроки онлайн, белый список и модерация"
+    },
+    "backups": {
+      "title": "Бэкапы",
+      "description": "Создание, скачивание, восстановление и удаление бэкапов"
+    },
+    "versions": {
+      "title": "Версии",
+      "description": "Установка и переключение сборок Vintage Story"
+    },
+    "settings": {
+      "title": "Настройки",
+      "description": "Конфигурация менеджера и доступ"
+    }
   },
   "login": {
     "subtitle": "Менеджер сервера Vintage Story",
@@ -322,5 +373,13 @@
     "pt-BR": "Português (Brasil)",
     "ru": "Русский",
     "zh-CN": "简体中文"
+  },
+  "toasts": {
+    "queued": "В очереди: {{name}}",
+    "queuedUpdates": "{{count}} обновлений в очереди",
+    "failed": "Ошибка: {{message}}",
+    "created": "Создан {{name}}",
+    "restored": "Восстановлен {{name}}",
+    "deleted": "Удалён {{name}}"
   }
 }

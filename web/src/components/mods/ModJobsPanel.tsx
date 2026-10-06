@@ -1,6 +1,7 @@
 import { Check, Download, Loader2, PackagePlus, Trash2, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import ProgressBar from "@/components/common/ProgressBar";
 import { Badge } from "@/components/ui/badge";
 import { useModJobs } from "@/hooks/use-api";
 import type { ModJob } from "@/lib/api";
@@ -9,7 +10,7 @@ import { formatBytes } from "@/lib/format";
 function actionIcon(job: ModJob) {
   if (job.status === "done") return <Check className="size-3.5 text-success" />;
   if (job.status === "error") return <TriangleAlert className="size-3.5 text-error" />;
-  if (job.action === "remove") return <Trash2 className="size-3.5 text-text-secondary" />;
+  if (job.action === "remove") return <Trash2 className="size-3.5 text-muted-foreground" />;
   if (job.action === "update") return <Download className="size-3.5 text-info" />;
   return <PackagePlus className="size-3.5 text-accent-primary" />;
 }
@@ -34,7 +35,7 @@ function JobRow({ job }: { job: ModJob }) {
         )}
         <span className="min-w-0 flex-1 truncate">
           <span className="font-medium">{job.name}</span>
-          <span className="text-text-muted">
+          <span className="text-muted-foreground">
             {" "}
             ·{" "}
             {t(
@@ -45,10 +46,10 @@ function JobRow({ job }: { job: ModJob }) {
                   : "mods.jobRemove",
             )}
           </span>
-          {job.version && <span className="text-text-muted"> {job.version}</span>}
+          {job.version && <span className="text-muted-foreground"> {job.version}</span>}
         </span>
         {job.dependency && <Badge variant="outline">{t("mods.dependency")}</Badge>}
-        <span className="text-text-muted">
+        <span className="text-muted-foreground">
           {job.status === "running"
             ? job.total > 0
               ? `${percent}%`
@@ -57,15 +58,17 @@ function JobRow({ job }: { job: ModJob }) {
         </span>
       </div>
       {job.status === "running" && job.total > 0 && (
-        <div className="h-1 w-full bg-bg-input">
-          <div className="h-full bg-accent-primary transition-all" style={{ width: `${percent}%` }} />
-        </div>
+        <ProgressBar
+          max={job.total}
+          showPercentage={false}
+          value={job.progress}
+        />
       )}
       {job.status === "error" && job.error && (
         <p className="text-error text-[11px]">{job.error}</p>
       )}
       {job.status === "running" && job.total > 0 && (
-        <p className="text-text-muted text-[10px]">
+        <p className="text-muted-foreground text-[10px]">
           {t("mods.downloaded", {
             done: formatBytes(job.progress),
             total: formatBytes(job.total),
@@ -91,11 +94,11 @@ export default function ModJobsPanel() {
   if (visible.length === 0) return null;
 
   return (
-    <div className="border border-border-default bg-bg-card">
-      <div className="border-b border-border-subtle px-3 py-2 text-[10px] font-medium tracking-widest text-text-muted uppercase">
+    <div className="border border-border bg-card">
+      <div className="border-b border-border px-3 py-2 text-[10px] font-medium tracking-widest text-muted-foreground uppercase">
         {t("mods.modJobs")}
       </div>
-      <div className="divide-y divide-border-subtle">
+      <div className="divide-y divide-border">
         {visible.map((job) => (
           <JobRow job={job} key={job.id} />
         ))}

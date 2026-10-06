@@ -21,7 +21,31 @@
     "reset": "Reset",
     "switch": "Switch",
     "close": "Close",
-    "scrollToTop": "Scroll to top"
+    "scrollToTop": "Scroll to top",
+    "actions": {
+      "close": "Close"
+    }
+  },
+  "layout": {
+    "sidebar": {
+      "title": "VS WebUI",
+      "description": "Server Manager",
+      "toggle": "Toggle sidebar"
+    },
+    "theme": {
+      "toggle": "Toggle theme",
+      "switchToLight": "Switch to light theme",
+      "switchToDark": "Switch to dark theme"
+    },
+    "toast": {
+      "close": "Close"
+    }
+  },
+  "command": {
+    "placeholder": "Type a command or search…",
+    "empty": "No results.",
+    "navigation": "Navigation",
+    "server": "Server"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -349,5 +373,13 @@
     "pt-BR": "Português (Brasil)",
     "ru": "Русский",
     "zh-CN": "简体中文"
+  },
+  "toasts": {
+    "queued": "Queued: {{name}}",
+    "queuedUpdates": "Queued {{count}} updates",
+    "failed": "Failed: {{message}}",
+    "created": "Created {{name}}",
+    "restored": "Restored {{name}}",
+    "deleted": "Deleted {{name}}"
   }
 }

@@ -188,7 +188,7 @@ async function main() {
     await page.goto(`http://localhost:${PORT}/`);
     await page.fill("#password", PASSWORD);
     await page.click('button[type="submit"]');
-    await page.waitForSelector("aside", { timeout: 10_000 });
+    await page.waitForSelector('[data-slot="sidebar"]', { timeout: 10_000 });
 
     for (const pass of ["en", "de"] as const) {
       if (pass === "de") {
