@@ -58,10 +58,13 @@ async function main() {
     await page.waitForTimeout(300);
     console.log("command palette ok");
 
-    // Mod detail sheet (Base UI dialog) with a virtualized row.
+    // Mod detail sheet (Base UI dialog) with a virtualized row (search first —
+    // off-screen virtualized rows are not mounted).
     await page.goto(`http://localhost:${PORT}/mods`);
-    await page.waitForTimeout(1500);
-    await page.click("button:has-text('BetterRuins')");
+    await page.waitForSelector('[data-slot="input-group-control"]', { timeout: 10_000 });
+    await page.fill('[data-slot="input-group-control"]', "BetterRuins");
+    await page.waitForSelector('[data-slot="mod-row-summary"]', { timeout: 15_000 });
+    await page.click('[data-slot="mod-row-summary"]');
     await page.waitForSelector('[data-slot="sheet-content"]', { timeout: 5_000 });
     await page.keyboard.press("Escape");
     await page.waitForTimeout(300);

@@ -34,7 +34,7 @@ interface ModBrowseRowProps {
   favorited: boolean;
   pending: boolean;
   tagColorMap: Record<string, string>;
-  activeTag: string;
+  activeTags: Set<string>;
   onTagClick: (tag: string) => void;
   onOpen: () => void;
   onInstall: () => void;
@@ -90,7 +90,7 @@ export default function ModBrowseRow({
   favorited,
   pending,
   tagColorMap,
-  activeTag,
+  activeTags,
   onTagClick,
   onOpen,
   onInstall,
@@ -108,6 +108,7 @@ export default function ModBrowseRow({
 
   return (
     <div
+      data-slot="mod-browse-row"
       className={cn(
         "group flex w-full items-start gap-3 border bg-card p-3 transition-colors hover:bg-muted/40",
         // Installed: green. Pinned: amber. Update waiting: purple, so a pending
@@ -148,7 +149,12 @@ export default function ModBrowseRow({
         )}
       </div>
 
-      <button className="min-w-0 flex-1 text-left" onClick={onOpen} type="button">
+      <button
+        className="min-w-0 flex-1 text-left"
+        data-slot="mod-row-summary"
+        onClick={onOpen}
+        type="button"
+      >
         <div className="flex min-w-0 items-center gap-2">
           <h3 className="truncate text-sm font-semibold">{mod.name}</h3>
           <Badge className={sideBadgeClass(mod.side)} variant="outline">
@@ -182,7 +188,7 @@ export default function ModBrowseRow({
           <div className="mt-1.5 flex flex-wrap items-center gap-1">
             {mod.tags.slice(0, MAX_VISIBLE_TAGS).map((tag) => (
               <TagChip
-                active={activeTag === tag}
+                active={activeTags.has(tag)}
                 color={tagColorMap[tag]}
                 key={tag}
                 name={tag}

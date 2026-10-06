@@ -106,12 +106,26 @@ export function useSetActiveVersion() {
 
 // ── mods ────────────────────────────────────────────────────────────────────
 
-export function useModDb(version: string | undefined, text: string, enabled = true) {
+/** Canonical query key for the ModDB list fetch (used by the author filter). */
+export const modbQueryKey = (versions: string[], text: string) =>
+  ["modb", [...versions].sort().join(","), text] as const;
+
+export function useModDb(versions: string[], text: string, enabled = true) {
   return useQuery({
-    queryKey: ["modb", version ?? "", text],
-    queryFn: () => api.modbMods(version, text),
+    queryKey: modbQueryKey(versions, text),
+    queryFn: () => api.modbMods([...versions].sort(), text),
     staleTime: 5 * 60_000,
     placeholderData: (previous) => previous,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useGameVersions(enabled = true) {
+  return useQuery({
+    queryKey: ["modb", "gameversions"],
+    queryFn: api.modbGameVersions,
+    staleTime: 60 * 60_000,
     retry: false,
     enabled,
   });

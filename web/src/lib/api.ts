@@ -333,14 +333,18 @@ export const api = {
 
   serverConfig: () => request<ServerConfigResponse>("/api/serverconfig"),
 
-  modbMods: (version: string | undefined, text: string) => {
+  modbMods: (versions: string[], text: string) => {
     const params = new URLSearchParams();
-    if (version) params.set("version", version);
+    if (versions.length > 0) params.set("versions", versions.join(","));
     if (text) params.set("text", text);
     const query = params.toString();
     return request<{ mods: ModSummary[] }>(`/api/modb/mods${query ? `?${query}` : ""}`);
   },
   modbTags: () => request<{ tags: ModTag[] }>("/api/modb/tags"),
+  modbGameVersions: () =>
+    request<{ gameversions: Array<{ tagid: number; name: string; color: string }> }>(
+      "/api/modb/gameversions",
+    ),
   modbDetail: (modid: string | number) =>
     request<{ mod: ModDetail }>(`/api/modb/mod/${encodeURIComponent(String(modid))}`),
 

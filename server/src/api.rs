@@ -51,6 +51,7 @@ pub fn router(state: SharedState) -> Router {
         )
         .route("/api/modb/mods", get(modb_mods))
         .route("/api/modb/tags", get(modb_tags))
+        .route("/api/modb/gameversions", get(modb_gameversions))
         .route("/api/modb/mod/{modid}", get(modb_detail))
         .route("/api/mods/installed", get(mods_installed))
         .route("/api/mods/updates", get(mods_updates))
@@ -610,7 +611,8 @@ async fn put_serverconfig(
 
 #[derive(Deserialize)]
 struct ModbModsQuery {
-    version: Option<String>,
+    /// Comma-separated game versions (ModDB expects one `gameversions[]` each).
+    versions: Option<String>,
     text: Option<String>,
 }
 
@@ -653,9 +655,28 @@ async fn modb_mods(
     Query(query): Query<ModbModsQuery>,
 ) -> Result<Json<Value>, ApiError> {
     let text = query.text.unwrap_or_default();
+    let versions: Vec<String> = query
+        .versions
+        .unwrap_or_default()
+        .split(',')
+        .map(|version| version.trim().to_string())
+        .filter(|version| !version.is_empty())
+        .collect();
     state
         .moddb
-        .mods(query.version.as_deref(), &text)
+        .mods(&versions, &text)
+        .await
+        .map(Json)
+        .map_err(|message| ApiError::new(StatusCode::BAD_GATEWAY, message))
+}
+
+async fn modb_gameversions(
+    State(state): State<SharedState>,
+    _authed: Authed,
+) -> Result<Json<Value>, ApiError> {
+    state
+        .moddb
+        .gameversions()
         .await
         .map(Json)
         .map_err(|message| ApiError::new(StatusCode::BAD_GATEWAY, message))

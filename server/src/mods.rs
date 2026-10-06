@@ -28,6 +28,7 @@ pub struct ModDbCache {
     lists: Mutex<HashMap<String, (Instant, Value)>>,
     details: Mutex<HashMap<String, (Instant, Value)>>,
     tags: Mutex<Option<(Instant, Value)>>,
+    gameversions: Mutex<Option<(Instant, Value)>>,
 }
 
 impl ModDbCache {
@@ -37,20 +38,25 @@ impl ModDbCache {
             lists: Mutex::new(HashMap::new()),
             details: Mutex::new(HashMap::new()),
             tags: Mutex::new(None),
+            gameversions: Mutex::new(None),
         }
     }
 
-    /// Mod list filtered by game version and/or search text.
-    pub async fn mods(&self, version: Option<&str>, text: &str) -> Result<Value, String> {
-        let version = version.unwrap_or("").trim();
+    /// Mod list filtered by game versions and/or search text.
+    pub async fn mods(&self, versions: &[String], text: &str) -> Result<Value, String> {
+        let versions: Vec<String> = versions
+            .iter()
+            .map(|version| version.trim().to_string())
+            .filter(|version| !version.is_empty())
+            .collect();
         let text = text.trim();
-        let key = format!("{version}|{text}");
+        let key = format!("{}|{text}", versions.join(","));
         if let Some(value) = cached(&self.lists, &key, DB_CACHE_TTL) {
             return Ok(value);
         }
         let mut params: Vec<(String, String)> = Vec::new();
-        if !version.is_empty() {
-            params.push(("gameversions[]".into(), version.to_string()));
+        for version in &versions {
+            params.push(("gameversions[]".into(), version.clone()));
         }
         if !text.is_empty() {
             params.push(("text".into(), text.to_string()));
@@ -62,6 +68,20 @@ impl ModDbCache {
             .lock()
             .unwrap()
             .insert(key, (Instant::now(), value.clone()));
+        Ok(value)
+    }
+
+    /// Every game version tag known to ModDB (for the version filter).
+    pub async fn gameversions(&self) -> Result<Value, String> {
+        if let Some((at, value)) = self.gameversions.lock().unwrap().clone() {
+            if at.elapsed() < TAGS_CACHE_TTL {
+                return Ok(value);
+            }
+        }
+        let value = self
+            .fetch_json("https://mods.vintagestory.at/api/gameversions", &[])
+            .await?;
+        *self.gameversions.lock().unwrap() = Some((Instant::now(), value.clone()));
         Ok(value)
     }
 
