@@ -45,7 +45,8 @@
     "placeholder": "Saisir une commande ou rechercher…",
     "empty": "Aucun résultat.",
     "navigation": "Navigation",
-    "server": "Serveur"
+    "server": "Serveur",
+    "search": "Rechercher"
   },
   "nav": {
     "dashboard": "Tableau de bord",

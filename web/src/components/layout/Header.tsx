@@ -1,44 +1,104 @@
+import { formatForDisplay } from "@tanstack/react-hotkeys";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouterState } from "@tanstack/react-router";
-import { RefreshCw } from "lucide-react";
+import { Check, Languages, RefreshCw, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import ThemeToggle from "@/components/common/ThemeToggle";
+import DownloadsButton from "@/components/downloads/DownloadsButton";
+import ServerControls from "@/components/layout/ServerControls";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { LANGUAGES, setLanguage } from "@/lib/i18n";
 
-const pageMeta: Record<string, { titleKey: string; descriptionKey?: string }> = {
-  "/": { titleKey: "pages.dashboard.title", descriptionKey: "pages.dashboard.description" },
-  "/console": { titleKey: "pages.console.title", descriptionKey: "pages.console.description" },
-  "/mods": { titleKey: "pages.mods.title", descriptionKey: "pages.mods.description" },
-  "/config": { titleKey: "pages.configs.title", descriptionKey: "pages.configs.description" },
-  "/players": { titleKey: "pages.players.title", descriptionKey: "pages.players.description" },
-  "/backups": { titleKey: "pages.backups.title", descriptionKey: "pages.backups.description" },
-  "/versions": { titleKey: "pages.versions.title", descriptionKey: "pages.versions.description" },
-  "/settings": { titleKey: "pages.settings.title", descriptionKey: "pages.settings.description" },
-};
-
-export default function Header() {
-  const { t } = useTranslation();
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
+/**
+ * Full-width app bar spanning above the sidebar and the page inset
+ * (Story Forge titlebar layout).
+ */
+export default function Header({ onOpenPalette }: { onOpenPalette?: () => void }) {
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const fetching = queryClient.isFetching();
-  const meta = pageMeta[pathname] ?? { titleKey: "brand.name" };
 
   return (
-    <header className="flex h-11 shrink-0 items-center gap-3 border-b border-border px-4">
-      <h2 className="text-sm font-semibold whitespace-nowrap">{t(meta.titleKey)}</h2>
-      {meta.descriptionKey && (
-        <p className="truncate text-xs text-muted-foreground">{t(meta.descriptionKey)}</p>
-      )}
+    <header
+      className="fixed inset-x-0 top-0 z-30 flex h-11 items-center gap-2 bg-sidebar px-3"
+      data-slot="app-header"
+    >
+      <SidebarTrigger />
+      <div className="bg-muted block h-2/3 w-0.5" />
+      <span className="text-muted-foreground hidden truncate text-[10px] font-medium tracking-widest whitespace-nowrap uppercase sm:inline">
+        {t("brand.name")}
+      </span>
       <div className="flex-1" />
-      <Button
-        disabled={fetching > 0}
-        onClick={() => void queryClient.refetchQueries()}
-        size="sm"
-        variant="ghost"
-      >
-        <RefreshCw className={fetching > 0 ? "animate-spin" : undefined} />
-        {t("common.refresh")}
-      </Button>
+
+      <ServerControls />
+      <span className="h-5 w-px bg-border" />
+
+      <div className="flex items-center gap-1">
+        <DownloadsButton />
+
+        <Button
+          className="gap-2 text-muted-foreground"
+          onClick={onOpenPalette}
+          size="sm"
+          title={t("command.search")}
+          variant="outline"
+        >
+          <Search />
+          <span className="hidden md:inline">{t("command.search")}</span>
+          <kbd className="pointer-events-none hidden rounded-none border px-1 font-sans text-[10px] md:inline">
+            {formatForDisplay("Mod")}K
+          </kbd>
+        </Button>
+
+        <ThemeToggle />
+
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                aria-label={t("language.label")}
+                className="gap-2 text-muted-foreground"
+                size="sm"
+                variant="ghost"
+              />
+            }
+          >
+            <Languages />
+            <span className="hidden md:inline">{t(`language.${i18n.language}`)}</span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>{t("language.label")}</DropdownMenuLabel>
+              {LANGUAGES.map((language) => (
+                <DropdownMenuItem key={language} onClick={() => setLanguage(language)}>
+                  <span className="flex-1">{t(`language.${language}`)}</span>
+                  {i18n.language === language && <Check />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Button
+          aria-label={t("common.refresh")}
+          disabled={fetching > 0}
+          onClick={() => void queryClient.refetchQueries()}
+          size="icon-sm"
+          title={t("common.refresh")}
+          variant="ghost"
+        >
+          <RefreshCw className={fetching > 0 ? "animate-spin" : undefined} />
+        </Button>
+      </div>
     </header>
   );
 }

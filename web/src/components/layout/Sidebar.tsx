@@ -10,21 +10,8 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { Check, Download, Languages } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import ThemeToggle from "@/components/common/ThemeToggle";
-import { useDownloadsSheet } from "@/components/downloads/downloads-sheet";
-import { StatusDot, statusMeta } from "@/components/status-badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Sidebar as SidebarRoot,
   SidebarContent,
@@ -40,8 +27,6 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { useStatus } from "@/hooks/use-api";
-import { LANGUAGES, setLanguage } from "@/lib/i18n";
-import { cn } from "cn";
 
 interface NavItem {
   to: string;
@@ -62,16 +47,13 @@ const navItems: NavItem[] = [
 ];
 
 export default function Sidebar() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { data } = useStatus();
-  const { setOpen, activeCount } = useDownloadsSheet();
-  const status = data?.status.status;
-  const meta = statusMeta(status);
 
   return (
     <SidebarRoot collapsible="icon">
-      <SidebarHeader className="pt-3">
+      <SidebarHeader className="pt-14">
         <div className="pointer-events-none flex items-center gap-2.5 px-1 group-data-[collapsible=icon]:px-0">
           <div className="flex size-8 shrink-0 items-center justify-center border border-accent-primary/40 bg-accent-primary/10">
             <span className="text-sm font-bold text-accent-primary">VS</span>
@@ -116,49 +98,9 @@ export default function Sidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="grid gap-2 group-data-[collapsible=icon]:hidden">
-          <Button
-            className="w-full justify-start px-1"
-            onClick={() => setOpen(true)}
-            size="sm"
-            variant="outline"
-          >
-            <Download />
-            <span className="truncate">
-              {activeCount > 0
-                ? t("downloads.active", { count: activeCount })
-                : t("downloads.title")}
-            </span>
-          </Button>
-          <div className="flex items-center gap-2 px-1">
-            <StatusDot status={status} />
-            <span className={cn("text-xs font-medium", meta.text)}>{t(meta.labelKey)}</span>
-            <div className="flex-1" />
-            <ThemeToggle />
-          </div>
-          <p className="truncate px-1 font-mono text-[10px] text-muted-foreground">
-            {data?.status.version ?? data?.settings.version ?? t("status.noVersion")}
-          </p>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={<Button className="w-full justify-start px-1" size="sm" variant="ghost" />}
-            >
-              <Languages />
-              <span className="truncate">{t(`language.${i18n.language}`)}</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" side="top">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>{t("language.label")}</DropdownMenuLabel>
-                {LANGUAGES.map((language) => (
-                  <DropdownMenuItem key={language} onClick={() => setLanguage(language)}>
-                    <span className="flex-1">{t(`language.${language}`)}</span>
-                    {i18n.language === language && <Check />}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <p className="truncate px-1 font-mono text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">
+          {data?.status.version ?? data?.settings.version ?? t("status.noVersion")}
+        </p>
       </SidebarFooter>
 
       <SidebarRail />

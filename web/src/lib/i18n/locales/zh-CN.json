@@ -45,7 +45,8 @@
     "placeholder": "输入命令或搜索…",
     "empty": "无结果。",
     "navigation": "导航",
-    "server": "服务器"
+    "server": "服务器",
+    "search": "搜索"
   },
   "nav": {
     "dashboard": "概览",

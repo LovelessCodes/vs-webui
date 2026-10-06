@@ -45,7 +45,8 @@
     "placeholder": "Type a command or search…",
     "empty": "No results.",
     "navigation": "Navigation",
-    "server": "Server"
+    "server": "Server",
+    "search": "Search"
   },
   "nav": {
     "dashboard": "Dashboard",

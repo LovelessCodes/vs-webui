@@ -45,7 +45,8 @@
     "placeholder": "Befehl eingeben oder suchen…",
     "empty": "Keine Ergebnisse.",
     "navigation": "Navigation",
-    "server": "Server"
+    "server": "Server",
+    "search": "Suchen"
   },
   "nav": {
     "dashboard": "Übersicht",

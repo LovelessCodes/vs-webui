@@ -6,6 +6,7 @@ import { useState } from "react";
 import CommandPalette from "@/components/command-palette";
 import { DownloadsProvider } from "@/components/downloads/downloads-sheet";
 import Header from "@/components/layout/Header";
+import PageHeader from "@/components/layout/PageHeader";
 import Sidebar from "@/components/layout/Sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/toast";
@@ -35,9 +36,10 @@ export default function AppShell() {
     <SidebarProvider className="h-svh overflow-hidden">
       <DownloadsProvider>
         <Toaster />
+        <Header onOpenPalette={() => setCommandOpen(true)} />
         <Sidebar />
-        <SidebarInset className="min-w-0 overflow-hidden">
-          <Header />
+        <SidebarInset className="mt-11 min-w-0 overflow-hidden md:mt-11">
+          <PageHeader />
           <main className="min-h-0 flex-1 overflow-hidden p-6">
             <Outlet />
           </main>
