@@ -419,7 +419,19 @@
     "backupRetention": "Copias conservadas por tipo",
     "backupRetentionHint": "Las copias antiguas se eliminan automáticamente (1–100).",
     "collectTps": "Recopilar métricas de TPS",
-    "collectTpsHint": "Envía /stats una vez por minuto mientras el servidor está en marcha para que el panel pueda graficar el tick rate. La salida de la sonda se oculta en la consola."
+    "collectTpsHint": "Envía /stats una vez por minuto mientras el servidor está en marcha para que el panel pueda graficar el tick rate. La salida de la sonda se oculta en la consola.",
+    "publicTitle": "Vista pública",
+    "publicDescription": "Muestra un panel de solo lectura a los visitantes sin sesión, con un botón de acceso.",
+    "publicEnable": "Activar vista pública",
+    "publicEnableHint": "Los visitantes sin sesión ven la página de invitado en lugar del formulario de acceso.",
+    "publicSections": "Secciones visibles",
+    "publicSectionStatus": "Estado del servidor",
+    "publicSectionBuild": "Versión y runtime",
+    "publicSectionMetrics": "Métricas de rendimiento",
+    "publicSectionInfo": "Información del servidor",
+    "publicSectionPlayers": "Jugadores en línea",
+    "publicSectionHistory": "Historial de jugadores",
+    "publicPreview": "Abrir vista de invitado"
   },
   "players": {
     "notRunning": "El servidor no está en ejecución — los comandos de lista blanca y moderación lo requieren.",
@@ -520,5 +532,11 @@
     "configDescription": "Ajustes del mundo desde serverconfig.json (WorldConfig); se aplican en el próximo inicio del servidor.",
     "configMissing": "serverconfig.json aún no existe — se genera en el primer inicio del servidor.",
     "legacy": "Antiguo"
+  },
+  "public": {
+    "infoTitle": "Información del servidor",
+    "previewHint": "Estás previsualizando la página de invitado: los visitantes ven exactamente esto.",
+    "exitPreview": "Salir de la vista previa",
+    "disabled": "La vista pública está desactivada. Actívala en Ajustes → Vista pública."
   }
 }

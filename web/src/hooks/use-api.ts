@@ -570,6 +570,16 @@ export function useMetrics(enabled = true) {
   });
 }
 
+export function usePublicView(enabled = true) {
+  return useQuery({
+    queryKey: ["public"],
+    queryFn: api.publicView,
+    refetchInterval: 5_000,
+    retry: false,
+    enabled,
+  });
+}
+
 export function useStorage(enabled = true) {
   return useQuery({
     queryKey: ["storage"],

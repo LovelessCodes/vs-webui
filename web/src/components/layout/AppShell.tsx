@@ -13,10 +13,14 @@ import { Toaster } from "@/components/ui/toast";
 import { useMe } from "@/hooks/use-api";
 
 import Login from "@/pages/Login";
+import PublicDashboard from "@/pages/PublicDashboard";
 
 export default function AppShell() {
   const me = useMe();
   const [commandOpen, setCommandOpen] = useState(false);
+  const [previewGuest] = useState(
+    () => new URLSearchParams(window.location.search).get("as") === "guest",
+  );
 
   useHotkey("Mod+K", () => setCommandOpen((open) => !open));
 
@@ -29,7 +33,12 @@ export default function AppShell() {
   }
 
   if (!me.data?.authenticated) {
-    return <Login />;
+    // Visitors get the guest page when the admin enabled it.
+    return me.data?.public?.enabled ? <PublicDashboard /> : <Login />;
+  }
+
+  if (previewGuest) {
+    return <PublicDashboard preview />;
   }
 
   return (

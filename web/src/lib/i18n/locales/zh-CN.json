@@ -419,7 +419,19 @@
     "backupRetention": "每类保留的备份数",
     "backupRetentionHint": "旧备份会自动清理（1–100）。",
     "collectTps": "收集 TPS 指标",
-    "collectTpsHint": "服务器运行时每分钟发送一次 /stats，以便仪表盘绘制 tick 率。探测输出不会显示在控制台中。"
+    "collectTpsHint": "服务器运行时每分钟发送一次 /stats，以便仪表盘绘制 tick 率。探测输出不会显示在控制台中。",
+    "publicTitle": "公开视图",
+    "publicDescription": "向未登录访客展示只读仪表盘，并提供登录按钮。",
+    "publicEnable": "启用公开视图",
+    "publicEnableHint": "未登录访客将看到访客页面，而不是登录表单。",
+    "publicSections": "可见区块",
+    "publicSectionStatus": "服务器状态",
+    "publicSectionBuild": "版本与运行时",
+    "publicSectionMetrics": "性能指标",
+    "publicSectionInfo": "服务器信息",
+    "publicSectionPlayers": "在线玩家",
+    "publicSectionHistory": "玩家历史",
+    "publicPreview": "打开访客预览"
   },
   "players": {
     "notRunning": "服务器未运行 — 白名单与管理命令需要服务器处于运行状态。",
@@ -520,5 +532,11 @@
     "configDescription": "世界设置来自 serverconfig.json (WorldConfig)；下次启动服务器时生效。",
     "configMissing": "serverconfig.json 尚不存在——服务器首次启动时会生成。",
     "legacy": "旧格式"
+  },
+  "public": {
+    "infoTitle": "服务器信息",
+    "previewHint": "你正在预览访客页面——访客看到的正是这个页面。",
+    "exitPreview": "退出预览",
+    "disabled": "公开视图当前已禁用。可在 设置 → 公开视图 中启用。"
   }
 }

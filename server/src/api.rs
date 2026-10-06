@@ -23,6 +23,8 @@ use crate::versions::{InstallStatus, CHANNELS};
 
 const COOKIE_NAME: &str = "vs_session";
 const SESSION_MAX_AGE: u64 = 60 * 60 * 24 * 30;
+/// Sections the guest view can expose (validated on save).
+const PUBLIC_SECTIONS: [&str; 6] = ["status", "metrics", "build", "info", "players", "history"];
 
 pub fn router(state: SharedState) -> Router {
     let dist = std::env::var("VS_WEB_DIST").unwrap_or_else(|_| "/app/web".into());
@@ -30,6 +32,7 @@ pub fn router(state: SharedState) -> Router {
 
     Router::new()
         .route("/api/health", get(health))
+        .route("/api/public", get(public_view))
         .route("/api/login", post(login))
         .route("/api/me", get(me))
         .route("/api/logout", post(logout))
@@ -262,6 +265,10 @@ struct SettingsReq {
     webhook_events: Option<Vec<String>>,
     #[serde(default)]
     collect_tps: Option<bool>,
+    #[serde(default)]
+    public_view: Option<bool>,
+    #[serde(default)]
+    public_sections: Option<Vec<String>>,
 }
 
 #[derive(Deserialize)]
@@ -297,12 +304,29 @@ async fn health() -> Json<Value> {
 }
 
 async fn me(State(state): State<SharedState>, headers: HeaderMap) -> Json<Value> {
+    let public = {
+        let settings = state.settings.lock().unwrap();
+        settings.public_view
+    };
     if !state.auth.enabled() {
-        return Json(json!({ "authenticated": true, "auth_disabled": true, "csrf": null }));
+        return Json(json!({
+            "authenticated": true,
+            "auth_disabled": true,
+            "csrf": null,
+            "public": { "enabled": public },
+        }));
     }
     match cookie_token(&headers).and_then(|token| state.auth.session(&token)) {
-        Some(session) => Json(json!({ "authenticated": true, "csrf": session.csrf })),
-        None => Json(json!({ "authenticated": false, "csrf": null })),
+        Some(session) => Json(json!({
+            "authenticated": true,
+            "csrf": session.csrf,
+            "public": { "enabled": public },
+        })),
+        None => Json(json!({
+            "authenticated": false,
+            "csrf": null,
+            "public": { "enabled": public },
+        })),
     }
 }
 
@@ -353,6 +377,113 @@ async fn change_password(
     Ok(Json(json!({ "ok": true })))
 }
 
+/// Update notices from the warmed caches (see `spawn_cache_warmer`); never
+/// does network I/O, so status and the guest view stay instant.
+async fn update_notices(state: &SharedState) -> (Option<String>, Option<String>) {
+    let (version, flavor, stratum_tag) = {
+        let settings = state.settings.lock().unwrap();
+        (
+            settings.version.clone(),
+            settings.flavor.clone(),
+            settings.stratum_tag.clone(),
+        )
+    };
+    let game = match version {
+        Some(current) => state
+            .versions
+            .cached("stable")
+            .await
+            .and_then(|entries| entries.iter().find(|entry| entry.latest).cloned())
+            .and_then(|latest| (latest.version != current).then_some(latest.version)),
+        None => None,
+    };
+    let stratum = if flavor == "stratum" {
+        match stratum_tag {
+            Some(current) => state
+                .stratum
+                .cached_releases()
+                .and_then(|releases| releases.into_iter().find(|release| !release.prerelease))
+                .and_then(|latest| (latest.tag != current).then_some(latest.tag)),
+            None => None,
+        }
+    } else {
+        None
+    };
+    (game, stratum)
+}
+
+/// Public-safe summary of serverconfig.json.
+fn config_summary(state: &SharedState) -> Option<Value> {
+    let config = crate::serverconfig::read(&state.layout)
+        .and_then(|raw| serde_json::from_str::<Value>(&raw).ok())?;
+    Some(json!({
+        "server_name": config.get("ServerName").cloned().unwrap_or(Value::Null),
+        "port": config.get("Port").cloned().unwrap_or(Value::Null),
+        "max_clients": config.get("MaxClients").cloned().unwrap_or(Value::Null),
+        "password_protected": config
+            .get("Password")
+            .and_then(Value::as_str)
+            .map(|p| !p.is_empty())
+            .unwrap_or(false),
+    }))
+}
+
+/// Read-only, unauthenticated view for the guest page. Returns only the
+/// whitelisted fields of the sections the admin enabled.
+async fn public_view(State(state): State<SharedState>) -> Json<Value> {
+    let settings = state.settings.lock().unwrap().clone();
+    if !settings.public_view {
+        return Json(json!({ "enabled": false }));
+    }
+    let enabled = |name: &str| settings.public_sections.iter().any(|section| section == name);
+    let mut view = serde_json::Map::new();
+    view.insert("enabled".into(), Value::Bool(true));
+
+    if enabled("status") {
+        let supervisor = state.supervisor.status();
+        view.insert(
+            "status".into(),
+            json!({
+                "status": supervisor.status,
+                "started_at": supervisor.started_at,
+                "version": supervisor.version,
+                "online": state.supervisor.online_players().len(),
+            }),
+        );
+    }
+    if enabled("build") {
+        let (game, stratum) = update_notices(&state).await;
+        view.insert(
+            "build".into(),
+            json!({
+                "version": settings.version,
+                "flavor": settings.flavor,
+                "stratum_tag": settings.stratum_tag,
+                "updates": { "game": game, "stratum": stratum },
+            }),
+        );
+    }
+    if enabled("metrics") {
+        view.insert("metrics".into(), json!({ "samples": state.metrics.samples() }));
+    }
+    if enabled("info") {
+        view.insert("info".into(), config_summary(&state).unwrap_or(Value::Null));
+    }
+    if enabled("players") {
+        let online: Vec<Value> = state
+            .supervisor
+            .online_players()
+            .into_iter()
+            .map(|(name, since)| json!({ "name": name, "since": since }))
+            .collect();
+        view.insert("players".into(), json!(online));
+    }
+    if enabled("history") {
+        view.insert("history".into(), json!(state.player_history.list()));
+    }
+    Json(Value::Object(view))
+}
+
 async fn status(State(state): State<SharedState>) -> Json<Value> {
     let mut supervisor = state.supervisor.status();
     let settings = state.settings.lock().unwrap().clone();
@@ -374,45 +505,8 @@ async fn status(State(state): State<SharedState>) -> Json<Value> {
         }
     }
     let install = state.install.lock().unwrap().clone();
-
-    // Update notices come from the warmed caches only (see `spawn_cache_warmer`);
-    // status stays instant even when the CDN or GitHub is unreachable.
-    let game_update = match settings.version.clone() {
-        Some(current) => state
-            .versions
-            .cached("stable")
-            .await
-            .and_then(|entries| entries.iter().find(|entry| entry.latest).cloned())
-            .and_then(|latest| (latest.version != current).then_some(latest.version)),
-        None => None,
-    };
-    let stratum_update = if settings.flavor == "stratum" {
-        match settings.stratum_tag.clone() {
-            Some(current) => state
-                .stratum
-                .cached_releases()
-                .and_then(|releases| releases.into_iter().find(|release| !release.prerelease))
-                .and_then(|latest| (latest.tag != current).then_some(latest.tag)),
-            None => None,
-        }
-    } else {
-        None
-    };
-
-    let config = crate::serverconfig::read(&state.layout)
-        .and_then(|raw| serde_json::from_str::<Value>(&raw).ok());
-    let config_summary = config.as_ref().map(|config| {
-        json!({
-            "server_name": config.get("ServerName").cloned().unwrap_or(Value::Null),
-            "port": config.get("Port").cloned().unwrap_or(Value::Null),
-            "max_clients": config.get("MaxClients").cloned().unwrap_or(Value::Null),
-            "password_protected": config
-                .get("Password")
-                .and_then(Value::as_str)
-                .map(|p| !p.is_empty())
-                .unwrap_or(false),
-        })
-    });
+    let (game_update, stratum_update) = update_notices(&state).await;
+    let config_summary = config_summary(&state);
 
     Json(json!({
         "status": supervisor,
@@ -695,6 +789,15 @@ async fn put_settings(
         }
         if let Some(collect) = req.collect_tps {
             guard.collect_tps = collect;
+        }
+        if let Some(enabled) = req.public_view {
+            guard.public_view = enabled;
+        }
+        if let Some(sections) = req.public_sections {
+            guard.public_sections = sections
+                .into_iter()
+                .filter(|section| PUBLIC_SECTIONS.contains(&section.as_str()))
+                .collect();
         }
         if let Some(retention) = retention {
             guard.backup_retention = retention;

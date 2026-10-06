@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, Copy, KeyRound, Loader2, Plus, Send, ServerCog, ShieldCheck } from "lucide-react";
+import { Check, Copy, Globe, KeyRound, Loader2, Plus, Send, ServerCog, ShieldCheck } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -38,6 +38,8 @@ export default function Settings() {
   const [webhookUrl, setWebhookUrl] = useState("");
   const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
   const [collectTps, setCollectTps] = useState(true);
+  const [publicView, setPublicView] = useState(false);
+  const [publicSections, setPublicSections] = useState<string[]>([]);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -61,6 +63,8 @@ export default function Settings() {
       setWebhookUrl(settings.data.webhook_url ?? "");
       setWebhookEvents(settings.data.webhook_events ?? []);
       setCollectTps(settings.data.collect_tps ?? true);
+      setPublicView(settings.data.public_view ?? false);
+      setPublicSections(settings.data.public_sections ?? []);
     }
   }, [settings.data]);
 
@@ -77,6 +81,8 @@ export default function Settings() {
         webhook_url: webhookUrl,
         webhook_events: webhookEvents,
         collect_tps: collectTps,
+        public_view: publicView,
+        public_sections: publicSections,
       }),
     onSuccess: () => {
       toast.success(t("common.saved"));
@@ -110,6 +116,15 @@ export default function Settings() {
     { event: "player_join", labelKey: "settings.webhookEventPlayerJoin" },
     { event: "player_leave", labelKey: "settings.webhookEventPlayerLeave" },
     { event: "backup", labelKey: "settings.webhookEventBackup" },
+  ];
+
+  const PUBLIC_SECTION_OPTIONS: Array<{ section: string; labelKey: string }> = [
+    { section: "status", labelKey: "settings.publicSectionStatus" },
+    { section: "build", labelKey: "settings.publicSectionBuild" },
+    { section: "metrics", labelKey: "settings.publicSectionMetrics" },
+    { section: "info", labelKey: "settings.publicSectionInfo" },
+    { section: "players", labelKey: "settings.publicSectionPlayers" },
+    { section: "history", labelKey: "settings.publicSectionHistory" },
   ];
 
   const passwordMismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
@@ -334,6 +349,69 @@ export default function Settings() {
             >
               {saveSettings.isPending ? <Loader2 className="animate-spin" /> : <Check />}
               {t("common.save")}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="self-start lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="size-4 text-muted-foreground" />
+            {t("settings.publicTitle")}
+          </CardTitle>
+          <CardDescription>{t("settings.publicDescription")}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <Label htmlFor="public-view">{t("settings.publicEnable")}</Label>
+              <p className="text-muted-foreground text-[11px]">{t("settings.publicEnableHint")}</p>
+            </div>
+            <Switch checked={publicView} id="public-view" onCheckedChange={setPublicView} />
+          </div>
+
+          {publicView && (
+            <div className="grid gap-1.5">
+              <Label>{t("settings.publicSections")}</Label>
+              <div className="grid gap-1.5 sm:grid-cols-3">
+                {PUBLIC_SECTION_OPTIONS.map(({ section, labelKey }) => (
+                  <label className="flex items-center gap-2 text-xs" key={section}>
+                    <input
+                      checked={publicSections.includes(section)}
+                      className="accent-[#8b5cf6]"
+                      onChange={(changeEvent) =>
+                        setPublicSections((previous) =>
+                          changeEvent.target.checked
+                            ? [...previous, section]
+                            : previous.filter((entry) => entry !== section),
+                        )
+                      }
+                      type="checkbox"
+                    />
+                    {t(labelKey)}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              disabled={saveSettings.isPending || !settings.data}
+              onClick={() => saveSettings.mutate()}
+              variant="accent-primary"
+            >
+              {saveSettings.isPending ? <Loader2 className="animate-spin" /> : <Check />}
+              {t("common.save")}
+            </Button>
+            <Button
+              onClick={() => window.open("/?as=guest", "_blank")}
+              size="sm"
+              variant="outline"
+            >
+              <Globe />
+              {t("settings.publicPreview")}
             </Button>
           </div>
         </CardContent>

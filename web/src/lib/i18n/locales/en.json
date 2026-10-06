@@ -419,7 +419,19 @@
     "backupRetention": "Backups kept per type",
     "backupRetentionHint": "Older backups are pruned automatically (1–100).",
     "collectTps": "Collect TPS metrics",
-    "collectTpsHint": "Sends /stats once a minute while the server runs so the dashboard can chart tick rate. Probe output is hidden from the console."
+    "collectTpsHint": "Sends /stats once a minute while the server runs so the dashboard can chart tick rate. Probe output is hidden from the console.",
+    "publicTitle": "Public view",
+    "publicDescription": "Show a read-only dashboard to visitors who are not signed in, with a sign-in button.",
+    "publicEnable": "Enable public view",
+    "publicEnableHint": "Unauthenticated visitors see the guest page instead of the login form.",
+    "publicSections": "Visible sections",
+    "publicSectionStatus": "Server status",
+    "publicSectionBuild": "Version & runtime",
+    "publicSectionMetrics": "Performance metrics",
+    "publicSectionInfo": "Server info",
+    "publicSectionPlayers": "Online players",
+    "publicSectionHistory": "Player history",
+    "publicPreview": "Open guest preview"
   },
   "players": {
     "notRunning": "The server is not running — whitelist and moderation commands need a running server.",
@@ -520,5 +532,11 @@
     "configDescription": "World settings from serverconfig.json (WorldConfig); changes take effect on the next server start.",
     "configMissing": "serverconfig.json does not exist yet — it is generated when the server first starts.",
     "legacy": "Legacy"
+  },
+  "public": {
+    "infoTitle": "Server info",
+    "previewHint": "You are previewing the guest page — visitors see exactly this.",
+    "exitPreview": "Exit preview",
+    "disabled": "The public view is currently disabled. Turn it on under Settings → Public view."
   }
 }

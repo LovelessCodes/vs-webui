@@ -419,7 +419,19 @@
     "backupRetention": "Backups mantidos por tipo",
     "backupRetentionHint": "Backups antigos são removidos automaticamente (1–100).",
     "collectTps": "Coletar métricas de TPS",
-    "collectTpsHint": "Envia /stats uma vez por minuto enquanto o servidor roda para o painel gráfico a taxa de ticks. A saída da sondagem fica oculta no console."
+    "collectTpsHint": "Envia /stats uma vez por minuto enquanto o servidor roda para o painel gráfico a taxa de ticks. A saída da sondagem fica oculta no console.",
+    "publicTitle": "Visualização pública",
+    "publicDescription": "Mostra um painel somente leitura para visitantes sem sessão, com botão de entrar.",
+    "publicEnable": "Ativar visualização pública",
+    "publicEnableHint": "Visitantes sem sessão veem a página de visitante em vez do formulário de login.",
+    "publicSections": "Seções visíveis",
+    "publicSectionStatus": "Status do servidor",
+    "publicSectionBuild": "Versão e runtime",
+    "publicSectionMetrics": "Métricas de desempenho",
+    "publicSectionInfo": "Informações do servidor",
+    "publicSectionPlayers": "Jogadores online",
+    "publicSectionHistory": "Histórico de jogadores",
+    "publicPreview": "Abrir prévia de visitante"
   },
   "players": {
     "notRunning": "O servidor não está em execução — comandos de lista e moderação exigem ele ativo.",
@@ -520,5 +532,11 @@
     "configDescription": "Configurações do mundo do serverconfig.json (WorldConfig); valem no próximo início do servidor.",
     "configMissing": "serverconfig.json ainda não existe — ele é gerado no primeiro início do servidor.",
     "legacy": "Antigo"
+  },
+  "public": {
+    "infoTitle": "Informações do servidor",
+    "previewHint": "Você está pré-visualizando a página de visitante — é exatamente o que os visitantes veem.",
+    "exitPreview": "Sair da prévia",
+    "disabled": "A visualização pública está desativada. Ative em Configurações → Visualização pública."
   }
 }

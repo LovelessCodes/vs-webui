@@ -419,7 +419,19 @@
     "backupRetention": "Behaltene Backups pro Typ",
     "backupRetentionHint": "Ältere Backups werden automatisch gelöscht (1–100).",
     "collectTps": "TPS-Metriken sammeln",
-    "collectTpsHint": "Sendet einmal pro Minute /stats, solange der Server läuft, damit das Dashboard die Tickrate darstellen kann. Die Ausgabe wird in der Konsole ausgeblendet."
+    "collectTpsHint": "Sendet einmal pro Minute /stats, solange der Server läuft, damit das Dashboard die Tickrate darstellen kann. Die Ausgabe wird in der Konsole ausgeblendet.",
+    "publicTitle": "Öffentliche Ansicht",
+    "publicDescription": "Zeigt Besuchern ohne Anmeldung ein schreibgeschütztes Dashboard mit Anmelde-Button.",
+    "publicEnable": "Öffentliche Ansicht aktivieren",
+    "publicEnableHint": "Nicht angemeldete Besucher sehen die Gastseite statt des Login-Formulars.",
+    "publicSections": "Sichtbare Bereiche",
+    "publicSectionStatus": "Serverstatus",
+    "publicSectionBuild": "Version & Runtime",
+    "publicSectionMetrics": "Leistungsmetriken",
+    "publicSectionInfo": "Server-Infos",
+    "publicSectionPlayers": "Spieler online",
+    "publicSectionHistory": "Spielerhistorie",
+    "publicPreview": "Gastvorschau öffnen"
   },
   "players": {
     "notRunning": "Der Server läuft nicht — Whitelist- und Moderationsbefehle brauchen einen laufenden Server.",
@@ -520,5 +532,11 @@
     "configDescription": "Welt-Einstellungen aus serverconfig.json (WorldConfig); Änderungen greifen beim nächsten Serverstart.",
     "configMissing": "serverconfig.json existiert noch nicht — sie entsteht beim ersten Serverstart.",
     "legacy": "Legacy"
+  },
+  "public": {
+    "infoTitle": "Server-Infos",
+    "previewHint": "Du siehst die Gastseite als Vorschau — Besucher sehen genau das.",
+    "exitPreview": "Vorschau beenden",
+    "disabled": "Die öffentliche Ansicht ist derzeit deaktiviert. Aktiviere sie unter Einstellungen → Öffentliche Ansicht."
   }
 }

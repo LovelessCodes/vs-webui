@@ -419,7 +419,19 @@
     "backupRetention": "Sauvegardes conservées par type",
     "backupRetentionHint": "Les anciennes sauvegardes sont supprimées automatiquement (1–100).",
     "collectTps": "Collecter les métriques TPS",
-    "collectTpsHint": "Envoie /stats une fois par minute pendant que le serveur tourne pour que le tableau de bord puisse tracer le tick rate. La sortie de la sonde est masquée dans la console."
+    "collectTpsHint": "Envoie /stats une fois par minute pendant que le serveur tourne pour que le tableau de bord puisse tracer le tick rate. La sortie de la sonde est masquée dans la console.",
+    "publicTitle": "Vue publique",
+    "publicDescription": "Affiche un tableau de bord en lecture seule aux visiteurs non connectés, avec un bouton de connexion.",
+    "publicEnable": "Activer la vue publique",
+    "publicEnableHint": "Les visiteurs non connectés voient la page invité au lieu du formulaire de connexion.",
+    "publicSections": "Sections visibles",
+    "publicSectionStatus": "État du serveur",
+    "publicSectionBuild": "Version et runtime",
+    "publicSectionMetrics": "Métriques de performance",
+    "publicSectionInfo": "Infos serveur",
+    "publicSectionPlayers": "Joueurs en ligne",
+    "publicSectionHistory": "Historique des joueurs",
+    "publicPreview": "Ouvrir l'aperçu invité"
   },
   "players": {
     "notRunning": "Le serveur n'est pas en cours — les commandes de liste blanche et de modération l'exigent.",
@@ -520,5 +532,11 @@
     "configDescription": "Réglages du monde issus de serverconfig.json (WorldConfig) ; appliqués au prochain démarrage du serveur.",
     "configMissing": "serverconfig.json n'existe pas encore — il est généré au premier démarrage du serveur.",
     "legacy": "Ancien"
+  },
+  "public": {
+    "infoTitle": "Infos serveur",
+    "previewHint": "Vous prévisualisez la page invité — les visiteurs voient exactement ceci.",
+    "exitPreview": "Quitter l'aperçu",
+    "disabled": "La vue publique est désactivée. Activez-la dans Paramètres → Vue publique."
   }
 }

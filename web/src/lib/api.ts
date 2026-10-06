@@ -43,6 +43,7 @@ export interface Me {
   authenticated: boolean;
   auth_disabled?: boolean;
   csrf: string | null;
+  public?: { enabled: boolean };
 }
 
 export interface ServerStatus {
@@ -74,6 +75,8 @@ export interface Settings {
   restart_schedule?: string | null;
   backup_schedule?: string | null;
   backup_before_restart?: boolean;
+  public_view?: boolean;
+  public_sections?: string[];
   webhook_url?: string | null;
   webhook_events?: string[];
   collect_tps?: boolean;
@@ -333,6 +336,32 @@ export interface SaveEntry {
   legacy: boolean;
 }
 
+/** Read-only data exposed to unauthenticated visitors (enabled sections only). */
+export interface PublicView {
+  enabled: boolean;
+  status?: {
+    status: ServerStatus["status"];
+    started_at: number | null;
+    version: string | null;
+    online: number;
+  };
+  build?: {
+    version?: string | null;
+    flavor?: string;
+    stratum_tag?: string | null;
+    updates?: { game?: string | null; stratum?: string | null };
+  };
+  metrics?: { samples: MetricSample[] };
+  info?: {
+    server_name?: string | null;
+    port?: number | null;
+    max_clients?: number | null;
+    password_protected?: boolean;
+  } | null;
+  players?: Array<{ name: string; since: number }>;
+  history?: PlayerRecord[];
+}
+
 export interface StorageView {
   areas: StorageArea[];
   free_bytes: number;
@@ -390,6 +419,8 @@ export const api = {
     webhook_url: string;
     webhook_events: string[];
     collect_tps: boolean;
+    public_view: boolean;
+    public_sections: string[];
   }) =>
     request<Settings>("/api/settings", {
       method: "PUT",
@@ -416,6 +447,7 @@ export const api = {
     request<{ ok: boolean }>(`/api/tokens/${encodeURIComponent(id)}`, { method: "DELETE" }),
 
   metrics: () => request<{ running: boolean; samples: MetricSample[] }>("/api/metrics"),
+  publicView: () => request<PublicView>("/api/public"),
   storage: () => request<StorageView>("/api/storage"),
   deleteVersion: (version: string) =>
     request<{ ok: boolean }>(`/api/versions/${encodeURIComponent(version)}`, { method: "DELETE" }),

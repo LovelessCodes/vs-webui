@@ -65,6 +65,12 @@ pub struct Settings {
     /// Send `/stats` every minute to collect tick rate for the metrics charts.
     #[serde(default = "default_true", skip_serializing_if = "is_true")]
     pub collect_tps: bool,
+    /// Guest view: unauthenticated visitors get a read-only dashboard.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub public_view: bool,
+    /// Sections the guest view exposes (validated names).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub public_sections: Vec<String>,
     /// How many backups of each kind to keep.
     #[serde(default = "default_retention")]
     pub backup_retention: u32,
@@ -95,6 +101,8 @@ impl Default for Settings {
             webhook_url: None,
             webhook_events: Vec::new(),
             collect_tps: true,
+            public_view: false,
+            public_sections: Vec::new(),
             backup_retention: default_retention(),
         }
     }
