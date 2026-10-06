@@ -16,6 +16,9 @@ services:
       VS_WEB_PASSWORD: "change-me"
       # VS_AUTO_INSTALL: "true"
       # VS_AUTO_START: "true"
+      # Run the server as a different host user/group (NAS shares):
+      # PUID: "1000"
+      # PGID: "1000"
     volumes:
       - vs-data:/data
 

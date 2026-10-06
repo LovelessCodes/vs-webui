@@ -39,6 +39,12 @@ More under [`web/screenshots/`](web/screenshots/) (`de/` holds the German pass).
 | `VS_AUTO_INSTALL`   | `false`   | Install the game version on first boot                        |
 | `VS_AUTO_START`     | `false`   | Start the server when the manager boots                       |
 | `VS_SECURE_COOKIE`  | `false`   | Set `Secure` on the session cookie (HTTPS deployments)        |
+| `PUID` / `PGID`     | `1000`    | Host user/group the server runs as; `/data` is re-owned on start |
+
+The image ships a `HEALTHCHECK` against `GET /api/health` (30 s interval), so
+`docker ps`/compose report the container as unhealthy if the manager stops
+answering. `PUID`/`PGID` are applied at start-up by remapping the internal `vs`
+user and chowning `/data`; running the container with `--user` skips the remap.
 
 ## Data layout
 
@@ -76,3 +82,21 @@ cd server && cargo run
 # web UI (proxies /api to localhost:8080)
 cd web && bun install && bun run dev
 ```
+
+## API tokens
+
+Create a token under **Settings → API tokens** (shown once) and use it as a
+bearer token for automation — no cookies or CSRF needed:
+
+```sh
+TOKEN=vsw_…
+# start / stop / restart
+curl -H "Authorization: Bearer $TOKEN" -X POST http://localhost:8080/api/server/start
+# server backup
+curl -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+     -d '{"kind":"server"}' http://localhost:8080/api/backups
+# Prometheus scrape target (see metrics section)
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/metrics
+```
+
+Tokens never expire; revoke them from the same settings card.
