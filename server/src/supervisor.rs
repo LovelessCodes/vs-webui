@@ -534,6 +534,18 @@ async fn start_server(
         started: Instant::now(),
         user_stop: false,
     });
+    // The freshly started process picks up any pending apply-on-restart
+    // changes, so the "restart required" state is resolved by starting.
+    {
+        let mut guard = settings.lock().unwrap();
+        if guard.restart_required {
+            guard.restart_required = false;
+            let path = layout.settings_path();
+            if let Err(error) = guard.save(&path) {
+                tracing::warn!("failed to persist cleared restart flag: {error}");
+            }
+        }
+    }
     Ok(())
 }
 

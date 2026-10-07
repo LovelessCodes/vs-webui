@@ -729,6 +729,23 @@ async fn install_version(
     Ok(Json(json!({ "ok": true, "version": req.version })))
 }
 
+/// Marks that an apply-on-restart change was made while the server runs; the
+/// supervisor clears the flag on the next start. Persisted so it survives a
+/// manager restart too.
+fn mark_restart_required(state: &SharedState) {
+    if !state.supervisor.is_running() {
+        return;
+    }
+    let mut guard = state.settings.lock().unwrap();
+    if !guard.restart_required {
+        guard.restart_required = true;
+        let path = state.layout.settings_path();
+        if let Err(error) = guard.save(&path) {
+            tracing::warn!("failed to persist restart flag: {error}");
+        }
+    }
+}
+
 async fn set_active_version(
     State(state): State<SharedState>,
     _authed: Authed,
@@ -746,6 +763,7 @@ async fn set_active_version(
         let _ = guard.save(&state.layout.settings_path());
         guard.clone()
     };
+    mark_restart_required(&state);
     Ok(Json(json!({ "ok": true, "settings": settings })))
 }
 
@@ -940,12 +958,16 @@ async fn prometheus_metrics(
          vs_webui_server_memory_bytes {}\n\
          # HELP vs_webui_server_tps Ticks per second reported by /stats.\n\
          # TYPE vs_webui_server_tps gauge\n\
-         vs_webui_server_tps {}\n",
+         vs_webui_server_tps {}\n\
+         # HELP vs_webui_players_online Players currently online.\n\
+         # TYPE vs_webui_players_online gauge\n\
+         vs_webui_players_online {}\n",
         if running { 1 } else { 0 },
         last.as_ref().map(|sample| sample.cpu).unwrap_or_default(),
         last.as_ref().map(|sample| sample.memory).unwrap_or_default(),
         tps.map(|value| format!("{value:.2}"))
             .unwrap_or_else(|| "NaN".into()),
+        state.supervisor.online_players().len(),
     );
     (
         [(header::CONTENT_TYPE, "text/plain; version=0.0.4; charset=utf-8")],
@@ -966,6 +988,7 @@ async fn put_serverconfig(
     Json(req): Json<ConfigReq>,
 ) -> Result<Json<Value>, ApiError> {
     crate::serverconfig::write(&state.layout, &req.content).map_err(ApiError::bad_request)?;
+    mark_restart_required(&state);
     Ok(Json(json!({
         "ok": true,
         "restart_required": state.supervisor.is_running(),
@@ -1193,6 +1216,7 @@ async fn mods_install(
         constraint: req.constraint,
         dependency: false,
     });
+    mark_restart_required(&state);
     Ok(Json(json!({ "job_id": job_id, "backup": backup })))
 }
 
@@ -1223,6 +1247,7 @@ async fn mods_remove(
         constraint: None,
         dependency: false,
     });
+    mark_restart_required(&state);
     Ok(Json(json!({ "job_id": job_id, "backup": backup })))
 }
 
@@ -1251,6 +1276,7 @@ async fn mods_update(
         constraint: None,
         dependency: false,
     });
+    mark_restart_required(&state);
     Ok(Json(json!({ "job_id": job_id, "backup": backup })))
 }
 
@@ -1323,6 +1349,7 @@ async fn mods_update_all(
             dependency: false,
         }));
     }
+    mark_restart_required(&state);
     Ok(Json(json!({ "job_ids": job_ids, "backup": backup })))
 }
 
@@ -1405,6 +1432,7 @@ async fn save_config(
     .await
     .map_err(|e| ApiError::internal(format!("config save failed: {e}")))?
     .map_err(ApiError::bad_request)?;
+    mark_restart_required(&state);
     Ok(Json(json!({
         "ok": true,
         "restart_required": state.supervisor.is_running(),
@@ -1537,6 +1565,7 @@ async fn set_flavor(
             .map_err(|e| ApiError::internal(format!("cannot save settings: {e}")))?;
         guard.clone()
     };
+    mark_restart_required(&state);
     Ok(Json(json!({
         "ok": true,
         "settings": settings,

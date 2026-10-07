@@ -74,6 +74,10 @@ pub struct Settings {
     /// How many backups of each kind to keep.
     #[serde(default = "default_retention")]
     pub backup_retention: u32,
+    /// Set when an apply-on-restart change happened while the server was
+    /// running; cleared by the supervisor on the next start.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub restart_required: bool,
 }
 
 /// Parse a 24-hour `HH:MM` time.
@@ -104,6 +108,7 @@ impl Default for Settings {
             public_view: false,
             public_sections: Vec::new(),
             backup_retention: default_retention(),
+            restart_required: false,
         }
     }
 }

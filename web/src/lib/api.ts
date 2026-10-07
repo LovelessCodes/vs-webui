@@ -81,6 +81,7 @@ export interface Settings {
   webhook_events?: string[];
   collect_tps?: boolean;
   backup_retention?: number;
+  restart_required?: boolean;
 }
 
 export interface ConfigSummary {
@@ -309,6 +310,7 @@ export interface MetricSample {
   cpu: number;
   memory: number;
   tps: number | null;
+  players: number;
 }
 
 export interface StorageArea {

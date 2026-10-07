@@ -22,6 +22,8 @@ pub struct MetricSample {
     /// Resident memory in bytes.
     pub memory: u64,
     pub tps: Option<f32>,
+    /// Players online at sample time.
+    pub players: usize,
 }
 
 #[derive(Default)]
@@ -78,6 +80,7 @@ pub fn spawn_collector(state: SharedState) {
                 cpu: process.cpu_usage(),
                 memory: process.memory(),
                 tps: state.metrics.last_tps(),
+                players: state.supervisor.online_players().len(),
             });
         }
     });

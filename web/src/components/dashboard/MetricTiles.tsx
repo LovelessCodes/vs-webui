@@ -17,13 +17,17 @@ export default function MetricTiles({ samples }: { samples: MetricSample[] }) {
   const tpsPoints = samples
     .filter((sample): sample is MetricSample & { tps: number } => sample.tps !== null)
     .map((sample) => ({ ts: sample.ts, value: sample.tps }));
+  const playersPoints = samples.map((sample) => ({
+    ts: sample.ts,
+    value: sample.players ?? 0,
+  }));
 
   if (samples.length < 2) {
     return <p className="text-muted-foreground text-xs">{t("dashboard.noMetrics")}</p>;
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <div className="grid min-w-0 gap-1">
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-muted-foreground text-[11px]">{t("dashboard.cpu")}</span>
@@ -68,6 +72,19 @@ export default function MetricTiles({ samples }: { samples: MetricSample[] }) {
         ) : (
           <p className="text-muted-foreground text-[10px]">{t("dashboard.tpsHint")}</p>
         )}
+      </div>
+      <div className="grid min-w-0 gap-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-muted-foreground text-[11px]">{t("dashboard.players")}</span>
+          <span className="font-mono text-xs">{last ? (last.players ?? 0) : "—"}</span>
+        </div>
+        <Sparkline
+          ariaLabel={t("dashboard.players")}
+          color="#3b82f6"
+          formatValue={(value) => String(Math.round(value))}
+          points={playersPoints}
+          valueLabel={t("dashboard.players")}
+        />
       </div>
     </div>
   );

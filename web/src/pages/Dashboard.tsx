@@ -1,29 +1,40 @@
 import { Link } from "@tanstack/react-router";
 import {
   Activity,
+  Archive,
   Boxes,
   FolderCog,
   HardDrive,
   Loader2,
+  Megaphone,
   Play,
   RotateCw,
+  Save,
   Server,
   Settings2,
   Square,
   Terminal,
 } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { StatusDot, statusMeta } from "@/components/status-badge";
 import ProgressBar from "@/components/common/ProgressBar";
+import AnnounceSheet from "@/components/dashboard/AnnounceSheet";
+import AttentionCard from "@/components/dashboard/AttentionCard";
+import AutomationCard from "@/components/dashboard/AutomationCard";
 import MetricTiles from "@/components/dashboard/MetricTiles";
+import WorldCard from "@/components/dashboard/WorldCard";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   useConsolePreview,
+  useCreateBackup,
   useMetrics,
+  usePlayers,
+  useServerCommand,
   useServerRestart,
   useServerStart,
   useServerStop,
@@ -42,6 +53,10 @@ export default function Dashboard() {
   const restart = useServerRestart();
   const metrics = useMetrics();
   const storage = useStorage();
+  const players = usePlayers();
+  const command = useServerCommand();
+  const backup = useCreateBackup();
+  const [announceOpen, setAnnounceOpen] = useState(false);
 
   const storageAreaKeys: Record<string, string> = {
     runtime: "dashboard.storageRuntime",
@@ -85,6 +100,7 @@ export default function Dashboard() {
   const actionError = start.error ?? stop.error ?? restart.error;
 
   const metricsSamples = metrics.data?.samples ?? [];
+  const online = players.data?.online ?? [];
 
   return (
     <ScrollArea className="h-full" scrollFade>
@@ -126,7 +142,19 @@ export default function Dashboard() {
                   {data.status.exit_code === null ? "—" : `code ${data.status.exit_code}`}
                 </dd>
               </div>
+              <div>
+                <dt className="text-muted-foreground">{t("dashboard.online")}</dt>
+                <dd className="font-mono">{online.length}</dd>
+              </div>
             </dl>
+
+            {online.length > 0 && (
+              <p className="truncate text-[11px] text-muted-foreground">
+                {online
+                  .map((player) => player.name)
+                  .join(", ")}
+              </p>
+            )}
 
             {actionError && <p className="text-error text-xs">{errorMessage(actionError)}</p>}
 
@@ -152,6 +180,36 @@ export default function Dashboard() {
                 {t("dashboard.restart")}
               </Button>
             </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                disabled={!canStop || command.isPending}
+                onClick={() => command.mutate("/autosavenow")}
+                size="sm"
+                variant="outline"
+              >
+                <Save />
+                {t("dashboard.saveNow")}
+              </Button>
+              <Button
+                disabled={backup.isPending}
+                onClick={() => backup.mutate("server")}
+                size="sm"
+                variant="outline"
+              >
+                <Archive />
+                {t("dashboard.backupNow")}
+              </Button>
+              <Button
+                disabled={!canStop}
+                onClick={() => setAnnounceOpen(true)}
+                size="sm"
+                variant="outline"
+              >
+                <Megaphone />
+                {t("dashboard.announce")}
+              </Button>
+            </div>
             {!data.settings.version && (
               <p className="text-warning text-xs">
                 {t("dashboard.noVersion")}{" "}
@@ -163,6 +221,8 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
+
+        <AttentionCard />
 
         <Card>
           <CardHeader>
@@ -183,6 +243,10 @@ export default function Dashboard() {
             <MetricTiles samples={metricsSamples} />
           </CardContent>
         </Card>
+
+        <AutomationCard />
+
+        <WorldCard />
 
         <Card>
           <CardHeader>
@@ -384,6 +448,7 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
+      <AnnounceSheet onOpenChange={setAnnounceOpen} open={announceOpen} />
       </div>
     </ScrollArea>
   );
