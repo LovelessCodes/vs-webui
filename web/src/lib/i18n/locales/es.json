@@ -538,5 +538,10 @@
     "previewHint": "Estás previsualizando la página de invitado: los visitantes ven exactamente esto.",
     "exitPreview": "Salir de la vista previa",
     "disabled": "La vista pública está desactivada. Actívala en Ajustes → Vista pública."
+  },
+  "connection": {
+    "lost": "Conexión perdida",
+    "hint": "Reconectando con el gestor del servidor…",
+    "retry": "Reintentar ahora"
   }
 }

@@ -3,6 +3,7 @@ use std::convert::Infallible;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
+use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
 use axum::extract::{ConnectInfo, DefaultBodyLimit, FromRequestParts, Multipart, Path as UrlPath, Query, State};
 use axum::http::request::Parts;
 use axum::http::{header, HeaderMap, StatusCode};
@@ -33,6 +34,7 @@ pub fn router(state: SharedState) -> Router {
     Router::new()
         .route("/api/health", get(health))
         .route("/api/public", get(public_view))
+        .route("/api/ws", get(ws_handler))
         .route("/api/login", post(login))
         .route("/api/me", get(me))
         .route("/api/logout", post(logout))
@@ -301,6 +303,43 @@ fn default_channel() -> String {
 
 async fn health() -> Json<Value> {
     Json(json!({ "ok": true, "manager": env!("CARGO_PKG_VERSION") }))
+}
+
+/// WebSocket liveness endpoint. Deliberately unauthenticated: it carries no
+/// data (only "hello"/"ping" heartbeats), and the login and guest pages need
+/// it to detect a dead manager. The server closes the socket once the client
+/// stops answering, so failures are detected in both directions.
+async fn ws_handler(upgrade: WebSocketUpgrade) -> axum::response::Response {
+    upgrade.on_upgrade(ws_connection)
+}
+
+async fn ws_connection(mut socket: WebSocket) {
+    let mut heartbeat = tokio::time::interval(std::time::Duration::from_secs(10));
+    heartbeat.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+    // Let the client mark the connection online right away.
+    if socket.send(Message::Text("hello".into())).await.is_err() {
+        return;
+    }
+    loop {
+        tokio::select! {
+            _ = heartbeat.tick() => {
+                if socket.send(Message::Text("ping".into())).await.is_err() {
+                    return;
+                }
+            }
+            message = socket.recv() => {
+                match message {
+                    Some(Ok(Message::Ping(payload))) => {
+                        if socket.send(Message::Pong(payload)).await.is_err() {
+                            return;
+                        }
+                    }
+                    Some(Ok(Message::Text(_))) | Some(Ok(Message::Binary(_))) | Some(Ok(Message::Pong(_))) => {}
+                    Some(Ok(Message::Close(_))) | None | Some(Err(_)) => return,
+                }
+            }
+        }
+    }
 }
 
 async fn me(State(state): State<SharedState>, headers: HeaderMap) -> Json<Value> {

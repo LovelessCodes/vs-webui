@@ -538,5 +538,10 @@
     "previewHint": "Vous prévisualisez la page invité — les visiteurs voient exactement ceci.",
     "exitPreview": "Quitter l'aperçu",
     "disabled": "La vue publique est désactivée. Activez-la dans Paramètres → Vue publique."
+  },
+  "connection": {
+    "lost": "Connexion perdue",
+    "hint": "Nouvelle tentative de connexion au gestionnaire…",
+    "retry": "Réessayer"
   }
 }

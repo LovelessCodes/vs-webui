@@ -538,5 +538,10 @@
     "previewHint": "Du siehst die Gastseite als Vorschau — Besucher sehen genau das.",
     "exitPreview": "Vorschau beenden",
     "disabled": "Die öffentliche Ansicht ist derzeit deaktiviert. Aktiviere sie unter Einstellungen → Öffentliche Ansicht."
+  },
+  "connection": {
+    "lost": "Verbindung verloren",
+    "hint": "Verbindung zum Server-Manager wird wiederhergestellt…",
+    "retry": "Jetzt erneut versuchen"
   }
 }

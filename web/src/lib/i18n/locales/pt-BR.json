@@ -538,5 +538,10 @@
     "previewHint": "Você está pré-visualizando a página de visitante — é exatamente o que os visitantes veem.",
     "exitPreview": "Sair da prévia",
     "disabled": "A visualização pública está desativada. Ative em Configurações → Visualização pública."
+  },
+  "connection": {
+    "lost": "Conexão perdida",
+    "hint": "Tentando reconectar ao gerenciador do servidor…",
+    "retry": "Tentar novamente"
   }
 }

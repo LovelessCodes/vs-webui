@@ -538,5 +538,10 @@
     "previewHint": "You are previewing the guest page — visitors see exactly this.",
     "exitPreview": "Exit preview",
     "disabled": "The public view is currently disabled. Turn it on under Settings → Public view."
+  },
+  "connection": {
+    "lost": "Connection lost",
+    "hint": "Trying to reconnect to the server manager…",
+    "retry": "Retry now"
   }
 }
