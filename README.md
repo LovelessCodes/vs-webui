@@ -67,9 +67,11 @@ All captures in [`web/screenshots/`](web/screenshots/) (English + `de/`), regene
   actor, method, status and origin; REST API with bearer **API tokens** (full or read-only).
 - **Automation & monitoring** — **webhook notifications**
   (Discord, Slack or generic JSON) for start/stop/crash/join/leave/backup with crash log tails,
-  **threshold alerts** for low tick rate, low disk space and failed scheduled backups, a
-  persistent notification history in the bell menu, live CPU/memory/TPS sparklines on the
-  dashboard and a **Prometheus** endpoint at `GET /metrics`.
+  **threshold alerts** for low tick rate, low disk space, failed scheduled backups and an
+  unresponsive game port, a persistent notification history in the bell menu, live CPU/memory/TPS
+  sparklines with 15 m / 24 h / 7 d history on the dashboard and a **Prometheus** endpoint at
+  `GET /metrics` (players, world size, backup age, crashes; a Grafana dashboard ships in
+  [`docker/grafana/`](docker/grafana/vs-webui-dashboard.json)).
 - **7 languages** — English, German, Spanish, French, Brazilian Portuguese, Russian, Simplified
   Chinese, with a theme reveal transition and light/dark mode.
 

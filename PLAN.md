@@ -352,12 +352,15 @@ at the bottom of this file.
 
 #### Observability
 
-- [ ] **Persistent metrics** — persist samples (SQLite or JSONL under `/data/config`) for long
-      range charts that survive manager restarts, beyond the 15-minute in-memory window.
-- [ ] **More Prometheus metrics + Grafana bundle** — players online, world size, backup age,
-      crash count; ship a ready-to-import Grafana dashboard JSON.
-- [ ] **Game-port TCP probe** — periodic connect check to port 42420; alert on "process alive
-      but unresponsive".
+- [x] **Persistent metrics** — samples are appended to daily JSONL files under
+      `/data/config/metrics/` (30-day retention) and `GET /api/metrics/history?hours=…` returns
+      them downsampled to ≤240 points; the dashboard has a 15 m / 24 h / 7 d range toggle.
+- [x] **More Prometheus metrics + Grafana bundle** — players online/total, world size, backup
+      age, crash counter and server uptime on top of the existing gauges; a ready-to-import
+      Grafana dashboard ships at `docker/grafana/vs-webui-dashboard.json`.
+- [x] **Game-port TCP probe** — a periodic connect check to the configured game port alerts
+      (`server_unresponsive`) after three failed probes while the process is up, and notifies on
+      recovery; startup grace period avoids false positives while the world loads.
 
 #### Console & diagnostics
 
