@@ -47,6 +47,13 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/password", put(change_password))
         .route("/api/users", get(list_users).post(create_user))
         .route("/api/users/{id}", put(update_user).delete(delete_user))
+        .route("/api/sessions", get(list_sessions))
+        .route("/api/sessions/revoke", post(revoke_session))
+        .route("/api/sessions/revoke-others", post(revoke_other_sessions))
+        .route("/api/2fa", get(totp_status))
+        .route("/api/2fa/setup", post(totp_setup))
+        .route("/api/2fa/enable", post(totp_enable))
+        .route("/api/2fa/disable", post(totp_disable))
         .route("/api/audit", get(list_audit))
         .route(
             "/api/notifications",
@@ -219,52 +226,61 @@ impl FromRequestParts<SharedState> for Authed {
             return Ok(Self::system());
         }
         // Bearer tokens authenticate automation; there is no cookie to protect
-        // against CSRF, so the header check does not apply to them. Tokens act
-        // as operators (no user management).
-        if let Some(bearer) = bearer_token(&parts.headers) {
-            if let Some(label) = state.auth.verify_token(bearer) {
-                return Ok(Self {
-                    token: None,
-                    actor: Actor {
+        // against CSRF, so the header check does not apply to them. Full tokens
+        // act as operators, read-only tokens as viewers.
+        let (token, actor) = if let Some(bearer) = bearer_token(&parts.headers) {
+            if let Some((label, scope)) = state.auth.verify_token(bearer) {
+                (
+                    None,
+                    Actor {
                         name: label,
-                        role: Some(Role::Operator),
+                        role: Some(token_role(&scope)),
                         kind: "token",
                     },
-                });
+                )
+            } else {
+                return Err(ApiError::unauthorized());
             }
-            return Err(ApiError::unauthorized());
-        }
-        let token = cookie_token(&parts.headers).ok_or_else(ApiError::unauthorized)?;
-        let session = state
-            .auth
-            .session(&token)
-            .ok_or_else(ApiError::unauthorized)?;
-        let Some(role) = state.auth.role_of(&session.user) else {
-            // The account was deleted; the session is dead.
-            state.auth.logout(&token);
-            return Err(ApiError::unauthorized());
+        } else {
+            let token = cookie_token(&parts.headers).ok_or_else(ApiError::unauthorized)?;
+            let session = state
+                .auth
+                .session(&token)
+                .ok_or_else(ApiError::unauthorized)?;
+            let Some(role) = state.auth.role_of(&session.user) else {
+                // The account was deleted; the session is dead.
+                state.auth.logout(&token);
+                return Err(ApiError::unauthorized());
+            };
+            if parts.method != axum::http::Method::GET && parts.method != axum::http::Method::HEAD {
+                let csrf = parts
+                    .headers
+                    .get("x-csrf-token")
+                    .and_then(|value| value.to_str().ok())
+                    .unwrap_or_default();
+                if csrf != session.csrf {
+                    return Err(ApiError::forbidden());
+                }
+            }
+            (
+                Some(token),
+                Actor {
+                    name: session.user,
+                    role: Some(role),
+                    kind: "session",
+                },
+            )
         };
-        if parts.method != axum::http::Method::GET && parts.method != axum::http::Method::HEAD {
-            let csrf = parts
-                .headers
-                .get("x-csrf-token")
-                .and_then(|value| value.to_str().ok())
-                .unwrap_or_default();
-            if csrf != session.csrf {
-                return Err(ApiError::forbidden());
-            }
-            if role == Role::Viewer && !VIEWER_MUTATIONS.contains(&parts.uri.path()) {
-                return Err(ApiError::forbidden());
-            }
+
+        // Viewers (accounts and read-only tokens) may only read.
+        if parts.method != axum::http::Method::GET
+            && parts.method != axum::http::Method::HEAD
+            && actor.role == Some(Role::Viewer)
+            && !VIEWER_MUTATIONS.contains(&parts.uri.path())
+        {
+            return Err(ApiError::forbidden());
         }
-        Ok(Self {
-            token: Some(token),
-            actor: Actor {
-                name: session.user,
-                role: Some(role),
-                kind: "session",
-            },
-        })
+        Ok(Self { token, actor })
     }
 }
 
@@ -291,15 +307,33 @@ fn bearer_token(headers: &HeaderMap) -> Option<&str> {
         .filter(|value| !value.is_empty())
 }
 
+/// Role granted by an API token scope.
+fn token_role(scope: &str) -> Role {
+    if scope == "read" {
+        Role::Viewer
+    } else {
+        Role::Operator
+    }
+}
+
+/// Some endpoints only make sense for a browser session, not a token.
+fn require_session(authed: &Authed) -> Result<(), ApiError> {
+    if authed.actor.kind == "token" {
+        Err(ApiError::forbidden())
+    } else {
+        Ok(())
+    }
+}
+
 /// Resolves the acting identity for audit logging without rejecting requests.
 fn actor_from_headers(state: &SharedState, headers: &HeaderMap) -> Option<Actor> {
     if !state.auth.enabled() {
         return Some(Authed::system().actor);
     }
     if let Some(bearer) = bearer_token(headers) {
-        return state.auth.verify_token(bearer).map(|label| Actor {
+        return state.auth.verify_token(bearer).map(|(label, scope)| Actor {
             name: label,
-            role: Some(Role::Operator),
+            role: Some(token_role(&scope)),
             kind: "token",
         });
     }
@@ -369,6 +403,9 @@ struct LoginReq {
     #[serde(default)]
     username: String,
     password: String,
+    /// TOTP or recovery code, when the account has two-factor enabled.
+    #[serde(default)]
+    code: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -445,6 +482,9 @@ struct UpdateUserReq {
     role: Option<String>,
     #[serde(default)]
     password: Option<String>,
+    /// Owner-only escape hatch when a user lost their 2FA device.
+    #[serde(default)]
+    disable_2fa: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -532,7 +572,7 @@ async fn me(State(state): State<SharedState>, headers: HeaderMap) -> Json<Value>
             "authenticated": true,
             "auth_disabled": true,
             "csrf": null,
-            "user": { "name": "proxy", "role": "owner" },
+            "user": { "name": "proxy", "role": "owner", "totp_enabled": false },
             "public": { "enabled": public },
         }));
     }
@@ -542,7 +582,11 @@ async fn me(State(state): State<SharedState>, headers: HeaderMap) -> Json<Value>
             Some(role) => Json(json!({
                 "authenticated": true,
                 "csrf": session.csrf,
-                "user": { "name": session.user, "role": role.as_str() },
+                "user": {
+                    "name": session.user,
+                    "role": role.as_str(),
+                    "totp_enabled": state.auth.totp_enabled(&session.user),
+                },
                 "public": { "enabled": public },
             })),
             None => Json(json!({
@@ -562,14 +606,22 @@ async fn me(State(state): State<SharedState>, headers: HeaderMap) -> Json<Value>
 async fn login(
     State(state): State<SharedState>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
     Json(req): Json<LoginReq>,
 ) -> Result<Response, ApiError> {
     if !state.auth.enabled() {
         return Ok(Json(json!({ "ok": true })).into_response());
     }
     let ip = addr.ip().to_string();
-    match state.auth.login(&req.username, &req.password, &ip) {
-        Ok(ok) => {
+    let agent = headers
+        .get(header::USER_AGENT)
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default();
+    match state
+        .auth
+        .login(&req.username, &req.password, &ip, agent, req.code.as_deref())
+    {
+        Ok(crate::auth::LoginOutcome::LoggedIn(ok)) => {
             let actor = Actor {
                 name: ok.user.clone(),
                 role: Some(ok.role),
@@ -584,6 +636,9 @@ async fn login(
             }
             Ok(response)
         }
+        Ok(crate::auth::LoginOutcome::TotpRequired) => Ok(
+            Json(json!({ "ok": true, "totp_required": true })).into_response(),
+        ),
         Err("too_many_attempts") => {
             state.audit.record(
                 AuditEntry::anonymous("anonymous", "POST", "/api/login", 429, &ip)
@@ -594,21 +649,27 @@ async fn login(
                 "Too many attempts. Try again in a minute.",
             ))
         }
-        Err(_) => {
+        Err(error) => {
             let attempted = req.username.trim();
             let name = if attempted.is_empty() {
                 "anonymous"
             } else {
                 attempted
             };
+            let action = if error == "invalid_totp" {
+                "auth.totp_failed"
+            } else {
+                "auth.login_failed"
+            };
             state.audit.record(
-                AuditEntry::anonymous(name, "POST", "/api/login", 401, &ip)
-                    .with_action("auth.login_failed"),
+                AuditEntry::anonymous(name, "POST", "/api/login", 401, &ip).with_action(action),
             );
-            Err(ApiError::new(
-                StatusCode::UNAUTHORIZED,
-                "Invalid username or password.",
-            ))
+            let message = if error == "invalid_totp" {
+                "Invalid two-factor code."
+            } else {
+                "Invalid username or password."
+            };
+            Err(ApiError::new(StatusCode::UNAUTHORIZED, message))
         }
     }
 }
@@ -680,7 +741,12 @@ async fn update_user(
     };
     let user = state
         .auth
-        .update_user(&id, role, req.password.as_deref())
+        .update_user(
+            &id,
+            role,
+            req.password.as_deref(),
+            req.disable_2fa.unwrap_or(false),
+        )
         .map_err(ApiError::bad_request)?;
     Ok(Json(json!({ "ok": true, "user": user })))
 }
@@ -694,6 +760,96 @@ async fn delete_user(
     state
         .auth
         .delete_user(&id, &authed.actor.name)
+        .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+// ── sessions ────────────────────────────────────────────────────────────────
+
+async fn list_sessions(State(state): State<SharedState>, authed: Authed) -> Result<Json<Value>, ApiError> {
+    require_session(&authed)?;
+    let is_owner = authed.actor.role.is_some_and(Role::is_owner);
+    Ok(Json(json!({
+        "sessions": state.auth.sessions(&authed.actor.name, is_owner, authed.token.as_deref()),
+    })))
+}
+
+#[derive(Deserialize)]
+struct RevokeSessionReq {
+    id: String,
+}
+
+async fn revoke_session(
+    State(state): State<SharedState>,
+    authed: Authed,
+    Json(req): Json<RevokeSessionReq>,
+) -> Result<Json<Value>, ApiError> {
+    require_session(&authed)?;
+    let is_owner = authed.actor.role.is_some_and(Role::is_owner);
+    state
+        .auth
+        .revoke_session(&req.id, &authed.actor.name, is_owner)
+        .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+async fn revoke_other_sessions(
+    State(state): State<SharedState>,
+    authed: Authed,
+) -> Result<Json<Value>, ApiError> {
+    require_session(&authed)?;
+    let removed = state
+        .auth
+        .revoke_other_sessions(&authed.actor.name, authed.token.as_deref());
+    Ok(Json(json!({ "ok": true, "removed": removed })))
+}
+
+// ── two-factor ──────────────────────────────────────────────────────────────
+
+#[derive(Deserialize)]
+struct TotpCodeReq {
+    #[serde(default)]
+    code: String,
+}
+
+async fn totp_status(State(state): State<SharedState>, authed: Authed) -> Result<Json<Value>, ApiError> {
+    require_session(&authed)?;
+    Ok(Json(json!({
+        "enabled": state.auth.totp_enabled(&authed.actor.name),
+    })))
+}
+
+async fn totp_setup(State(state): State<SharedState>, authed: Authed) -> Result<Json<Value>, ApiError> {
+    require_session(&authed)?;
+    let (secret, url) = state
+        .auth
+        .start_totp_setup(&authed.actor.name)
+        .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "secret": secret, "url": url })))
+}
+
+async fn totp_enable(
+    State(state): State<SharedState>,
+    authed: Authed,
+    Json(req): Json<TotpCodeReq>,
+) -> Result<Json<Value>, ApiError> {
+    require_session(&authed)?;
+    let recovery_codes = state
+        .auth
+        .enable_totp(&authed.actor.name, &req.code)
+        .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true, "recovery_codes": recovery_codes })))
+}
+
+async fn totp_disable(
+    State(state): State<SharedState>,
+    authed: Authed,
+    Json(req): Json<TotpCodeReq>,
+) -> Result<Json<Value>, ApiError> {
+    require_session(&authed)?;
+    state
+        .auth
+        .disable_totp(&authed.actor.name, Some(&req.code), false)
         .map_err(ApiError::bad_request)?;
     Ok(Json(json!({ "ok": true })))
 }
@@ -1233,6 +1389,9 @@ async fn test_webhook(
 #[derive(Deserialize)]
 struct TokenCreateReq {
     label: String,
+    /// `full` (default) or `read`.
+    #[serde(default)]
+    scope: Option<String>,
 }
 
 async fn list_tokens(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {
@@ -1251,7 +1410,11 @@ async fn create_token(
     if label.chars().count() > 64 {
         return Err(ApiError::bad_request("label is too long"));
     }
-    let (token, plaintext) = state.auth.create_token(&label);
+    let scope = req.scope.as_deref().unwrap_or("full");
+    if scope != "full" && scope != "read" {
+        return Err(ApiError::bad_request("scope must be full or read"));
+    }
+    let (token, plaintext) = state.auth.create_token(&label, scope);
     Ok(Json(json!({
         "token": {
             "id": token.id,

@@ -14,19 +14,26 @@ export default function Login() {
   const queryClient = useQueryClient();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [totpStep, setTotpStep] = useState(false);
 
   const login = useMutation({
-    mutationFn: () => api.login(username.trim(), password),
+    mutationFn: () => api.login(username.trim(), password, code.trim() || undefined),
     onSuccess: (data) => {
+      if (data.totp_required) {
+        setTotpStep(true);
+        return;
+      }
       if (data.csrf) setCsrf(data.csrf);
       setPassword("");
+      setCode("");
       void queryClient.invalidateQueries();
     },
   });
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (password.length > 0) login.mutate();
+    if (password.length > 0 && (!totpStep || code.trim().length > 0)) login.mutate();
   }
 
   return (
@@ -65,11 +72,29 @@ export default function Login() {
             />
           </div>
 
+          {totpStep && (
+            <div className="grid gap-1.5">
+              <Label htmlFor="totp-code">{t("login.totpCode")}</Label>
+              <Input
+                autoComplete="one-time-code"
+                autoFocus
+                id="totp-code"
+                inputMode="numeric"
+                onChange={(event) => setCode(event.target.value)}
+                placeholder={t("login.totpPlaceholder")}
+                value={code}
+              />
+              <p className="text-[11px] text-muted-foreground">{t("login.totpHint")}</p>
+            </div>
+          )}
+
           {login.isError && <p className="text-error text-xs">{errorMessage(login.error)}</p>}
 
           <Button
             className="w-full"
-            disabled={password.length === 0 || login.isPending}
+            disabled={
+              password.length === 0 || (totpStep && code.trim().length === 0) || login.isPending
+            }
             type="submit"
             variant="accent-primary"
           >

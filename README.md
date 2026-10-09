@@ -53,8 +53,9 @@ All captures in [`web/screenshots/`](web/screenshots/) (English + `de/`), regene
   backup, restore, download and configurable retention.
 - **Users & access** — owner/operator/viewer accounts with per-user passwords (the first owner
   comes from `VS_WEB_PASSWORD`, or is generated on first boot and logged once), owner-only user
-  management, read-only viewers, and an audit log of every mutating action with actor, method,
-  status and origin; REST API with bearer **API tokens**.
+  management, read-only viewers, **optional TOTP two-factor** with one-time recovery codes,
+  active-session management (revoke one or all), and an audit log of every mutating action with
+  actor, method, status and origin; REST API with bearer **API tokens** (full or read-only).
 - **Automation & monitoring** — **webhook notifications**
   (Discord, Slack or generic JSON) for start/stop/crash/join/leave/backup with crash log tails,
   **threshold alerts** for low tick rate, low disk space and failed scheduled backups, a
@@ -180,8 +181,9 @@ remap and runs directly.
 
 ### API tokens
 
-Create one under **Settings → API tokens** (shown once, revocable, stored hashed). Send it as a
-bearer token — no cookies or CSRF handling required:
+Create one under **Settings → API tokens** (shown once, revocable, stored hashed) with a
+**full** or **read-only** scope. Send it as a bearer token — no cookies or CSRF handling
+required:
 
 ```sh
 TOKEN=vsw_…

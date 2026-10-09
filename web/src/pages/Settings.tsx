@@ -5,12 +5,22 @@ import { useTranslation } from "react-i18next";
 
 import ServerConfigForm from "@/components/config/ServerConfigForm";
 import AuditCard from "@/components/settings/AuditCard";
+import SessionsCard from "@/components/settings/SessionsCard";
+import TwoFactorCard from "@/components/settings/TwoFactorCard";
 import UsersCard from "@/components/settings/UsersCard";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
   useCreateToken,
@@ -56,6 +66,7 @@ export default function Settings() {
   const [passwordChanged, setPasswordChanged] = useState(false);
 
   const [tokenLabel, setTokenLabel] = useState("");
+  const [tokenScope, setTokenScope] = useState<"full" | "read">("full");
   const [createdToken, setCreatedToken] = useState<string | null>(null);
   const [tokenCopied, setTokenCopied] = useState(false);
   const [revokeConfirm, setRevokeConfirm] = useState<string | null>(null);
@@ -588,6 +599,10 @@ export default function Settings() {
 
       <UsersCard />
 
+      <TwoFactorCard />
+
+      <SessionsCard />
+
       <Card className="self-start lg:col-span-2">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -607,10 +622,28 @@ export default function Settings() {
                 placeholder={t("settings.tokenLabelPlaceholder")}
                 value={tokenLabel}
               />
+              <Select
+                items={[
+                  { value: "full", label: t("settings.tokenScopeFull") },
+                  { value: "read", label: t("settings.tokenScopeRead") },
+                ]}
+                onValueChange={(value) => {
+                  if (value === "full" || value === "read") setTokenScope(value);
+                }}
+                value={tokenScope}
+              >
+                <SelectTrigger className="w-40" size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent alignItemWithTrigger={false}>
+                  <SelectItem value="full">{t("settings.tokenScopeFull")}</SelectItem>
+                  <SelectItem value="read">{t("settings.tokenScopeRead")}</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 disabled={!tokenLabel.trim() || createToken.isPending}
                 onClick={() =>
-                  createToken.mutate(tokenLabel.trim(), {
+                  createToken.mutate({ label: tokenLabel.trim(), scope: tokenScope }, {
                     onSuccess: (data) => {
                       setCreatedToken(data.plaintext);
                       setTokenCopied(false);
@@ -669,8 +702,13 @@ export default function Settings() {
               <div className="divide-y divide-border">
                 {tokens.data.tokens.map((token) => (
                   <div className="flex items-center gap-3 px-3 py-2.5" key={token.id}>
-                    <span className="min-w-0 flex-1 truncate text-xs font-medium">
-                      {token.label}
+                    <span className="flex min-w-0 flex-1 items-center gap-2">
+                      <span className="truncate text-xs font-medium">{token.label}</span>
+                      <Badge variant={token.scope === "read" ? "outline" : "secondary"}>
+                        {token.scope === "read"
+                          ? t("settings.tokenScopeRead")
+                          : t("settings.tokenScopeFull")}
+                      </Badge>
                     </span>
                     <span className="hidden w-40 font-mono text-[11px] text-muted-foreground sm:block">
                       {new Date(token.created * 1000).toLocaleString()}

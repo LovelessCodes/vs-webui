@@ -646,11 +646,81 @@ export function useTokens(enabled = true) {
 export function useCreateToken() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (label: string) => api.createToken(label),
+    mutationFn: ({ label, scope }: { label: string; scope: "full" | "read" }) =>
+      api.createToken(label, scope),
     onError: (error) =>
       toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["tokens"] });
+    },
+  });
+}
+
+export function useSessions(enabled = true) {
+  return useQuery({
+    queryKey: ["sessions"],
+    queryFn: api.sessions,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useRevokeSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.revokeSession(id),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: () => toast.success(i18n.t("settings.sessionRevoked")),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["sessions"] });
+    },
+  });
+}
+
+export function useRevokeOtherSessions() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.revokeOtherSessions(),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: (data) =>
+      toast.success(i18n.t("settings.sessionsRevoked", { n: data.removed })),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["sessions"] });
+    },
+  });
+}
+
+export function useTotpSetup() {
+  return useMutation({
+    mutationFn: () => api.totpSetup(),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+  });
+}
+
+export function useTotpEnable() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (code: string) => api.totpEnable(code),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["me"] });
+    },
+  });
+}
+
+export function useTotpDisable() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (code: string) => api.totpDisable(code),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: () => toast.success(i18n.t("settings.totpDisabled")),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["me"] });
     },
   });
 }

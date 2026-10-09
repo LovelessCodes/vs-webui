@@ -43,7 +43,7 @@ export interface Me {
   authenticated: boolean;
   auth_disabled?: boolean;
   csrf: string | null;
-  user?: { name: string; role: UserRole };
+  user?: { name: string; role: UserRole; totp_enabled?: boolean };
   public?: { enabled: boolean };
 }
 
@@ -340,6 +340,17 @@ export interface ApiToken {
   label: string;
   created: number;
   last_used: number | null;
+  scope: "full" | "read";
+}
+
+export interface SessionView {
+  id: string;
+  user: string;
+  created: number;
+  last_seen: number;
+  ip: string;
+  agent: string;
+  current: boolean;
 }
 
 export interface MetricSample {
@@ -413,10 +424,10 @@ export interface StorageView {
 
 export const api = {
   me: () => request<Me>("/api/me"),
-  login: (username: string, password: string) =>
-    request<{ ok: boolean; csrf?: string }>("/api/login", {
+  login: (username: string, password: string, code?: string) =>
+    request<{ ok: boolean; csrf?: string; totp_required?: boolean }>("/api/login", {
       method: "POST",
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, code }),
     }),
   logout: () => request<{ ok: boolean }>("/api/logout", { method: "POST" }),
   changePassword: (current: string, next: string) =>
@@ -426,6 +437,26 @@ export const api = {
     }),
 
   users: () => request<{ users: UserView[] }>("/api/users"),
+  sessions: () => request<{ sessions: SessionView[] }>("/api/sessions"),
+  revokeSession: (id: string) =>
+    request<{ ok: boolean }>("/api/sessions/revoke", {
+      method: "POST",
+      body: JSON.stringify({ id }),
+    }),
+  revokeOtherSessions: () =>
+    request<{ ok: boolean; removed: number }>("/api/sessions/revoke-others", { method: "POST" }),
+  totpStatus: () => request<{ enabled: boolean }>("/api/2fa"),
+  totpSetup: () => request<{ secret: string; url: string }>("/api/2fa/setup", { method: "POST" }),
+  totpEnable: (code: string) =>
+    request<{ ok: boolean; recovery_codes: string[] }>("/api/2fa/enable", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
+  totpDisable: (code: string) =>
+    request<{ ok: boolean }>("/api/2fa/disable", {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
   createUser: (body: { name: string; password: string; role: UserRole }) =>
     request<{ ok: boolean; user: UserView }>("/api/users", {
       method: "POST",
@@ -508,10 +539,10 @@ export const api = {
   testWebhook: () => request<{ ok: boolean }>("/api/webhook/test", { method: "POST" }),
 
   tokens: () => request<{ tokens: ApiToken[] }>("/api/tokens"),
-  createToken: (label: string) =>
+  createToken: (label: string, scope: "full" | "read") =>
     request<{ token: ApiToken; plaintext: string }>("/api/tokens", {
       method: "POST",
-      body: JSON.stringify({ label }),
+      body: JSON.stringify({ label, scope }),
     }),
   revokeToken: (id: string) =>
     request<{ ok: boolean }>(`/api/tokens/${encodeURIComponent(id)}`, { method: "DELETE" }),
