@@ -219,7 +219,8 @@
     "announce": "Annoncer…",
     "announceDescription": "Envoie un message à tous les joueurs du serveur.",
     "announcePlaceholder": "Message à tous les joueurs",
-    "announceSend": "Envoyer"
+    "announceSend": "Envoyer",
+    "automationTimezone": "Fuseau horaire"
   },
   "console": {
     "live": "en direct",
@@ -546,7 +547,35 @@
     "totpRecoveryHint": "Enregistrez-les maintenant — chacun fonctionne une fois si vous perdez votre authentificateur.",
     "totpCopyCodes": "Copier les codes",
     "totpCopySecret": "Copier le secret",
-    "totpCopied": "Copié"
+    "totpCopied": "Copié",
+    "scheduleTitle": "Tâches planifiées",
+    "scheduleDescription": "Redémarrages, sauvegardes et commandes console de type cron — plusieurs fois par jour, filtres par jour, exécutions uniques et fuseau horaire explicite.",
+    "taskAdd": "Ajouter une tâche",
+    "taskEdit": "Modifier la tâche",
+    "taskDescription": "Une action planifiée ; les tâches utilisent le fuseau configuré.",
+    "taskKindLabel": "Action",
+    "taskKind": {
+      "restart": "Redémarrage",
+      "backup": "Sauvegarde",
+      "command": "Commande"
+    },
+    "taskCommand": "Commande console",
+    "taskCommandHint": "Envoyée à la console du serveur au déclenchement (serveur démarré requis).",
+    "taskRunOnce": "Exécuter une fois",
+    "taskRunOnceHint": "Se déclenche à une date unique puis se désactive.",
+    "taskDate": "Date",
+    "taskTimes": "Heures",
+    "taskAddTime": "Ajouter une heure",
+    "taskWeekdays": "Jours de la semaine",
+    "taskWeekdaysHint": "Aucune sélection signifie tous les jours.",
+    "taskBackupFirst": "Sauvegarde avant",
+    "taskBackupFirstHint": "Crée une sauvegarde du serveur juste avant le redémarrage.",
+    "taskOnce": "Une fois le {{date}}",
+    "taskEveryDay": "Tous les jours",
+    "tasksEmpty": "Aucune tâche planifiée pour l'instant.",
+    "timezone": "Fuseau horaire",
+    "timezonePlaceholder": "Heure locale du conteneur",
+    "timezoneHint": "Fuseau IANA pour toutes les tâches (ex. Europe/Berlin). Vide utilise l'heure locale du conteneur."
   },
   "players": {
     "notRunning": "Le serveur n'est pas en cours — les commandes de liste blanche et de modération l'exigent.",

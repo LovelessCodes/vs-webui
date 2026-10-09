@@ -5,42 +5,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useBackups, useStatus } from "@/hooks/use-api";
 import { formatBytes, formatDuration } from "@/lib/format";
 
-/** Next occurrence of a local `HH:MM` time, in milliseconds. */
-function nextOccurrence(value: string | null | undefined): number | null {
-  if (!value) return null;
-  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
-  if (!match) return null;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  if (hours > 23 || minutes > 59) return null;
-  const now = new Date();
-  const target = new Date(now);
-  target.setHours(hours, minutes, 0, 0);
-  if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
-  return target.getTime();
-}
-
-function scheduleLabel(
-  value: string | null | undefined,
-  disabled: string,
-  inLabel: (duration: string) => string,
-): string {
-  const next = nextOccurrence(value);
-  if (next === null) return disabled;
-  const time = new Date(next).toLocaleTimeString(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return `${time} · ${inLabel(formatDuration(Math.round((next - Date.now()) / 1000)))}`;
-}
-
-/** Daily schedules and the most recent backup at a glance. */
+/** Scheduled tasks and the most recent backup at a glance. */
 export default function AutomationCard() {
   const { t } = useTranslation();
   const status = useStatus();
   const backups = useBackups();
   const settings = status.data?.settings;
+  const schedules = status.data?.tasks ?? [];
+  const nextRestart = schedules.find((task) => task.kind === "restart");
+  const nextBackup = schedules.find((task) => task.kind === "backup");
+  const backupBefore = schedules.some(
+    (task) => task.kind === "restart" && task.backup_before,
+  );
   const newest = (backups.data?.backups ?? []).find((entry) => entry.name.startsWith("server"));
+
+  const label = (next: { next: number } | undefined) =>
+    next
+      ? `${new Date(next.next * 1000).toLocaleTimeString(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+        })} · ${t("dashboard.automationIn", {
+          duration: formatDuration(Math.max(0, next.next - Math.floor(Date.now() / 1000))),
+        })}`
+      : t("dashboard.automationDisabled");
 
   return (
     <Card>
@@ -54,23 +41,11 @@ export default function AutomationCard() {
       <CardContent className="grid gap-2 text-xs">
         <div className="flex justify-between gap-4">
           <span className="text-muted-foreground">{t("dashboard.automationNextRestart")}</span>
-          <span className="font-mono">
-            {scheduleLabel(
-              settings?.restart_schedule,
-              t("dashboard.automationDisabled"),
-              (duration) => t("dashboard.automationIn", { duration }),
-            )}
-          </span>
+          <span className="font-mono">{label(nextRestart)}</span>
         </div>
         <div className="flex justify-between gap-4">
           <span className="text-muted-foreground">{t("dashboard.automationNextBackup")}</span>
-          <span className="font-mono">
-            {scheduleLabel(
-              settings?.backup_schedule,
-              t("dashboard.automationDisabled"),
-              (duration) => t("dashboard.automationIn", { duration }),
-            )}
-          </span>
+          <span className="font-mono">{label(nextBackup)}</span>
         </div>
         <div className="flex justify-between gap-4">
           <span className="text-muted-foreground">{t("dashboard.automationLastBackup")}</span>
@@ -85,11 +60,15 @@ export default function AutomationCard() {
         <div className="flex justify-between gap-4">
           <span className="text-muted-foreground">{t("dashboard.automationBeforeRestart")}</span>
           <span className="font-mono">
-            {settings?.backup_before_restart
-              ? t("dashboard.automationOn")
-              : t("dashboard.automationOff")}
+            {backupBefore ? t("dashboard.automationOn") : t("dashboard.automationOff")}
           </span>
         </div>
+        {settings?.timezone && (
+          <div className="flex justify-between gap-4">
+            <span className="text-muted-foreground">{t("dashboard.automationTimezone")}</span>
+            <span className="font-mono">{settings.timezone}</span>
+          </div>
+        )}
         <div className="flex justify-between gap-4">
           <span className="text-muted-foreground">{t("dashboard.automationRetention")}</span>
           <span className="font-mono">{settings?.backup_retention ?? "—"}</span>

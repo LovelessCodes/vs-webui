@@ -20,6 +20,7 @@ mod stratum;
 mod supervisor;
 mod versions;
 
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -214,95 +215,206 @@ fn env_bool(name: &str) -> bool {
         .unwrap_or(false)
 }
 
-/// Daily restart at the configured local `HH:MM`, with 5-minute and 1-minute
-/// announcements through the server console.
+/// Runs scheduled tasks (restarts, backups, console commands) with 5- and
+/// 1-minute restart announcements. Times use the configured IANA timezone, or
+/// the container's local time when none is set.
 fn spawn_schedulers(state: SharedState) {
     tokio::spawn(async move {
-        let mut fired_restart: Option<String> = None;
-        let mut fired_backup: Option<String> = None;
-        let mut warned5: Option<String> = None;
-        let mut warned1: Option<String> = None;
+        let mut fired: HashMap<String, String> = HashMap::new();
+        let mut warned5: HashMap<String, String> = HashMap::new();
+        let mut warned1: HashMap<String, String> = HashMap::new();
 
         loop {
             tokio::time::sleep(Duration::from_secs(20)).await;
 
-            let (restart_schedule, backup_schedule, backup_before_restart) = {
+            let (tasks, timezone) = {
                 let settings = state.settings.lock().unwrap();
-                (
-                    settings.restart_schedule.clone(),
-                    settings.backup_schedule.clone(),
-                    settings.backup_before_restart,
-                )
+                (settings.tasks.clone(), settings.timezone.clone())
             };
-
-            // ── scheduled backups ──────────────────────────────────────────
-            if let Some(schedule) = backup_schedule {
-                if let Some((seconds, key)) = next_occurrence(&schedule) {
-                    if seconds <= 25 && fired_backup.as_deref() != Some(&key) {
-                        run_scheduled_backup(&state).await;
-                        fired_backup = Some(key);
-                    }
-                }
+            if tasks.is_empty() {
+                continue;
             }
-
-            // ── scheduled restarts (with optional pre-restart backup) ──────
-            let Some(schedule) = restart_schedule else {
-                continue;
-            };
-            let Some((seconds, key)) = next_occurrence(&schedule) else {
-                continue;
-            };
+            let tz = timezone
+                .as_deref()
+                .and_then(|name| name.parse::<chrono_tz::Tz>().ok());
             let running = state.supervisor.is_running();
 
-            if seconds <= 25 {
-                if fired_restart.as_deref() != Some(&key) {
-                    if backup_before_restart {
-                        run_scheduled_backup(&state).await;
+            for task in tasks.iter().filter(|task| task.enabled) {
+                for time in &task.times {
+                    let occurrence = match tz {
+                        Some(tz) => {
+                            next_task_occurrence(task, time, chrono::Utc::now().with_timezone(&tz))
+                        }
+                        None => next_task_occurrence(task, time, chrono::Local::now()),
+                    };
+                    let Some((seconds, key)) = occurrence else {
+                        continue;
+                    };
+                    let already_fired = fired.get(&task.id).map(String::as_str) == Some(&key);
+
+                    if seconds <= 25 && !already_fired {
+                        fired.insert(task.id.clone(), key.clone());
+                        run_task(&state, task).await;
+                        if task.date.is_some() {
+                            disable_task(&state, &task.id);
+                        }
+                    } else if task.kind == "restart" && running && !already_fired {
+                        if seconds <= 90
+                            && warned1.get(&task.id).map(String::as_str) != Some(&key)
+                        {
+                            warned1.insert(task.id.clone(), key.clone());
+                            state
+                                .supervisor
+                                .command("/announce Server restart in 1 minute".into())
+                                .await;
+                        } else if seconds <= 360
+                            && warned5.get(&task.id).map(String::as_str) != Some(&key)
+                        {
+                            warned5.insert(task.id.clone(), key.clone());
+                            state
+                                .supervisor
+                                .command("/announce Server restart in 5 minutes".into())
+                                .await;
+                        }
                     }
-                    if running {
-                        tracing::info!("scheduled restart: restarting the server now");
-                        state
-                            .supervisor
-                            .command("/announce Server restarting now".into())
-                            .await;
-                        state.supervisor.restart().await;
-                    }
-                    fired_restart = Some(key);
                 }
-            } else if seconds <= 90 {
-                if running && warned1.as_deref() != Some(&key) {
-                    state
-                        .supervisor
-                        .command("/announce Server restart in 1 minute".into())
-                        .await;
-                    warned1 = Some(key);
-                }
-            } else if seconds <= 360 && running && warned5.as_deref() != Some(&key) {
-                state
-                    .supervisor
-                    .command("/announce Server restart in 5 minutes".into())
-                    .await;
-                warned5 = Some(key);
             }
         }
     });
 }
 
-/// Seconds until the next local occurrence of `HH:MM`, plus a per-day dedupe key.
-fn next_occurrence(schedule: &str) -> Option<(i64, String)> {
-    use chrono::{Local, TimeZone};
-
-    let (hours, minutes) = settings::parse_hhmm(schedule)?;
-    let now = Local::now();
-    let naive = now.date_naive().and_hms_opt(hours, minutes, 0)?;
-    let mut target = Local.from_local_datetime(&naive).single()?;
-    if target <= now {
-        target += chrono::Duration::days(1);
+async fn run_task(state: &SharedState, task: &settings::ScheduledTask) {
+    match task.kind.as_str() {
+        "restart" => {
+            if task.backup_before {
+                run_scheduled_backup(state).await;
+            }
+            if state.supervisor.is_running() {
+                tracing::info!("scheduled restart firing (task {})", task.id);
+                state
+                    .supervisor
+                    .command("/announce Server restarting now".into())
+                    .await;
+                state.supervisor.restart().await;
+            } else {
+                state
+                    .supervisor
+                    .console
+                    .push("[manager] scheduled restart skipped: server is not running");
+            }
+        }
+        "backup" => run_scheduled_backup(state).await,
+        "command" => {
+            let command = task.command.clone().unwrap_or_default();
+            if command.is_empty() {
+                return;
+            }
+            if state.supervisor.is_running() {
+                tracing::info!("scheduled command firing (task {}): {command}", task.id);
+                state.supervisor.command(command).await;
+            } else {
+                state.supervisor.console.push(format!(
+                    "[manager] scheduled command skipped (server not running): {command}"
+                ));
+            }
+        }
+        _ => {}
     }
-    Some((
-        (target - now).num_seconds(),
-        target.format("%Y-%m-%d %H:%M").to_string(),
-    ))
+}
+
+/// One-off tasks disable themselves after firing.
+fn disable_task(state: &SharedState, id: &str) {
+    let mut settings = state.settings.lock().unwrap();
+    if let Some(task) = settings.tasks.iter_mut().find(|task| task.id == id) {
+        task.enabled = false;
+        if let Err(error) = settings.save(&state.layout.settings_path()) {
+            tracing::warn!("failed to persist one-off task state: {error}");
+        }
+    }
+}
+
+/// Enabled tasks with their next firing, for the dashboard.
+pub(crate) fn task_summaries(state: &SharedState) -> serde_json::Value {
+    let (tasks, timezone) = {
+        let settings = state.settings.lock().unwrap();
+        (settings.tasks.clone(), settings.timezone.clone())
+    };
+    let tz = timezone
+        .as_deref()
+        .and_then(|name| name.parse::<chrono_tz::Tz>().ok());
+    let mut summaries: Vec<(i64, serde_json::Value)> = Vec::new();
+    for task in tasks.iter().filter(|task| task.enabled) {
+        let next = task
+            .times
+            .iter()
+            .filter_map(|time| match tz {
+                Some(tz) => {
+                    next_task_occurrence(task, time, chrono::Utc::now().with_timezone(&tz))
+                }
+                None => next_task_occurrence(task, time, chrono::Local::now()),
+            })
+            .min_by_key(|(seconds, _)| *seconds);
+        if let Some((seconds, at)) = next {
+            summaries.push((
+                seconds,
+                serde_json::json!({
+                    "id": task.id,
+                    "kind": task.kind,
+                    "label": task.label,
+                    "next": crate::console::now_unix() + seconds.max(0) as u64,
+                    "at": at,
+                    "backup_before": task.backup_before,
+                }),
+            ));
+        }
+    }
+    summaries.sort_by_key(|(seconds, _)| *seconds);
+    serde_json::Value::Array(summaries.into_iter().map(|(_, value)| value).collect())
+}
+
+/// Seconds until the next firing of `time` for `task`, honoring its date
+/// (one-off) and weekday filters; the returned key dedupes firings.
+fn next_task_occurrence<Tz: chrono::TimeZone>(
+    task: &settings::ScheduledTask,
+    time: &str,
+    now: chrono::DateTime<Tz>,
+) -> Option<(i64, String)> {
+    use chrono::{Datelike, NaiveDate};
+
+    let (hours, minutes) = settings::parse_hhmm(time)?;
+
+    if let Some(date) = task.date.as_deref() {
+        let naive = NaiveDate::parse_from_str(date, "%Y-%m-%d")
+            .ok()?
+            .and_hms_opt(hours, minutes, 0)?;
+        let target = now.timezone().from_local_datetime(&naive).earliest()?;
+        let seconds = (target.clone() - now.clone()).num_seconds();
+        return (seconds >= 0)
+            .then(|| (seconds, target.naive_local().format("%Y-%m-%d %H:%M").to_string()));
+    }
+
+    // Today or the next matching weekday, up to a week out.
+    for offset in 0..=7 {
+        let day = (now.clone() + chrono::Duration::days(offset)).date_naive();
+        if !task.weekdays.is_empty()
+            && !task
+                .weekdays
+                .contains(&(day.weekday().number_from_monday() as u32))
+        {
+            continue;
+        }
+        let Some(naive) = day.and_hms_opt(hours, minutes, 0) else {
+            continue;
+        };
+        let Some(target) = now.timezone().from_local_datetime(&naive).earliest() else {
+            continue;
+        };
+        let seconds = (target.clone() - now.clone()).num_seconds();
+        if seconds >= 0 {
+            return Some((seconds, target.naive_local().format("%Y-%m-%d %H:%M").to_string()));
+        }
+    }
+    None
 }
 
 async fn run_scheduled_backup(state: &SharedState) {
@@ -391,5 +503,57 @@ async fn shutdown_signal() {
     tokio::select! {
         _ = ctrl_c => {},
         _ = terminate => {},
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::TimeZone;
+
+    fn utc(y: i32, m: u32, d: u32, h: u32, min: u32) -> chrono::DateTime<chrono_tz::Tz> {
+        chrono_tz::UTC
+            .with_ymd_and_hms(y, m, d, h, min, 0)
+            .unwrap()
+    }
+
+    #[test]
+    fn task_occurrences_honor_weekdays_and_one_offs() {
+        // 2026-10-13 is a Tuesday.
+        let now = utc(2026, 10, 13, 10, 0);
+
+        // Daily task: today at 12:00.
+        let task = settings::ScheduledTask::restart(vec!["12:00".into()], false);
+        let (seconds, key) = next_task_occurrence(&task, "12:00", now.clone()).unwrap();
+        assert_eq!(seconds, 2 * 3600);
+        assert_eq!(key, "2026-10-13 12:00");
+
+        // Passed time today rolls to tomorrow.
+        let (seconds, key) = next_task_occurrence(&task, "09:00", now.clone()).unwrap();
+        assert_eq!(seconds, 23 * 3600);
+        assert_eq!(key, "2026-10-14 09:00");
+
+        // Mondays only: from Tuesday the next firing is six days out.
+        let task = settings::ScheduledTask {
+            weekdays: vec![1],
+            ..settings::ScheduledTask::restart(vec!["12:00".into()], false)
+        };
+        let (seconds, key) = next_task_occurrence(&task, "12:00", now.clone()).unwrap();
+        assert_eq!(seconds, 6 * 24 * 3600 + 2 * 3600);
+        assert_eq!(key, "2026-10-19 12:00");
+
+        // A one-off on a future date fires then; a past date never fires.
+        let task = settings::ScheduledTask {
+            date: Some("2026-10-14".into()),
+            ..settings::ScheduledTask::restart(vec!["09:00".into()], false)
+        };
+        let (seconds, key) = next_task_occurrence(&task, "09:00", now.clone()).unwrap();
+        assert_eq!(seconds, 23 * 3600);
+        assert_eq!(key, "2026-10-14 09:00");
+        let task = settings::ScheduledTask {
+            date: Some("2026-10-12".into()),
+            ..settings::ScheduledTask::restart(vec!["09:00".into()], false)
+        };
+        assert!(next_task_occurrence(&task, "09:00", now).is_none());
     }
 }

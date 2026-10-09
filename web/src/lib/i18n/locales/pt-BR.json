@@ -219,7 +219,8 @@
     "announce": "Anunciar…",
     "announceDescription": "Envia uma mensagem para todos no servidor.",
     "announcePlaceholder": "Mensagem para todos os jogadores",
-    "announceSend": "Enviar"
+    "announceSend": "Enviar",
+    "automationTimezone": "Fuso horário"
   },
   "console": {
     "live": "ao vivo",
@@ -546,7 +547,35 @@
     "totpRecoveryHint": "Salve agora — cada um funciona uma vez se você perder o autenticador.",
     "totpCopyCodes": "Copiar códigos",
     "totpCopySecret": "Copiar segredo",
-    "totpCopied": "Copiado"
+    "totpCopied": "Copiado",
+    "scheduleTitle": "Tarefas agendadas",
+    "scheduleDescription": "Reinícios, backups e comandos de console estilo cron — várias vezes ao dia, filtros por dia da semana, execuções únicas e fuso horário explícito.",
+    "taskAdd": "Adicionar tarefa",
+    "taskEdit": "Editar tarefa",
+    "taskDescription": "Uma ação agendada; as tarefas usam o fuso configurado.",
+    "taskKindLabel": "Ação",
+    "taskKind": {
+      "restart": "Reinício",
+      "backup": "Backup",
+      "command": "Comando"
+    },
+    "taskCommand": "Comando de console",
+    "taskCommandHint": "Enviado ao console do servidor ao disparar (o servidor precisa estar rodando).",
+    "taskRunOnce": "Executar uma vez",
+    "taskRunOnceHint": "Dispara em uma única data e depois se desativa.",
+    "taskDate": "Data",
+    "taskTimes": "Horários",
+    "taskAddTime": "Adicionar horário",
+    "taskWeekdays": "Dias da semana",
+    "taskWeekdaysHint": "Sem seleção significa todos os dias.",
+    "taskBackupFirst": "Backup antes",
+    "taskBackupFirstHint": "Cria um backup do servidor logo antes de reiniciar.",
+    "taskOnce": "Uma vez em {{date}}",
+    "taskEveryDay": "Todos os dias",
+    "tasksEmpty": "Ainda sem tarefas agendadas.",
+    "timezone": "Fuso horário",
+    "timezonePlaceholder": "Hora local do contêiner",
+    "timezoneHint": "Fuso IANA para todas as tarefas (ex.: Europe/Berlin). Vazio usa a hora local do contêiner."
   },
   "players": {
     "notRunning": "O servidor não está em execução — comandos de lista e moderação exigem ele ativo.",

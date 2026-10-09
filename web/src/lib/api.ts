@@ -94,6 +94,28 @@ export interface InstallStatus {
   success: boolean | null;
 }
 
+export interface ScheduledTask {
+  id: string;
+  enabled: boolean;
+  kind: "restart" | "backup" | "command";
+  command?: string | null;
+  times: string[];
+  weekdays: number[];
+  backup_before: boolean;
+  date?: string | null;
+  label?: string | null;
+}
+
+/** Enabled task with its next firing, computed by the manager. */
+export interface TaskSummary {
+  id: string;
+  kind: "restart" | "backup" | "command";
+  label?: string | null;
+  next: number;
+  at: string;
+  backup_before: boolean;
+}
+
 export interface Settings {
   version?: string | null;
   flavor?: string;
@@ -103,7 +125,8 @@ export interface Settings {
   start_params?: string;
   pinned_mods?: string[];
   favorite_mods?: string[];
-  restart_schedule?: string | null;
+  tasks?: ScheduledTask[];
+  timezone?: string | null;
   backup_schedule?: string | null;
   backup_before_restart?: boolean;
   public_view?: boolean;
@@ -134,6 +157,7 @@ export interface StatusResponse {
   config: ConfigSummary | null;
   updates?: { game?: string | null; stratum?: string | null };
   unread_notifications?: number;
+  tasks?: TaskSummary[];
   manager: {
     version: string;
     uptime: number;
@@ -504,13 +528,12 @@ export const api = {
     }),
 
   settings: () => request<Settings>("/api/settings"),
-  saveSettings: (settings: {
+  saveSettings: (settings: Partial<{
     auto_start: boolean;
     auto_restart: boolean;
     start_params: string;
-    restart_schedule: string;
-    backup_schedule: string;
-    backup_before_restart: boolean;
+    tasks: ScheduledTask[];
+    timezone: string;
     backup_retention: number;
     webhook_url: string;
     webhook_events: string[];
@@ -522,7 +545,7 @@ export const api = {
     alert_disk: boolean;
     alert_disk_percent: number;
     alert_backup: boolean;
-  }) =>
+  }>) =>
     request<Settings>("/api/settings", {
       method: "PUT",
       body: JSON.stringify(settings),

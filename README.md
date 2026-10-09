@@ -37,7 +37,9 @@ All captures in [`web/screenshots/`](web/screenshots/) (English + `de/`), regene
 
 - **Server control** — status chip, start/stop/restart and refresh in the app bar; live console
   over SSE with ANSI colors, output filter, log-file browser/download, command autocomplete and
-  persistent history; daily restart schedule with `5`/`1`-minute announcements.
+  persistent history; **scheduled tasks** (cron-like restarts, backups and console commands with
+  weekday filters, one-off runs, pre-restart backups, an explicit timezone and
+  `5`/`1`-minute announcements).
 - **Versions & runtimes** — install or switch any vanilla build from the official manifests
   (streaming download, MD5 verified); one-click [Stratum](https://stratumvs.dev) install/update
   with its three config editors and a `/stratum reload` action.

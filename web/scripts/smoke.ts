@@ -30,7 +30,6 @@ async function main() {
     page.on("console", (message) => {
       if (message.type() === "error") errors.push(`console: ${message.text()}`);
     });
-
     await page.goto(`http://localhost:${PORT}/`);
     await page.fill("#password", PASSWORD);
     await page.click('button[type="submit"]');
@@ -74,7 +73,8 @@ async function main() {
     await page.waitForSelector("text=Threshold alerts", { timeout: 5_000 });
     await page.waitForSelector("text=Two-factor authentication", { timeout: 5_000 });
     await page.waitForSelector("text=Active sessions", { timeout: 5_000 });
-    console.log("users + audit + alerts + sessions ok");
+    await page.waitForSelector("text=Scheduled tasks", { timeout: 5_000 });
+    console.log("users + audit + alerts + sessions + schedule ok");
 
     // Notification bell (empty history on a fresh data dir).
     await page.getByRole("button", { name: "Notifications" }).click();
@@ -112,6 +112,10 @@ async function main() {
     console.log("mod sheet ok");
 
     await browser.close();
+  } catch (error) {
+    console.error(`\nsmoke failed: ${error}`);
+    for (const entry of errors) console.error(`  - ${entry}`);
+    process.exit(1);
   } finally {
     stopManager(child);
   }

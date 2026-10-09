@@ -219,7 +219,8 @@
     "announce": "Ankündigen…",
     "announceDescription": "Sendet eine Nachricht an alle auf dem Server.",
     "announcePlaceholder": "Nachricht an alle Spieler",
-    "announceSend": "Senden"
+    "announceSend": "Senden",
+    "automationTimezone": "Zeitzone"
   },
   "console": {
     "live": "live",
@@ -546,7 +547,35 @@
     "totpRecoveryHint": "Jetzt speichern — jeder funktioniert einmal, falls du deinen Authenticator verlierst.",
     "totpCopyCodes": "Codes kopieren",
     "totpCopySecret": "Secret kopieren",
-    "totpCopied": "Kopiert"
+    "totpCopied": "Kopiert",
+    "scheduleTitle": "Geplante Aufgaben",
+    "scheduleDescription": "Cron-artige Neustarts, Backups und Konsolenbefehle — mehrfach täglich, Wochentagsfilter, Einmal-Ausführungen und explizite Zeitzone.",
+    "taskAdd": "Aufgabe hinzufügen",
+    "taskEdit": "Aufgabe bearbeiten",
+    "taskDescription": "Eine geplante Aktion; Aufgaben laufen in der konfigurierten Zeitzone.",
+    "taskKindLabel": "Aktion",
+    "taskKind": {
+      "restart": "Neustart",
+      "backup": "Backup",
+      "command": "Befehl"
+    },
+    "taskCommand": "Konsolenbefehl",
+    "taskCommandHint": "Wird beim Auslösen an die Serverkonsole gesendet (Server muss laufen).",
+    "taskRunOnce": "Einmalig",
+    "taskRunOnceHint": "Läuft an einem einzelnen Datum und deaktiviert sich danach.",
+    "taskDate": "Datum",
+    "taskTimes": "Uhrzeiten",
+    "taskAddTime": "Uhrzeit hinzufügen",
+    "taskWeekdays": "Wochentage",
+    "taskWeekdaysHint": "Keine Auswahl bedeutet jeden Tag.",
+    "taskBackupFirst": "Backup davor",
+    "taskBackupFirstHint": "Erstellt direkt vor dem Neustart ein Server-Backup.",
+    "taskOnce": "Einmalig am {{date}}",
+    "taskEveryDay": "Täglich",
+    "tasksEmpty": "Noch keine geplanten Aufgaben.",
+    "timezone": "Zeitzone",
+    "timezonePlaceholder": "Lokale Containerzeit",
+    "timezoneHint": "IANA-Zeitzone für alle geplanten Aufgaben (z. B. Europe/Berlin). Leer nutzt die lokale Containerzeit."
   },
   "players": {
     "notRunning": "Der Server läuft nicht — Whitelist- und Moderationsbefehle brauchen einen laufenden Server.",

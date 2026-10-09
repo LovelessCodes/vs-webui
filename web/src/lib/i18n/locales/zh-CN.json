@@ -219,7 +219,8 @@
     "announce": "公告…",
     "announceDescription": "向服务器上的所有人发送消息。",
     "announcePlaceholder": "发送给所有玩家的消息",
-    "announceSend": "发送"
+    "announceSend": "发送",
+    "automationTimezone": "时区"
   },
   "console": {
     "live": "实时",
@@ -546,7 +547,35 @@
     "totpRecoveryHint": "请立即保存——丢失身份验证器时每个代码可用一次。",
     "totpCopyCodes": "复制代码",
     "totpCopySecret": "复制密钥",
-    "totpCopied": "已复制"
+    "totpCopied": "已复制",
+    "scheduleTitle": "计划任务",
+    "scheduleDescription": "类 cron 的重启、备份与控制台命令——每天多次、按星期筛选、单次执行以及明确的时区。",
+    "taskAdd": "添加任务",
+    "taskEdit": "编辑任务",
+    "taskDescription": "计划执行的操作；任务使用配置的时区。",
+    "taskKindLabel": "操作",
+    "taskKind": {
+      "restart": "重启",
+      "backup": "备份",
+      "command": "命令"
+    },
+    "taskCommand": "控制台命令",
+    "taskCommandHint": "触发时发送到服务器控制台（服务器需正在运行）。",
+    "taskRunOnce": "仅执行一次",
+    "taskRunOnceHint": "在指定日期执行一次后自动停用。",
+    "taskDate": "日期",
+    "taskTimes": "时间",
+    "taskAddTime": "添加时间",
+    "taskWeekdays": "星期",
+    "taskWeekdaysHint": "不选择表示每天。",
+    "taskBackupFirst": "先备份",
+    "taskBackupFirstHint": "重启前先创建服务器备份。",
+    "taskOnce": "{{date}} 执行一次",
+    "taskEveryDay": "每天",
+    "tasksEmpty": "暂无计划任务。",
+    "timezone": "时区",
+    "timezonePlaceholder": "容器本地时间",
+    "timezoneHint": "所有计划任务使用的 IANA 时区（例如 Europe/Berlin）。留空则使用容器本地时间。"
   },
   "players": {
     "notRunning": "服务器未运行 — 白名单与管理命令需要服务器处于运行状态。",

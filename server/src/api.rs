@@ -430,17 +430,15 @@ struct VersionReq {
 #[derive(Deserialize)]
 struct SettingsReq {
     #[serde(default)]
-    auto_start: bool,
+    auto_start: Option<bool>,
     #[serde(default)]
-    auto_restart: bool,
+    auto_restart: Option<bool>,
     #[serde(default)]
-    start_params: String,
+    start_params: Option<String>,
     #[serde(default)]
-    restart_schedule: Option<String>,
+    tasks: Option<Vec<crate::settings::ScheduledTask>>,
     #[serde(default)]
-    backup_schedule: Option<String>,
-    #[serde(default)]
-    backup_before_restart: Option<bool>,
+    timezone: Option<String>,
     #[serde(default)]
     backup_retention: Option<u32>,
     #[serde(default)]
@@ -1029,6 +1027,7 @@ async fn status(State(state): State<SharedState>) -> Json<Value> {
             "stratum": stratum_update,
         },
         "unread_notifications": state.notifications.unread(),
+        "tasks": crate::task_summaries(&state),
         "manager": {
             "version": env!("CARGO_PKG_VERSION"),
             "uptime": state.started.elapsed().as_secs(),
@@ -1256,24 +1255,28 @@ async fn put_settings(
     _authed: Authed,
     Json(req): Json<SettingsReq>,
 ) -> Result<Json<Value>, ApiError> {
-    let schedule = match req.restart_schedule {
+    let tasks = match req.tasks {
         None => None,
-        Some(value) if value.trim().is_empty() => Some(None),
-        Some(value) => {
-            if crate::settings::parse_hhmm(&value).is_none() {
-                return Err(ApiError::bad_request("restart time must look like 04:30"));
+        Some(mut tasks) => {
+            if tasks.len() > 32 {
+                return Err(ApiError::bad_request("at most 32 scheduled tasks"));
             }
-            Some(Some(value.trim().to_string()))
+            for task in &mut tasks {
+                crate::settings::validate_task(task).map_err(ApiError::bad_request)?;
+            }
+            let mut seen = std::collections::HashSet::new();
+            for task in &tasks {
+                if !seen.insert(task.id.clone()) {
+                    return Err(ApiError::bad_request("duplicate scheduled task id"));
+                }
+            }
+            Some(tasks)
         }
     };
-    let backup_schedule = match req.backup_schedule {
+    let timezone = match req.timezone {
         None => None,
-        Some(value) if value.trim().is_empty() => Some(None),
         Some(value) => {
-            if crate::settings::parse_hhmm(&value).is_none() {
-                return Err(ApiError::bad_request("backup time must look like 04:30"));
-            }
-            Some(Some(value.trim().to_string()))
+            Some(crate::settings::validate_timezone(&value).map_err(ApiError::bad_request)?)
         }
     };
     let webhook_url = match req.webhook_url {
@@ -1319,17 +1322,20 @@ async fn put_settings(
     }
     let settings = {
         let mut guard = state.settings.lock().unwrap();
-        guard.auto_start = req.auto_start;
-        guard.auto_restart = req.auto_restart;
-        guard.start_params = req.start_params;
-        if let Some(schedule) = schedule {
-            guard.restart_schedule = schedule;
+        if let Some(enabled) = req.auto_start {
+            guard.auto_start = enabled;
         }
-        if let Some(schedule) = backup_schedule {
-            guard.backup_schedule = schedule;
+        if let Some(enabled) = req.auto_restart {
+            guard.auto_restart = enabled;
         }
-        if let Some(before) = req.backup_before_restart {
-            guard.backup_before_restart = before;
+        if let Some(params) = req.start_params {
+            guard.start_params = params;
+        }
+        if let Some(tasks) = tasks {
+            guard.tasks = tasks;
+        }
+        if let Some(timezone) = timezone {
+            guard.timezone = timezone;
         }
         if let Some(url) = webhook_url {
             guard.webhook_url = url;

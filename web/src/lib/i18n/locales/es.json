@@ -219,7 +219,8 @@
     "announce": "Anunciar…",
     "announceDescription": "Envía un mensaje a todos en el servidor.",
     "announcePlaceholder": "Mensaje para todos los jugadores",
-    "announceSend": "Enviar"
+    "announceSend": "Enviar",
+    "automationTimezone": "Zona horaria"
   },
   "console": {
     "live": "en vivo",
@@ -546,7 +547,35 @@
     "totpRecoveryHint": "Guárdalos ahora: cada uno funciona una vez si pierdes tu autenticador.",
     "totpCopyCodes": "Copiar códigos",
     "totpCopySecret": "Copiar secreto",
-    "totpCopied": "Copiado"
+    "totpCopied": "Copiado",
+    "scheduleTitle": "Tareas programadas",
+    "scheduleDescription": "Reinicios, copias y comandos de consola tipo cron — varias veces al día, filtros por día de la semana, ejecuciones únicas y zona horaria explícita.",
+    "taskAdd": "Añadir tarea",
+    "taskEdit": "Editar tarea",
+    "taskDescription": "Una acción programada; las tareas usan la zona horaria configurada.",
+    "taskKindLabel": "Acción",
+    "taskKind": {
+      "restart": "Reinicio",
+      "backup": "Copia",
+      "command": "Comando"
+    },
+    "taskCommand": "Comando de consola",
+    "taskCommandHint": "Se envía a la consola del servidor al ejecutarse (el servidor debe estar activo).",
+    "taskRunOnce": "Ejecutar una vez",
+    "taskRunOnceHint": "Se ejecuta en una sola fecha y luego se desactiva.",
+    "taskDate": "Fecha",
+    "taskTimes": "Horas",
+    "taskAddTime": "Añadir hora",
+    "taskWeekdays": "Días de la semana",
+    "taskWeekdaysHint": "Sin selección significa todos los días.",
+    "taskBackupFirst": "Copia antes",
+    "taskBackupFirstHint": "Crea una copia del servidor justo antes de reiniciar.",
+    "taskOnce": "Una vez el {{date}}",
+    "taskEveryDay": "Todos los días",
+    "tasksEmpty": "Aún no hay tareas programadas.",
+    "timezone": "Zona horaria",
+    "timezonePlaceholder": "Hora local del contenedor",
+    "timezoneHint": "Zona horaria IANA para todas las tareas (p. ej. Europe/Berlin). Vacío usa la hora local del contenedor."
   },
   "players": {
     "notRunning": "El servidor no está en ejecución — los comandos de lista blanca y moderación lo requieren.",

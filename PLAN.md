@@ -317,12 +317,13 @@ at the bottom of this file.
 
 #### Scheduling
 
-- [ ] **General scheduled tasks** — cron-like tasks (multiple runs per day, weekday sets) for
-      restarts, backups and arbitrary console commands/announcements.
-- [ ] **One-off scheduled actions** — "restart at 21:00 tonight" without touching the recurring
-      schedule.
-- [ ] **Timezone setting** — explicit IANA timezone for schedules and announcements (currently
-      container-local time).
+- [x] **General scheduled tasks** — cron-like tasks (multiple runs per day, weekday sets) for
+      restarts, backups and arbitrary console commands/announcements. Managed in
+      `settings.tasks`; the legacy single daily restart/backup times migrate on load.
+- [x] **One-off scheduled actions** — "restart at 21:00 tonight" without touching the recurring
+      schedule; one-off tasks disable themselves after firing.
+- [x] **Timezone setting** — explicit IANA timezone for schedules and announcements (defaults to
+      container-local time); next occurrences are computed server-side for the dashboard.
 
 #### Community surface
 

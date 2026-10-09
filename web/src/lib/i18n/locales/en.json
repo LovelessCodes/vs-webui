@@ -219,7 +219,8 @@
     "announce": "Announce…",
     "announceDescription": "Sends a message to everyone on the server.",
     "announcePlaceholder": "Message to all players",
-    "announceSend": "Send"
+    "announceSend": "Send",
+    "automationTimezone": "Timezone"
   },
   "console": {
     "live": "live",
@@ -546,7 +547,35 @@
     "totpRecoveryHint": "Save these now — each works once if you lose your authenticator.",
     "totpCopyCodes": "Copy codes",
     "totpCopySecret": "Copy secret",
-    "totpCopied": "Copied"
+    "totpCopied": "Copied",
+    "scheduleTitle": "Scheduled tasks",
+    "scheduleDescription": "Cron-like restarts, backups and console commands — several times a day, weekday filters, one-off runs and an explicit timezone.",
+    "taskAdd": "Add task",
+    "taskEdit": "Edit task",
+    "taskDescription": "A scheduled action; tasks run in the configured timezone.",
+    "taskKindLabel": "Action",
+    "taskKind": {
+      "restart": "Restart",
+      "backup": "Backup",
+      "command": "Command"
+    },
+    "taskCommand": "Console command",
+    "taskCommandHint": "Sent to the server console when the task fires (server must be running).",
+    "taskRunOnce": "Run once",
+    "taskRunOnceHint": "Fires on a single date, then disables itself.",
+    "taskDate": "Date",
+    "taskTimes": "Times",
+    "taskAddTime": "Add time",
+    "taskWeekdays": "Weekdays",
+    "taskWeekdaysHint": "No selection means every day.",
+    "taskBackupFirst": "Backup first",
+    "taskBackupFirstHint": "Take a server backup right before restarting.",
+    "taskOnce": "Once on {{date}}",
+    "taskEveryDay": "Every day",
+    "tasksEmpty": "No scheduled tasks yet.",
+    "timezone": "Timezone",
+    "timezonePlaceholder": "Container local time",
+    "timezoneHint": "IANA timezone for all scheduled tasks (e.g. Europe/Berlin). Empty uses the container's local time."
   },
   "players": {
     "notRunning": "The server is not running — whitelist and moderation commands need a running server.",
