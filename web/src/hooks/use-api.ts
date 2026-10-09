@@ -430,6 +430,21 @@ export function useUploadSave() {
   });
 }
 
+export function useCreateWorld() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Parameters<typeof api.createWorld>[0]) => api.createWorld(body),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: (data) => toast.success(i18n.t("worlds.created", { name: data.name })),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["saves"] });
+      void queryClient.invalidateQueries({ queryKey: ["status"] });
+      void queryClient.invalidateQueries({ queryKey: ["serverconfig"] });
+    },
+  });
+}
+
 export function useActivateSave() {
   const queryClient = useQueryClient();
   return useMutation({

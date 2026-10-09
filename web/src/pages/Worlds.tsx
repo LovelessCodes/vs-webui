@@ -4,6 +4,7 @@ import {
   FileJson2,
   HardDrive,
   Loader2,
+  Plus,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -15,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import CreateWorldSheet from "@/components/worlds/CreateWorldSheet";
 import WorldConfigSheet from "@/components/worlds/WorldConfigSheet";
 import {
   useActivateSave,
@@ -36,6 +38,7 @@ export default function Worlds() {
   const fileInput = useRef<HTMLInputElement>(null);
   const [confirm, setConfirm] = useState<string | null>(null);
   const [configFor, setConfigFor] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const running = status.data?.status.status === "running";
   const mutationError = activate.error ?? remove.error ?? upload.error;
@@ -69,6 +72,15 @@ export default function Worlds() {
                   ref={fileInput}
                   type="file"
                 />
+                <Button
+                  disabled={running}
+                  onClick={() => setCreateOpen(true)}
+                  size="sm"
+                  variant="accent-primary"
+                >
+                  <Plus />
+                  {t("worlds.create")}
+                </Button>
                 <Button
                   disabled={running || upload.isPending}
                   onClick={() => fileInput.current?.click()}
@@ -122,15 +134,20 @@ export default function Worlds() {
                           {save.active && (
                             <Badge variant="accent">{t("worlds.active")}</Badge>
                           )}
+                          {save.pending && (
+                            <Badge variant="warning">{t("worlds.pending")}</Badge>
+                          )}
                           {save.legacy && (
                             <Badge variant="outline">{t("worlds.legacy")}</Badge>
                           )}
                         </div>
                         <span className="hidden w-20 text-right font-mono text-[11px] text-muted-foreground sm:block">
-                          {formatBytes(save.size)}
+                          {save.pending ? "—" : formatBytes(save.size)}
                         </span>
                         <span className="hidden w-40 font-mono text-[11px] text-muted-foreground sm:block">
-                          {new Date(save.modified * 1000).toLocaleString()}
+                          {save.pending
+                            ? "—"
+                            : new Date(save.modified * 1000).toLocaleString()}
                         </span>
                         <div className="flex w-64 shrink-0 items-center justify-end gap-1.5">
                           {confirming ? (
@@ -166,13 +183,15 @@ export default function Worlds() {
                                   <FileJson2 />
                                 </Button>
                               )}
-                              <a
-                                className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
-                                href={`/api/saves/${encodeURIComponent(save.name)}/download`}
-                                title={t("common.download")}
-                              >
-                                <Download />
-                              </a>
+                              {!save.pending && (
+                                <a
+                                  className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
+                                  href={`/api/saves/${encodeURIComponent(save.name)}/download`}
+                                  title={t("common.download")}
+                                >
+                                  <Download />
+                                </a>
+                              )}
                               {!save.active && (
                                 <Button
                                   disabled={running || activate.isPending}
@@ -183,15 +202,17 @@ export default function Worlds() {
                                   {t("worlds.setActive")}
                                 </Button>
                               )}
-                              <Button
-                                disabled={running}
-                                onClick={() => setConfirm(save.name)}
-                                size="icon-sm"
-                                title={running ? t("worlds.stopHint") : t("worlds.deleteTitle")}
-                                variant="ghost"
-                              >
-                                <Trash2 />
-                              </Button>
+                              {!save.pending && (
+                                <Button
+                                  disabled={running}
+                                  onClick={() => setConfirm(save.name)}
+                                  size="icon-sm"
+                                  title={running ? t("worlds.stopHint") : t("worlds.deleteTitle")}
+                                  variant="ghost"
+                                >
+                                  <Trash2 />
+                                </Button>
+                              )}
                             </>
                           )}
                         </div>
@@ -207,6 +228,7 @@ export default function Worlds() {
         </Card>
 
         <WorldConfigSheet name={configFor} onClose={() => setConfigFor(null)} />
+        <CreateWorldSheet onOpenChange={setCreateOpen} open={createOpen} />
       </div>
     </ScrollArea>
   );

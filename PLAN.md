@@ -274,9 +274,11 @@ at the bottom of this file.
 
 #### World lifecycle
 
-- [ ] **World creation wizard** — pick name, seed, world type, climate/oceans/landform and the
+- [x] **World creation wizard** — pick name, seed, world type, climate/oceans/landform and the
       other `WorldGen` fields *before* first boot; write them into `serverconfig.json` so the
-      engine creates the requested world instead of defaults.
+      engine creates the requested world instead of defaults. Bootstraps a complete-enough
+      config (bundled 1.22.x default roles) when the server has never run; the configured
+      world shows as a pending entry until the server generates it.
 - [ ] **Edit inactive worlds** — open the WorldConfig editor (read + copy settings) for any
       world, not just the active one; copy a config between worlds.
 - [ ] **Duplicate / rename world** — copy a `.vcdbs` plus SQLite sidecars and repoint

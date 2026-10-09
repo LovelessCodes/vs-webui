@@ -42,6 +42,25 @@ async function main() {
       console.log(`visited ${route}`);
     }
 
+    // World creation wizard: configure a world that the server would generate
+    // on its next start, then confirm the pending entry appears.
+    await page.goto(`http://localhost:${PORT}/worlds`);
+    await page.waitForTimeout(600);
+    await page.getByRole("button", { name: "Create world" }).first().click();
+    await page.waitForSelector('[data-slot="sheet-content"]', { timeout: 5_000 });
+    await page.fill("#world-name", "Smoke World");
+    await page.fill("#world-seed", "smoke-seed");
+    await page.getByRole("button", { name: /World generation/ }).click();
+    await page.waitForTimeout(200);
+    await page
+      .locator('[data-slot="sheet-content"] button')
+      .filter({ hasText: "Create world" })
+      .last()
+      .click();
+    await page.waitForSelector("text=Pending creation", { timeout: 5_000 });
+    await page.waitForTimeout(400);
+    console.log("world wizard ok");
+
     // Language dropdown (Base UI menu with group label).
     await page.goto(`http://localhost:${PORT}/`);
     await page.waitForTimeout(600);

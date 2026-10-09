@@ -85,6 +85,7 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/players", get(players_view))
         .route("/api/players/history", get(players_history))
         .route("/api/saves", get(list_saves))
+        .route("/api/saves/create", post(create_save))
         .route(
             "/api/saves/upload",
             post(upload_save).layer(DefaultBodyLimit::max(2_147_483_648)),
@@ -1588,6 +1589,30 @@ async fn list_saves(State(state): State<SharedState>, _authed: Authed) -> Json<V
         .await
         .unwrap_or_default();
     Json(json!({ "saves": saves }))
+}
+
+/// Configures a brand-new world (created on the next server start).
+async fn create_save(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Json(spec): Json<crate::saves::WorldSpec>,
+) -> Result<Json<Value>, ApiError> {
+    if state.supervisor.is_running() {
+        return Err(ApiError::bad_request(
+            "stop the server before creating a world",
+        ));
+    }
+    let layout = state.layout.clone();
+    let outcome = tokio::task::spawn_blocking(move || crate::saves::create_world(&layout, &spec))
+        .await
+        .map_err(|e| ApiError::internal(format!("world task failed: {e}")))?
+        .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({
+        "ok": true,
+        "name": outcome.name,
+        "first_boot": outcome.first_boot,
+        "restart_required": true,
+    })))
 }
 
 async fn activate_save(
