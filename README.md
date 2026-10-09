@@ -55,7 +55,8 @@ All captures in [`web/screenshots/`](web/screenshots/) (English + `de/`), regene
   commands (kick, ban, op, …).
 - **Backups** — manual and scheduled (daily `HH:MM`) server/mods backups, optional pre-restart
   and automatic pre-version/flavor-change backups, restore (stopped server only, or
-  stop-restore-start in one action), download and configurable retention.
+  stop-restore-start in one action with a progress bar), CRC verification of every archive,
+  count- and size-based retention, download and configurable retention.
 - **Users & access** — owner/operator/viewer accounts with per-user passwords (the first owner
   comes from `VS_WEB_PASSWORD`, or is generated on first boot and logged once), owner-only user
   management, read-only viewers, **optional TOTP two-factor** with one-time recovery codes,

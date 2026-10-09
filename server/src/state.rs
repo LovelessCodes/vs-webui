@@ -3,6 +3,7 @@ use std::time::Instant;
 
 use crate::audit::AuditStore;
 use crate::auth::AuthStore;
+use crate::backups::RestoreProgressHandle;
 use crate::metrics::MetricsStore;
 use crate::mods::{ModDbCache, ModsManager};
 use crate::notifications::NotificationStore;
@@ -26,6 +27,7 @@ pub struct AppState {
     pub stratum: StratumCache,
     pub metrics: MetricsStore,
     pub player_history: PlayerHistory,
+    pub restore: RestoreProgressHandle,
     pub install: Mutex<Option<InstallStatus>>,
     pub started: Instant,
 }

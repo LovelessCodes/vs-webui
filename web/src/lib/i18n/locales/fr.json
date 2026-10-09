@@ -575,7 +575,9 @@
     "tasksEmpty": "Aucune tâche planifiée pour l'instant.",
     "timezone": "Fuseau horaire",
     "timezonePlaceholder": "Heure locale du conteneur",
-    "timezoneHint": "Fuseau IANA pour toutes les tâches (ex. Europe/Berlin). Vide utilise l'heure locale du conteneur."
+    "timezoneHint": "Fuseau IANA pour toutes les tâches (ex. Europe/Berlin). Vide utilise l'heure locale du conteneur.",
+    "backupMaxSize": "Taille totale maximale (Mo)",
+    "backupMaxSizeHint": "Plafond optionnel pour toutes les sauvegardes ; les archives les plus anciennes sont supprimées d'abord. 0 désactive le plafond."
   },
   "players": {
     "notRunning": "Le serveur n'est pas en cours — les commandes de liste blanche et de modération l'exigent.",
@@ -630,7 +632,12 @@
     "deleteTitle": "Supprimer",
     "footer": "La restauration exige le serveur arrêté. Les sauvegardes serveur écrasent monde, mods, configs et joueurs ; celles des mods ne remplacent que Mods/.",
     "restoreStartTitle": "Restaurer et démarrer",
-    "restoreStartQuestion": "Arrêter, restaurer, démarrer ?"
+    "restoreStartQuestion": "Arrêter, restaurer, démarrer ?",
+    "verifyTitle": "Vérifier l'archive",
+    "verifyOk": "Sauvegarde vérifiée",
+    "verifyFailed": "Échec de la vérification : {{message}}",
+    "corruptBadge": "Corrompu",
+    "restoring": "Restauration de {{name}}…"
   },
   "language": {
     "label": "Langue",

@@ -115,6 +115,7 @@ async function main() {
   } catch (error) {
     console.error(`\nsmoke failed: ${error}`);
     for (const entry of errors) console.error(`  - ${entry}`);
+    stopManager(child);
     process.exit(1);
   } finally {
     stopManager(child);

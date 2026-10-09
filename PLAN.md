@@ -307,13 +307,17 @@ at the bottom of this file.
 
 - [ ] **Offsite targets** — mirror completed backups to S3-compatible storage or WebDAV
       (credentials in settings); schedule and retention shared with local backups.
-- [ ] **Integrity verification** — zip-walk check after creation; surface corrupt archives in
-      the UI and exclude them from retention accounting.
-- [ ] **Size-based retention** — optional max total backup size in addition to count.
+- [x] **Integrity verification** — zip-walk check after creation (creation fails and removes the
+      archive when the check fails); a Verify action does the full CRC walk on demand, results
+      are persisted and surfaced in the UI, and corrupt archives are excluded from count-based
+      retention (kept for inspection, never counted as valid backups).
+- [x] **Size-based retention** — optional max total backup size in addition to count; oldest
+      archives are removed first and the newest is never deleted.
 - [x] **Pre-runtime-change backups** — automatic backup before version install/switch and flavor
       changes (mirrors the existing pre-mod-change backups). Aborts the change when the backup
       fails.
-- [ ] **Restore progress** — stream extraction/import progress for large world restores.
+- [x] **Restore progress** — stream extraction progress for large world restores; the backups
+      page polls a progress endpoint and shows a bar during restore.
 
 #### Scheduling
 

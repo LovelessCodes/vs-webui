@@ -1,7 +1,8 @@
-import { Archive, Download, Loader2, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { Archive, Download, Loader2, Plus, RotateCcw, ShieldCheck, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import ProgressBar from "@/components/common/ProgressBar";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,8 +12,9 @@ import {
   useCreateBackup,
   useDeleteBackup,
   useRestoreBackup,
-  useSettings,
+  useRestoreStatus,
   useStatus,
+  useVerifyBackup,
 } from "@/hooks/use-api";
 import { errorMessage, formatBytes } from "@/lib/format";
 import { cn } from "cn";
@@ -21,9 +23,11 @@ export default function Backups() {
   const { t } = useTranslation();
   const backups = useBackups();
   const status = useStatus();
-  const settings = useSettings();
   const create = useCreateBackup();
   const restore = useRestoreBackup();
+  const verify = useVerifyBackup();
+  const restoreStatus = useRestoreStatus(restore.isPending);
+  const progress = restoreStatus.data?.progress ?? null;
   const remove = useDeleteBackup();
   const [confirm, setConfirm] = useState<{
     name: string;
@@ -31,7 +35,8 @@ export default function Backups() {
   } | null>(null);
 
   const running = status.data?.status.status === "running";
-  const mutationError = create.error ?? restore.error ?? remove.error;
+  const nextBackupTask = status.data?.tasks?.find((task) => task.kind === "backup");
+  const mutationError = create.error ?? restore.error ?? remove.error ?? verify.error;
 
   return (
     <ScrollArea className="h-full" scrollFade>
@@ -65,10 +70,22 @@ export default function Backups() {
             </div>
           </div>
           <CardDescription>{t("backups.description")}</CardDescription>
-          {settings.data?.backup_schedule && (
+          {nextBackupTask && (
             <p className="text-muted-foreground text-[11px]">
-              {t("backups.nextScheduled", { time: settings.data.backup_schedule })}
+              {t("backups.nextScheduled", { time: nextBackupTask.at })}
             </p>
+          )}
+          {restore.isPending && (
+            <div className="mt-2 border border-border bg-card p-3">
+              <p className="mb-2 text-xs">
+                {t("backups.restoring", { name: progress?.name ?? "" })}
+              </p>
+              <ProgressBar
+                max={progress?.total || 1}
+                showPercentage={(progress?.total ?? 0) > 0}
+                value={progress?.done ?? 0}
+              />
+            </div>
           )}
         </CardHeader>
         <CardContent className="grid gap-3">
@@ -110,6 +127,11 @@ export default function Backups() {
                         </Badge>
                         {backup.name.startsWith("server-scheduled-") && (
                           <Badge variant="accent">{t("backups.scheduledBadge")}</Badge>
+                        )}
+                        {backup.integrity && !backup.integrity.ok && (
+                          <Badge variant="error" title={backup.integrity.error}>
+                            {t("backups.corruptBadge")}
+                          </Badge>
                         )}
                       </div>
                       <span className="hidden w-20 text-right font-mono text-[11px] text-muted-foreground sm:block">
@@ -158,6 +180,19 @@ export default function Backups() {
                           </>
                         ) : (
                           <>
+                            <Button
+                              disabled={verify.isPending}
+                              onClick={() => verify.mutate(backup.name)}
+                              size="icon-sm"
+                              title={t("backups.verifyTitle")}
+                              variant="ghost"
+                            >
+                              {verify.isPending ? (
+                                <Loader2 className="animate-spin" />
+                              ) : (
+                                <ShieldCheck />
+                              )}
+                            </Button>
                             <a
                               className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
                               href={`/api/backups/${encodeURIComponent(backup.name)}/download`}

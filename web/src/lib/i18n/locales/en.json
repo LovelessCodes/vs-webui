@@ -575,7 +575,9 @@
     "tasksEmpty": "No scheduled tasks yet.",
     "timezone": "Timezone",
     "timezonePlaceholder": "Container local time",
-    "timezoneHint": "IANA timezone for all scheduled tasks (e.g. Europe/Berlin). Empty uses the container's local time."
+    "timezoneHint": "IANA timezone for all scheduled tasks (e.g. Europe/Berlin). Empty uses the container's local time.",
+    "backupMaxSize": "Max total backup size (MB)",
+    "backupMaxSizeHint": "Optional cap across all backups; the oldest archives are removed first. 0 disables the cap."
   },
   "players": {
     "notRunning": "The server is not running — whitelist and moderation commands need a running server.",
@@ -630,7 +632,12 @@
     "deleteTitle": "Delete",
     "footer": "Restoring requires the server to be stopped. Server backups overwrite world, mods, configs and player data; mods backups only replace Mods/.",
     "restoreStartTitle": "Restore and start",
-    "restoreStartQuestion": "Stop, restore, start?"
+    "restoreStartQuestion": "Stop, restore, start?",
+    "verifyTitle": "Verify archive",
+    "verifyOk": "Backup verified",
+    "verifyFailed": "Verification failed: {{message}}",
+    "corruptBadge": "Corrupt",
+    "restoring": "Restoring {{name}}…"
   },
   "language": {
     "label": "Language",

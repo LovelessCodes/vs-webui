@@ -575,7 +575,9 @@
     "tasksEmpty": "Noch keine geplanten Aufgaben.",
     "timezone": "Zeitzone",
     "timezonePlaceholder": "Lokale Containerzeit",
-    "timezoneHint": "IANA-Zeitzone für alle geplanten Aufgaben (z. B. Europe/Berlin). Leer nutzt die lokale Containerzeit."
+    "timezoneHint": "IANA-Zeitzone für alle geplanten Aufgaben (z. B. Europe/Berlin). Leer nutzt die lokale Containerzeit.",
+    "backupMaxSize": "Max. Gesamtgröße der Backups (MB)",
+    "backupMaxSizeHint": "Optionale Obergrenze für alle Backups; die ältesten Archive werden zuerst entfernt. 0 deaktiviert die Grenze."
   },
   "players": {
     "notRunning": "Der Server läuft nicht — Whitelist- und Moderationsbefehle brauchen einen laufenden Server.",
@@ -630,7 +632,12 @@
     "deleteTitle": "Löschen",
     "footer": "Zum Wiederherstellen muss der Server gestoppt sein. Server-Backups überschreiben Welt, Mods, Konfigs und Spielerdaten; Mods-Backups ersetzen nur Mods/.",
     "restoreStartTitle": "Wiederherstellen und starten",
-    "restoreStartQuestion": "Stoppen, wiederherstellen, starten?"
+    "restoreStartQuestion": "Stoppen, wiederherstellen, starten?",
+    "verifyTitle": "Archiv prüfen",
+    "verifyOk": "Backup geprüft",
+    "verifyFailed": "Prüfung fehlgeschlagen: {{message}}",
+    "corruptBadge": "Beschädigt",
+    "restoring": "{{name}} wird wiederhergestellt…"
   },
   "language": {
     "label": "Sprache",

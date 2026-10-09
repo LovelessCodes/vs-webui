@@ -575,7 +575,9 @@
     "tasksEmpty": "暂无计划任务。",
     "timezone": "时区",
     "timezonePlaceholder": "容器本地时间",
-    "timezoneHint": "所有计划任务使用的 IANA 时区（例如 Europe/Berlin）。留空则使用容器本地时间。"
+    "timezoneHint": "所有计划任务使用的 IANA 时区（例如 Europe/Berlin）。留空则使用容器本地时间。",
+    "backupMaxSize": "备份总大小上限（MB）",
+    "backupMaxSizeHint": "所有备份的可选上限；将优先删除最旧的压缩包。0 表示不限制。"
   },
   "players": {
     "notRunning": "服务器未运行 — 白名单与管理命令需要服务器处于运行状态。",
@@ -630,7 +632,12 @@
     "deleteTitle": "删除",
     "footer": "恢复前必须停止服务器。服务器备份会覆盖世界、模组、配置和玩家数据；模组备份仅替换 Mods/。",
     "restoreStartTitle": "恢复并启动",
-    "restoreStartQuestion": "停止、恢复并启动？"
+    "restoreStartQuestion": "停止、恢复并启动？",
+    "verifyTitle": "校验压缩包",
+    "verifyOk": "备份已校验",
+    "verifyFailed": "校验失败：{{message}}",
+    "corruptBadge": "已损坏",
+    "restoring": "正在恢复 {{name}}…"
   },
   "language": {
     "label": "语言",

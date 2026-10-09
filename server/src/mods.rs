@@ -780,15 +780,19 @@ fn safe_filename(name: &str) -> String {
 
 // ── backups ─────────────────────────────────────────────────────────────────
 
-/// Zip the current `Mods` directory into `backups/`, pruning old backups.
-pub fn create_mods_backup(layout: &Layout, retention: usize) -> Result<String, String> {
+/// Zip the current `Mods` directory into `backups/`, verifying the archive and
+/// pruning old backups.
+pub fn create_mods_backup(
+    layout: &Layout,
+    retention: usize,
+    max_bytes: Option<u64>,
+) -> Result<String, String> {
     let mods_dir = layout.server_dir().join(MODS_DIR);
     std::fs::create_dir_all(&mods_dir).map_err(|e| format!("cannot create Mods dir: {e}"))?;
     std::fs::create_dir_all(layout.backups_dir())
         .map_err(|e| format!("cannot create backups dir: {e}"))?;
 
-    let name = format!("mods-{}.zip", timestamp_label());
-    let path = layout.backups_dir().join(&name);
+    let (name, path) = crate::backups::unique_backup_path(layout, "mods");
     let file = std::fs::File::create(&path).map_err(|e| format!("cannot create backup: {e}"))?;
     let mut zip = zip::ZipWriter::new(file);
     let options = zip::write::SimpleFileOptions::default()
@@ -810,27 +814,81 @@ pub fn create_mods_backup(layout: &Layout, retention: usize) -> Result<String, S
     zip.finish()
         .map_err(|e| format!("cannot finish backup: {e}"))?;
 
-    prune_backups(layout, retention);
+    if let Err(error) = crate::backups::verify_path(&path) {
+        let _ = std::fs::remove_file(&path);
+        return Err(format!("backup verification failed: {error}"));
+    }
+    crate::backups::record_integrity(layout, &name, &Ok(()));
+    prune_backups(layout, retention, max_bytes);
     Ok(name)
 }
 
-fn prune_backups(layout: &Layout, retention: usize) {
+fn prune_backups(layout: &Layout, retention: usize, max_bytes: Option<u64>) {
     let dir = layout.backups_dir();
+    let integrity = crate::backups::integrity_map(layout);
     let Ok(entries) = std::fs::read_dir(&dir) else {
         return;
     };
-    let mut backups: Vec<String> = entries
+    let mut backups: Vec<(String, u64, u64)> = entries
         .flatten()
-        .filter(|entry| {
+        .filter_map(|entry| {
             let name = entry.file_name().to_string_lossy().into_owned();
-            name.starts_with("mods-") && name.ends_with(".zip")
+            if !(name.starts_with("mods-") && name.ends_with(".zip")) {
+                return None;
+            }
+            let metadata = entry.metadata().ok()?;
+            let modified = metadata
+                .modified()
+                .ok()
+                .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+                .map(|duration| duration.as_secs())
+                .unwrap_or(0);
+            Some((name, metadata.len(), modified))
         })
-        .map(|entry| entry.file_name().to_string_lossy().into_owned())
         .collect();
-    backups.sort();
-    while backups.len() > retention {
-        let oldest = backups.remove(0);
-        let _ = std::fs::remove_file(dir.join(oldest));
+    backups.sort_by(|a, b| a.0.cmp(&b.0));
+
+    let corrupt = |name: &str| {
+        integrity
+            .get(name)
+            .map(|info| !info.ok)
+            .unwrap_or(false)
+    };
+    let mut remove: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut kept = 0usize;
+    for (name, _, _) in backups.iter().rev() {
+        if corrupt(name) {
+            continue;
+        }
+        kept += 1;
+        if kept > retention {
+            remove.insert(name.clone());
+        }
+    }
+    if let Some(max) = max_bytes {
+        let mut total: u64 = backups
+            .iter()
+            .filter(|(name, _, _)| !remove.contains(name))
+            .map(|(_, size, _)| *size)
+            .sum();
+        let newest = backups
+            .iter()
+            .max_by_key(|(_, _, modified)| *modified)
+            .map(|(name, _, _)| name.clone());
+        for (name, size, _) in backups.iter() {
+            if total <= max {
+                break;
+            }
+            if remove.contains(name) || Some(name) == newest.as_ref() {
+                continue;
+            }
+            remove.insert(name.clone());
+            total = total.saturating_sub(*size);
+        }
+    }
+    for name in remove {
+        let _ = std::fs::remove_file(dir.join(&name));
+        crate::backups::forget_integrity_record(layout, &name);
     }
 }
 

@@ -769,6 +769,29 @@ export function useRevokeToken() {
   });
 }
 
+export function useVerifyBackup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => api.verifyBackup(name),
+    onError: (error) =>
+      toast.error(i18n.t("backups.verifyFailed", { message: errorMessage(error) })),
+    onSuccess: () => toast.success(i18n.t("backups.verifyOk")),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["backups"] });
+    },
+  });
+}
+
+export function useRestoreStatus(enabled: boolean) {
+  return useQuery({
+    queryKey: ["restore-status"],
+    queryFn: api.restoreStatus,
+    retry: false,
+    enabled,
+    refetchInterval: enabled ? 500 : false,
+  });
+}
+
 export function useMetrics(enabled = true) {
   return useQuery({
     queryKey: ["metrics"],

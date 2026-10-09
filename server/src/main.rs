@@ -88,6 +88,7 @@ async fn main() -> anyhow::Result<()> {
         stratum: stratum::StratumCache::new(http_client),
         metrics: metrics::MetricsStore::default(),
         player_history: playerhistory::PlayerHistory::load(&layout.config_dir()),
+        restore: Default::default(),
         install: Mutex::new(None),
         started: std::time::Instant::now(),
     });
@@ -419,9 +420,15 @@ fn next_task_occurrence<Tz: chrono::TimeZone>(
 
 async fn run_scheduled_backup(state: &SharedState) {
     let layout = state.layout.clone();
-    let retention = state.settings.lock().unwrap().backup_retention.max(1) as usize;
+    let (retention, max_bytes) = {
+        let settings = state.settings.lock().unwrap();
+        (
+            settings.backup_retention.max(1) as usize,
+            settings.backup_max_bytes(),
+        )
+    };
     let result = tokio::task::spawn_blocking(move || {
-        backups::create_scheduled_backup(&layout, retention)
+        backups::create_scheduled_backup(&layout, retention, max_bytes)
     })
     .await;
 

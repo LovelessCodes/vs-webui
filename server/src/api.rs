@@ -120,7 +120,9 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/whitelist/remove", post(remove_whitelist))
         .route("/api/whitelist/mode", post(set_whitelist_mode))
         .route("/api/backups", get(list_backups).post(create_backup))
+        .route("/api/backups/restore-status", get(restore_status))
         .route("/api/backups/{name}/restore", post(restore_backup))
+        .route("/api/backups/{name}/verify", post(verify_backup))
         .route("/api/backups/{name}/download", get(download_backup))
         .route("/api/backups/{name}", delete(delete_backup))
         .route("/api/logs", get(list_logs))
@@ -441,6 +443,8 @@ struct SettingsReq {
     timezone: Option<String>,
     #[serde(default)]
     backup_retention: Option<u32>,
+    #[serde(default)]
+    backup_max_mb: Option<u32>,
     #[serde(default)]
     webhook_url: Option<String>,
     #[serde(default)]
@@ -1358,6 +1362,9 @@ async fn put_settings(
         if let Some(retention) = retention {
             guard.backup_retention = retention;
         }
+        if let Some(max_mb) = req.backup_max_mb {
+            guard.backup_max_mb = (max_mb > 0).then_some(max_mb);
+        }
         if let Some(enabled) = req.alert_tps {
             guard.alert_tps = enabled;
         }
@@ -1705,8 +1712,14 @@ async fn mods_jobs(State(state): State<SharedState>, _authed: Authed) -> Json<Va
 
 async fn create_backup_blocking(state: &SharedState) -> Result<String, ApiError> {
     let layout = state.layout.clone();
-    let retention = state.settings.lock().unwrap().backup_retention.max(1) as usize;
-    tokio::task::spawn_blocking(move || mods::create_mods_backup(&layout, retention))
+    let (retention, max_bytes) = {
+        let settings = state.settings.lock().unwrap();
+        (
+            settings.backup_retention.max(1) as usize,
+            settings.backup_max_bytes(),
+        )
+    };
+    tokio::task::spawn_blocking(move || mods::create_mods_backup(&layout, retention, max_bytes))
         .await
         .map_err(|e| ApiError::internal(format!("backup task failed: {e}")))?
         .map_err(ApiError::internal)
@@ -1719,9 +1732,15 @@ async fn pre_change_backup(state: &SharedState) -> Result<Option<String>, ApiErr
         return Ok(None);
     }
     let layout = state.layout.clone();
-    let retention = state.settings.lock().unwrap().backup_retention.max(1) as usize;
+    let (retention, max_bytes) = {
+        let settings = state.settings.lock().unwrap();
+        (
+            settings.backup_retention.max(1) as usize,
+            settings.backup_max_bytes(),
+        )
+    };
     let name = tokio::task::spawn_blocking(move || {
-        crate::backups::create_server_backup(&layout, retention)
+        crate::backups::create_server_backup(&layout, retention, max_bytes)
     })
     .await
     .map_err(|e| ApiError::internal(format!("backup task failed: {e}")))?
@@ -2511,10 +2530,16 @@ async fn create_backup(
 ) -> Result<Json<Value>, ApiError> {
     let layout = state.layout.clone();
     let kind = req.kind.clone();
-    let retention = state.settings.lock().unwrap().backup_retention.max(1) as usize;
+    let (retention, max_bytes) = {
+        let settings = state.settings.lock().unwrap();
+        (
+            settings.backup_retention.max(1) as usize,
+            settings.backup_max_bytes(),
+        )
+    };
     let name = tokio::task::spawn_blocking(move || match kind.as_str() {
-        "mods" => crate::mods::create_mods_backup(&layout, retention),
-        "server" => crate::backups::create_server_backup(&layout, retention),
+        "mods" => crate::mods::create_mods_backup(&layout, retention, max_bytes),
+        "server" => crate::backups::create_server_backup(&layout, retention, max_bytes),
         other => Err(format!("unknown backup kind: {other}")),
     })
     .await
@@ -2557,14 +2582,56 @@ async fn restore_backup(
         }
     }
     let layout = state.layout.clone();
-    tokio::task::spawn_blocking(move || crate::backups::restore_backup(&layout, &name))
-        .await
-        .map_err(|e| ApiError::internal(format!("restore task failed: {e}")))?
-        .map_err(ApiError::bad_request)?;
+    let progress = state.restore.clone();
+    {
+        let mut guard = progress.lock().unwrap();
+        *guard = Some(crate::backups::RestoreProgress {
+            name: name.clone(),
+            done: 0,
+            total: 0,
+            entries: 0,
+            finished: false,
+        });
+    }
+    let restore_name = name.clone();
+    let result = tokio::task::spawn_blocking(move || {
+        crate::backups::restore_backup(&layout, &restore_name, Some(&progress))
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("restore task failed: {e}")))?;
+    *state.restore.lock().unwrap() = None;
+    result.map_err(ApiError::bad_request)?;
     if start_after {
         state.supervisor.start().await;
     }
     Ok(Json(json!({ "ok": true, "started": start_after })))
+}
+
+/// Progress of an in-flight restore, polled by the backups page.
+async fn restore_status(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {
+    let progress = state.restore.lock().unwrap().clone();
+    Json(json!({ "progress": progress }))
+}
+
+/// Full CRC walk of one archive; the result is persisted for the UI.
+async fn verify_backup(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(name): UrlPath<String>,
+) -> Result<Json<Value>, ApiError> {
+    let layout = state.layout.clone();
+    let verify_name = name.clone();
+    let result = tokio::task::spawn_blocking(move || {
+        let result = crate::backups::verify_backup(&layout, &verify_name);
+        crate::backups::record_integrity(&layout, &verify_name, &result);
+        result
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("verify task failed: {e}")))?;
+    match result {
+        Ok(()) => Ok(Json(json!({ "ok": true }))),
+        Err(error) => Err(ApiError::bad_request(error)),
+    }
 }
 
 async fn delete_backup(

@@ -135,6 +135,7 @@ export interface Settings {
   webhook_events?: string[];
   collect_tps?: boolean;
   backup_retention?: number;
+  backup_max_mb?: number | null;
   alert_tps?: boolean;
   alert_tps_min?: number;
   alert_disk?: boolean;
@@ -351,6 +352,15 @@ export interface BackupEntry {
   name: string;
   size: number;
   modified: number;
+  integrity?: { ok: boolean; checked: number; error?: string };
+}
+
+export interface RestoreProgress {
+  name: string;
+  done: number;
+  total: number;
+  entries: number;
+  finished: boolean;
 }
 
 export interface LogFileEntry {
@@ -535,6 +545,7 @@ export const api = {
     tasks: ScheduledTask[];
     timezone: string;
     backup_retention: number;
+    backup_max_mb: number;
     webhook_url: string;
     webhook_events: string[];
     collect_tps: boolean;
@@ -739,6 +750,11 @@ export const api = {
       `/api/backups/${encodeURIComponent(name)}/restore${startAfter ? "?start_after=true" : ""}`,
       { method: "POST" },
     ),
+  restoreStatus: () => request<{ progress: RestoreProgress | null }>("/api/backups/restore-status"),
+  verifyBackup: (name: string) =>
+    request<{ ok: boolean }>(`/api/backups/${encodeURIComponent(name)}/verify`, {
+      method: "POST",
+    }),
   deleteBackup: (name: string) =>
     request<{ ok: boolean }>(`/api/backups/${encodeURIComponent(name)}`, {
       method: "DELETE",

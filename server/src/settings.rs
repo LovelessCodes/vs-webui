@@ -236,6 +236,9 @@ pub struct Settings {
     /// How many backups of each kind to keep.
     #[serde(default = "default_retention")]
     pub backup_retention: u32,
+    /// Optional cap on the total size of all backups, in MB (0/None = no cap).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub backup_max_mb: Option<u32>,
     /// Alert (in-app + webhook) when the tick rate stays below `alert_tps_min`.
     #[serde(default = "default_true", skip_serializing_if = "is_true")]
     pub alert_tps: bool,
@@ -288,6 +291,7 @@ impl Default for Settings {
             public_view: false,
             public_sections: Vec::new(),
             backup_retention: default_retention(),
+            backup_max_mb: None,
             alert_tps: true,
             alert_tps_min: default_tps_min(),
             alert_disk: true,
@@ -334,6 +338,13 @@ impl Settings {
         let tmp = path.with_extension("json.tmp");
         std::fs::write(&tmp, serde_json::to_vec_pretty(self).unwrap_or_default())?;
         std::fs::rename(tmp, path)
+    }
+
+    /// Total-size cap for backups in bytes; `None` disables it.
+    pub fn backup_max_bytes(&self) -> Option<u64> {
+        self.backup_max_mb
+            .filter(|mb| *mb > 0)
+            .map(|mb| u64::from(mb) * 1024 * 1024)
     }
 }
 

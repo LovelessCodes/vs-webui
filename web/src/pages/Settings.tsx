@@ -47,6 +47,7 @@ export default function Settings() {
   const [autoRestart, setAutoRestart] = useState(false);
   const [startParams, setStartParams] = useState("");
   const [backupRetention, setBackupRetention] = useState(10);
+  const [backupMaxMb, setBackupMaxMb] = useState(0);
   const [webhookUrl, setWebhookUrl] = useState("");
   const [webhookEvents, setWebhookEvents] = useState<string[]>([]);
   const [collectTps, setCollectTps] = useState(true);
@@ -75,6 +76,7 @@ export default function Settings() {
       setAutoRestart(settings.data.auto_restart ?? false);
       setStartParams(settings.data.start_params ?? "");
       setBackupRetention(settings.data.backup_retention ?? 10);
+      setBackupMaxMb(settings.data.backup_max_mb ?? 0);
       setWebhookUrl(settings.data.webhook_url ?? "");
       setWebhookEvents(settings.data.webhook_events ?? []);
       setCollectTps(settings.data.collect_tps ?? true);
@@ -95,6 +97,7 @@ export default function Settings() {
         auto_restart: autoRestart,
         start_params: startParams,
         backup_retention: backupRetention,
+        backup_max_mb: backupMaxMb,
         webhook_url: webhookUrl,
         webhook_events: webhookEvents,
         collect_tps: collectTps,
@@ -231,6 +234,21 @@ export default function Settings() {
             <p className="text-muted-foreground text-[11px]">
               {t("settings.backupRetentionHint")}
             </p>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label htmlFor="backup-max-mb">{t("settings.backupMaxSize")}</Label>
+            <Input
+              className="w-32"
+              id="backup-max-mb"
+              min={0}
+              onChange={(event) =>
+                setBackupMaxMb(Math.max(0, Math.min(1_000_000, Number(event.target.value) || 0)))
+              }
+              type="number"
+              value={backupMaxMb}
+            />
+            <p className="text-muted-foreground text-[11px]">{t("settings.backupMaxSizeHint")}</p>
           </div>
 
           <div className="flex items-center justify-between gap-4">

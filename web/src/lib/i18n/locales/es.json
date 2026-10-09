@@ -575,7 +575,9 @@
     "tasksEmpty": "Aún no hay tareas programadas.",
     "timezone": "Zona horaria",
     "timezonePlaceholder": "Hora local del contenedor",
-    "timezoneHint": "Zona horaria IANA para todas las tareas (p. ej. Europe/Berlin). Vacío usa la hora local del contenedor."
+    "timezoneHint": "Zona horaria IANA para todas las tareas (p. ej. Europe/Berlin). Vacío usa la hora local del contenedor.",
+    "backupMaxSize": "Tamaño máximo total (MB)",
+    "backupMaxSizeHint": "Límite opcional para todas las copias; se eliminan primero los archivos más antiguos. 0 desactiva el límite."
   },
   "players": {
     "notRunning": "El servidor no está en ejecución — los comandos de lista blanca y moderación lo requieren.",
@@ -630,7 +632,12 @@
     "deleteTitle": "Borrar",
     "footer": "Restaurar requiere el servidor detenido. Las copias del servidor sobrescriben mundo, mods, configs y jugadores; las de mods solo reemplazan Mods/.",
     "restoreStartTitle": "Restaurar e iniciar",
-    "restoreStartQuestion": "¿Detener, restaurar e iniciar?"
+    "restoreStartQuestion": "¿Detener, restaurar e iniciar?",
+    "verifyTitle": "Verificar archivo",
+    "verifyOk": "Copia verificada",
+    "verifyFailed": "Verificación fallida: {{message}}",
+    "corruptBadge": "Corrupto",
+    "restoring": "Restaurando {{name}}…"
   },
   "language": {
     "label": "Idioma",
