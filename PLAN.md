@@ -4,7 +4,8 @@ Single-container Vintage Story dedicated server with a browser UI inspired by St
 Supports vanilla and **Stratum** (patched server runtime) flavors, mod browsing/updating and
 mod config editing.
 
-Status: phase 1 (manager core) implemented. Phase progress at the bottom of this file.
+Status: phases 1–5 implemented. Phase 6 (post-v1 backlog) is planned work, not yet started.
+Phase progress at the bottom of this file.
 
 ## Decisions
 
@@ -252,6 +253,113 @@ Design vocabulary from `storyforge/PORTING.md`: sharp corners, right-side Sheets
 - Verified locally: whitelist shapes, mode flip (modern + legacy), backup zip contents
       (Logs excluded), restore, download, delete, schedule validation; in-container smoke
       test of players/backups endpoints; screenshot pipeline run end-to-end
+
+### Phase 6 — post-v1 backlog (toward "fantastic") 🚧 planned
+
+Gap analysis for team- and community-run servers, from a full review of phases 1–5. Order
+within a theme is value order; nothing here is scheduled yet. Non-goals stay as documented
+at the bottom of this file.
+
+#### Access & trust
+
+- [ ] **User accounts & roles** — replace the single shared password with owner/operator/viewer
+      accounts (argon2, per-user sessions); viewers get a read-only UI and cannot mutate.
+- [ ] **Scoped API tokens** — read-only vs full scope so dashboards and scrapers can poll
+      `/api/*` without being able to stop the server or change settings.
+- [ ] **Audit log** — append-only record of mutations (start/stop/restart, config saves, restores,
+      mod changes, token create/revoke) with actor (user or token label), timestamp and origin;
+      browsable under Settings with filtering.
+- [ ] **Session management & 2FA** — list active sessions with IP and last-seen, revoke one or
+      all; optional TOTP two-factor for privileged accounts.
+
+#### World lifecycle
+
+- [ ] **World creation wizard** — pick name, seed, world type, climate/oceans/landform and the
+      other `WorldGen` fields *before* first boot; write them into `serverconfig.json` so the
+      engine creates the requested world instead of defaults.
+- [ ] **Edit inactive worlds** — open the WorldConfig editor (read + copy settings) for any
+      world, not just the active one; copy a config between worlds.
+- [ ] **Duplicate / rename world** — copy a `.vcdbs` plus SQLite sidecars and repoint
+      WorldConfig.
+- [ ] **Stop-restore-start flow** — one confirmed action that stops the server, restores the
+      selected backup and starts again, with progress feedback.
+
+#### Alerting depth
+
+- [ ] **Threshold alerts** — webhook and in-app alert when TPS stays below a configured floor,
+      free disk drops below a threshold, or a scheduled backup fails.
+- [ ] **Crash diagnostics payload** — include exit code, uptime and the last N console lines
+      (tail of `server-main.txt`) in the `crash` notification.
+- [ ] **Notification history** — persist fired notifications/events with unread state in a bell
+      menu instead of transient toasts only.
+
+#### Backups
+
+- [ ] **Offsite targets** — mirror completed backups to S3-compatible storage or WebDAV
+      (credentials in settings); schedule and retention shared with local backups.
+- [ ] **Integrity verification** — zip-walk check after creation; surface corrupt archives in
+      the UI and exclude them from retention accounting.
+- [ ] **Size-based retention** — optional max total backup size in addition to count.
+- [ ] **Pre-runtime-change backups** — automatic backup before version install/switch and flavor
+      changes (mirrors the existing pre-mod-change backups).
+- [ ] **Restore progress** — stream extraction/import progress for large world restores.
+
+#### Scheduling
+
+- [ ] **General scheduled tasks** — cron-like tasks (multiple runs per day, weekday sets) for
+      restarts, backups and arbitrary console commands/announcements.
+- [ ] **One-off scheduled actions** — "restart at 21:00 tonight" without touching the recurring
+      schedule.
+- [ ] **Timezone setting** — explicit IANA timezone for schedules and announcements (currently
+      container-local time).
+
+#### Community surface
+
+- [ ] **In-game chat view** — parse join/leave and chat lines into a dedicated timeline with
+      per-player colors; send messages from the same composer.
+- [ ] **Two-way Discord bridge** — optional bot token; relay chat/join/leave to a channel and
+      Discord messages back into the game.
+- [ ] **Player notes & moderation history** — freeform notes plus kick/ban history per player.
+- [ ] **Role/privilege editor** — assign VS roles (whitelisted/moderator/admin) visually instead
+      of `op`/`deop` console commands.
+- [ ] **Ban list UI** — view and lift persistent bans without the console.
+- [ ] **Leaderboard aggregation** — sortable playtime/session aggregates from player history.
+
+#### Observability
+
+- [ ] **Persistent metrics** — persist samples (SQLite or JSONL under `/data/config`) for long
+      range charts that survive manager restarts, beyond the 15-minute in-memory window.
+- [ ] **More Prometheus metrics + Grafana bundle** — players online, world size, backup age,
+      crash count; ship a ready-to-import Grafana dashboard JSON.
+- [ ] **Game-port TCP probe** — periodic connect check to port 42420; alert on "process alive
+      but unresponsive".
+
+#### Console & diagnostics
+
+- [ ] **Log-file search** — server-side search across `Logs/*.txt` with match navigation.
+- [ ] **Level presets & highlighting** — one-click error/warn filters and rule-based
+      highlighting in the console.
+- [ ] **Post-crash report** — after a crash, automatically surface the first stack trace / last
+      error block from the log.
+- [ ] **Manager self-update notice** — check GitHub/GHCR for a newer vs-webui image and show an
+      update-available notice on the dashboard.
+
+#### Distribution
+
+- [ ] **Serverpack export/import** — one archive with mods (+ versions), ModConfig, relevant
+      server config and game version for reproducible setups; import validates and queues the
+      installs.
+
+#### Polish
+
+- [ ] **First-run onboarding** — checklist wizard: set password → install version → world
+      defaults → start; replaces the "install a version" empty state.
+- [ ] **PWA + web push** — installable UI and push notifications for lifecycle/threshold events.
+- [ ] **Accessibility audit** — keyboard/focus order, labels, contrast, reduced-motion pass.
+- [ ] **Mobile pass** — layout tuning and screenshot coverage below the current 1200×800.
+
+**Suggested first three:** world creation wizard → users/roles + audit log → threshold alerts +
+notification history.
 
 ## Verification
 
