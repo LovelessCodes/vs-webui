@@ -61,6 +61,18 @@ async function main() {
     await page.waitForTimeout(400);
     console.log("world wizard ok");
 
+    // Users + audit log (owner): add an operator account, then confirm the
+    // mutation is visible in the audit card.
+    await page.goto(`http://localhost:${PORT}/settings`);
+    await page.waitForSelector("#user-name", { timeout: 10_000 });
+    await page.fill("#user-name", "smoke-mod");
+    await page.fill("#user-password", "smoke-mod-password");
+    await page.getByRole("button", { name: "Add user" }).click();
+    await page.waitForSelector("text=smoke-mod", { timeout: 5_000 });
+    await page.getByRole("button", { name: "Refresh" }).last().click();
+    await page.waitForSelector("text=api/users", { timeout: 5_000 });
+    console.log("users + audit ok");
+
     // Language dropdown (Base UI menu with group label).
     await page.goto(`http://localhost:${PORT}/`);
     await page.waitForTimeout(600);

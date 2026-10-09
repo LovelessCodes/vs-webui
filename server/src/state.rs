@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
+use crate::audit::AuditStore;
 use crate::auth::AuthStore;
 use crate::metrics::MetricsStore;
 use crate::mods::{ModDbCache, ModsManager};
@@ -15,6 +16,7 @@ pub struct AppState {
     pub layout: Layout,
     pub settings: Arc<Mutex<Settings>>,
     pub auth: AuthStore,
+    pub audit: AuditStore,
     pub supervisor: Supervisor,
     pub versions: VersionCache,
     pub moddb: ModDbCache,

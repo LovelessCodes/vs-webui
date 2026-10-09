@@ -51,7 +51,11 @@ All captures in [`web/screenshots/`](web/screenshots/) (English + `de/`), regene
   commands (kick, ban, op, …).
 - **Backups** — manual and scheduled (daily `HH:MM`) server/mods backups, optional pre-restart
   backup, restore, download and configurable retention.
-- **Automation & monitoring** — REST API with bearer **API tokens**, **webhook notifications**
+- **Users & access** — owner/operator/viewer accounts with per-user passwords (the first owner
+  comes from `VS_WEB_PASSWORD`, or is generated on first boot and logged once), owner-only user
+  management, read-only viewers, and an audit log of every mutating action with actor, method,
+  status and origin; REST API with bearer **API tokens**.
+- **Automation & monitoring** — **webhook notifications**
   (Discord, Slack or generic JSON) for start/stop/crash/join/leave/backup, live CPU/memory/TPS
   sparklines on the dashboard and a **Prometheus** endpoint at `GET /metrics`.
 - **7 languages** — English, German, Spanish, French, Brazilian Portuguese, Russian, Simplified
@@ -126,9 +130,10 @@ The image already carries the same `HEALTHCHECK`, so the explicit flags above ar
 if you want to override the defaults. `docker ps` shows `(healthy)` once the manager answers
 `GET /api/health`.
 
-Open `http://localhost:8080` and log in with `VS_WEB_PASSWORD` (or the password generated on
-first boot and printed to the container logs). Then install a game version under **Versions**
-and press **Start** in the app bar. Game clients connect to `<host>:42420`.
+Open `http://localhost:8080` and log in as `admin` with `VS_WEB_PASSWORD` (or the password
+generated on first boot and printed to the container logs). Add more accounts under
+**Settings → Users**. Then install a game version under **Versions** and press **Start** in the
+app bar. Game clients connect to `<host>:42420`.
 
 ## Ports
 
@@ -141,7 +146,8 @@ and press **Start** in the app bar. Game clients connect to `<host>:42420`.
 
 | Variable | Default | Description |
 | -------- | ------- | ----------- |
-| `VS_WEB_PASSWORD` | generated | Web UI password; generated and logged once when unset |
+| `VS_WEB_PASSWORD` | generated | Password for the first owner account; generated and logged once when no users exist yet |
+| `VS_WEB_USERNAME` | `admin` | Name of that first owner account |
 | `VS_WEB_AUTH` | `password` | `password` or `off` (use behind an authenticating reverse proxy) |
 | `VS_WEB_PORT` | `8080` | Web UI port inside the container |
 | `VS_DATA` | `/data` | Persistent data root (server files, worlds, mods, backups) |
@@ -160,7 +166,7 @@ remap and runs directly.
 
 ```
 /data
-  config/                manager settings, auth, API tokens, sessions
+  config/                manager settings, users, sessions, API tokens, audit log
   runtime/
     vanilla/<version>/   installed vanilla server builds
     stratum/<tag>/       installed Stratum builds

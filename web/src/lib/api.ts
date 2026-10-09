@@ -43,7 +43,29 @@ export interface Me {
   authenticated: boolean;
   auth_disabled?: boolean;
   csrf: string | null;
+  user?: { name: string; role: UserRole };
   public?: { enabled: boolean };
+}
+
+export type UserRole = "owner" | "operator" | "viewer";
+
+export interface UserView {
+  id: string;
+  name: string;
+  role: UserRole;
+  created: number;
+}
+
+export interface AuditEntry {
+  ts: number;
+  actor: string;
+  role: string;
+  kind: string;
+  method: string;
+  path: string;
+  status: number;
+  action?: string;
+  ip: string;
 }
 
 export interface ServerStatus {
@@ -376,10 +398,10 @@ export interface StorageView {
 
 export const api = {
   me: () => request<Me>("/api/me"),
-  login: (password: string) =>
+  login: (username: string, password: string) =>
     request<{ ok: boolean; csrf?: string }>("/api/login", {
       method: "POST",
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ username, password }),
     }),
   logout: () => request<{ ok: boolean }>("/api/logout", { method: "POST" }),
   changePassword: (current: string, next: string) =>
@@ -387,6 +409,21 @@ export const api = {
       method: "PUT",
       body: JSON.stringify({ current, new: next }),
     }),
+
+  users: () => request<{ users: UserView[] }>("/api/users"),
+  createUser: (body: { name: string; password: string; role: UserRole }) =>
+    request<{ ok: boolean; user: UserView }>("/api/users", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateUser: (id: string, body: { role?: UserRole; password?: string }) =>
+    request<{ ok: boolean; user: UserView }>(`/api/users/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    }),
+  deleteUser: (id: string) =>
+    request<{ ok: boolean }>(`/api/users/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  audit: (limit = 200) => request<{ entries: AuditEntry[] }>(`/api/audit?limit=${limit}`),
 
   status: () => request<StatusResponse>("/api/status"),
   start: () => request<{ ok: boolean }>("/api/server/start", { method: "POST" }),

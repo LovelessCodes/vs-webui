@@ -119,7 +119,9 @@
     "password": "Password",
     "placeholder": "Web UI password",
     "signIn": "Sign in",
-    "hint": "The password is set with the VS_WEB_PASSWORD environment variable, or generated on first boot and printed to the container logs."
+    "hint": "Accounts are managed under Settings → Users. The first owner is created from VS_WEB_PASSWORD, or generated on first boot and printed to the container logs.",
+    "username": "Username",
+    "usernamePlaceholder": "admin"
   },
   "dashboard": {
     "server": "Server",
@@ -472,7 +474,39 @@
     "publicSectionInfo": "Server info",
     "publicSectionPlayers": "Online players",
     "publicSectionHistory": "Player history",
-    "publicPreview": "Open guest preview"
+    "publicPreview": "Open guest preview",
+    "signedInAs": "Signed in as {{name}} ({{role}})",
+    "role": {
+      "owner": "Owner",
+      "operator": "Operator",
+      "viewer": "Viewer"
+    },
+    "usersTitle": "Users",
+    "usersDescription": "Accounts that can sign in to this manager. Owners manage users; operators control the server; viewers are read-only.",
+    "userName": "Name",
+    "userNamePlaceholder": "e.g. moderator",
+    "userPassword": "Password",
+    "userAdd": "Add user",
+    "userCreated": "User created: {{name}}",
+    "userDeleted": "User deleted",
+    "userCreatedAt": "Added",
+    "userResetPassword": "Reset password",
+    "userNewPassword": "New password",
+    "userDeleteTitle": "Delete user",
+    "userDeleteQuestion": "Delete?",
+    "userYou": "You",
+    "auditTitle": "Audit log",
+    "auditDescription": "Recent mutating actions recorded by the manager — start/stop, config saves, backups, mods, users and more.",
+    "auditFilterPlaceholder": "Filter by actor, path, IP…",
+    "auditUnavailable": "The audit log is not available.",
+    "auditEmpty": "No entries yet.",
+    "auditTime": "Time",
+    "auditActor": "Actor",
+    "auditRequest": "Request",
+    "auditStatus": "Status",
+    "auditIp": "IP",
+    "auditToken": "token",
+    "auditTruncated": "Showing the newest {{max}} entries."
   },
   "players": {
     "notRunning": "The server is not running — whitelist and moderation commands need a running server.",

@@ -47,6 +47,14 @@ impl Layout {
         self.config_dir().join("auth.json")
     }
 
+    pub fn users_path(&self) -> PathBuf {
+        self.config_dir().join("users.json")
+    }
+
+    pub fn audit_path(&self) -> PathBuf {
+        self.config_dir().join("audit.jsonl")
+    }
+
     pub fn sessions_path(&self) -> PathBuf {
         self.config_dir().join("sessions.json")
     }

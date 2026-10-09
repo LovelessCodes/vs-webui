@@ -119,7 +119,9 @@
     "password": "Senha",
     "placeholder": "Senha da interface",
     "signIn": "Entrar",
-    "hint": "A senha é definida pela variável de ambiente VS_WEB_PASSWORD ou gerada no primeiro boot e impressa nos logs do contêiner."
+    "hint": "As contas são gerenciadas em Configurações → Usuários. O primeiro proprietário é criado a partir de VS_WEB_PASSWORD ou gerado na primeira inicialização e impresso nos logs do contêiner.",
+    "username": "Usuário",
+    "usernamePlaceholder": "admin"
   },
   "dashboard": {
     "server": "Servidor",
@@ -472,7 +474,39 @@
     "publicSectionInfo": "Informações do servidor",
     "publicSectionPlayers": "Jogadores online",
     "publicSectionHistory": "Histórico de jogadores",
-    "publicPreview": "Abrir prévia de visitante"
+    "publicPreview": "Abrir prévia de visitante",
+    "signedInAs": "Conectado como {{name}} ({{role}})",
+    "role": {
+      "owner": "Proprietário",
+      "operator": "Operador",
+      "viewer": "Leitor"
+    },
+    "usersTitle": "Usuários",
+    "usersDescription": "Contas que podem entrar neste gerenciador. Proprietários gerenciam usuários; operadores controlam o servidor; leitores são somente leitura.",
+    "userName": "Nome",
+    "userNamePlaceholder": "ex.: moderator",
+    "userPassword": "Senha",
+    "userAdd": "Adicionar usuário",
+    "userCreated": "Usuário criado: {{name}}",
+    "userDeleted": "Usuário excluído",
+    "userCreatedAt": "Adicionado",
+    "userResetPassword": "Redefinir senha",
+    "userNewPassword": "Nova senha",
+    "userDeleteTitle": "Excluir usuário",
+    "userDeleteQuestion": "Excluir?",
+    "userYou": "Você",
+    "auditTitle": "Registro de auditoria",
+    "auditDescription": "Ações recentes que modificam o estado — iniciar/parar, configurações, backups, mods, usuários e mais.",
+    "auditFilterPlaceholder": "Filtrar por ator, caminho, IP…",
+    "auditUnavailable": "O registro de auditoria não está disponível.",
+    "auditEmpty": "Ainda sem entradas.",
+    "auditTime": "Hora",
+    "auditActor": "Ator",
+    "auditRequest": "Requisição",
+    "auditStatus": "Status",
+    "auditIp": "IP",
+    "auditToken": "token",
+    "auditTruncated": "Mostrando as {{max}} entradas mais recentes."
   },
   "players": {
     "notRunning": "O servidor não está em execução — comandos de lista e moderação exigem ele ativo.",

@@ -4,6 +4,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 
 import ServerConfigForm from "@/components/config/ServerConfigForm";
+import AuditCard from "@/components/settings/AuditCard";
+import UsersCard from "@/components/settings/UsersCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import {
   useCreateToken,
+  useMe,
   useRevokeToken,
   useSettings,
   useStatus,
@@ -27,6 +30,7 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const status = useStatus();
   const settings = useSettings();
+  const me = useMe();
 
   const [autoStart, setAutoStart] = useState(false);
   const [autoRestart, setAutoRestart] = useState(false);
@@ -430,6 +434,14 @@ export default function Settings() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {me.data?.user && (
+            <p className="mb-3 text-xs text-muted-foreground">
+              {t("settings.signedInAs", {
+                name: me.data.user.name,
+                role: t(`settings.role.${me.data.user.role}`),
+              })}
+            </p>
+          )}
           {passwordChanged ? (
             <p className="text-success text-xs">{t("settings.passwordChanged")}</p>
           ) : (
@@ -489,6 +501,8 @@ export default function Settings() {
           )}
         </CardContent>
       </Card>
+
+      <UsersCard />
 
       <Card className="self-start lg:col-span-2">
         <CardHeader>
@@ -622,6 +636,8 @@ export default function Settings() {
           )}
         </CardContent>
       </Card>
+
+      <AuditCard />
 
       <Card className="self-start lg:col-span-2">
         <CardHeader>

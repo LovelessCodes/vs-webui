@@ -119,7 +119,9 @@
     "password": "Mot de passe",
     "placeholder": "Mot de passe de l'interface",
     "signIn": "Se connecter",
-    "hint": "Le mot de passe est défini par la variable d'environnement VS_WEB_PASSWORD, ou généré au premier démarrage et affiché dans les logs du conteneur."
+    "hint": "Les comptes se gèrent dans Paramètres → Utilisateurs. Le premier propriétaire est créé à partir de VS_WEB_PASSWORD, ou généré au premier démarrage et affiché dans les logs du conteneur.",
+    "username": "Nom d'utilisateur",
+    "usernamePlaceholder": "admin"
   },
   "dashboard": {
     "server": "Serveur",
@@ -472,7 +474,39 @@
     "publicSectionInfo": "Infos serveur",
     "publicSectionPlayers": "Joueurs en ligne",
     "publicSectionHistory": "Historique des joueurs",
-    "publicPreview": "Ouvrir l'aperçu invité"
+    "publicPreview": "Ouvrir l'aperçu invité",
+    "signedInAs": "Connecté en tant que {{name}} ({{role}})",
+    "role": {
+      "owner": "Propriétaire",
+      "operator": "Opérateur",
+      "viewer": "Lecteur"
+    },
+    "usersTitle": "Utilisateurs",
+    "usersDescription": "Comptes pouvant se connecter à ce gestionnaire. Les propriétaires gèrent les utilisateurs ; les opérateurs contrôlent le serveur ; les lecteurs sont en lecture seule.",
+    "userName": "Nom",
+    "userNamePlaceholder": "ex. moderator",
+    "userPassword": "Mot de passe",
+    "userAdd": "Ajouter",
+    "userCreated": "Utilisateur créé : {{name}}",
+    "userDeleted": "Utilisateur supprimé",
+    "userCreatedAt": "Ajouté",
+    "userResetPassword": "Réinitialiser le mot de passe",
+    "userNewPassword": "Nouveau mot de passe",
+    "userDeleteTitle": "Supprimer l'utilisateur",
+    "userDeleteQuestion": "Supprimer ?",
+    "userYou": "Vous",
+    "auditTitle": "Journal d'audit",
+    "auditDescription": "Actions récentes qui modifient l'état — démarrage/arrêt, configurations, sauvegardes, mods, utilisateurs, etc.",
+    "auditFilterPlaceholder": "Filtrer par acteur, chemin, IP…",
+    "auditUnavailable": "Le journal d'audit n'est pas disponible.",
+    "auditEmpty": "Aucune entrée pour l'instant.",
+    "auditTime": "Heure",
+    "auditActor": "Acteur",
+    "auditRequest": "Requête",
+    "auditStatus": "Statut",
+    "auditIp": "IP",
+    "auditToken": "jeton",
+    "auditTruncated": "Affichage des {{max}} entrées les plus récentes."
   },
   "players": {
     "notRunning": "Le serveur n'est pas en cours — les commandes de liste blanche et de modération l'exigent.",

@@ -119,7 +119,9 @@
     "password": "Passwort",
     "placeholder": "Web-UI-Passwort",
     "signIn": "Anmelden",
-    "hint": "Das Passwort wird über die Umgebungsvariable VS_WEB_PASSWORD gesetzt oder beim ersten Start generiert und in den Container-Logs ausgegeben."
+    "hint": "Konten werden unter Einstellungen → Benutzer verwaltet. Der erste Owner entsteht aus VS_WEB_PASSWORD oder wird beim ersten Start erzeugt und in den Container-Logs ausgegeben.",
+    "username": "Benutzername",
+    "usernamePlaceholder": "admin"
   },
   "dashboard": {
     "server": "Server",
@@ -472,7 +474,39 @@
     "publicSectionInfo": "Server-Infos",
     "publicSectionPlayers": "Spieler online",
     "publicSectionHistory": "Spielerhistorie",
-    "publicPreview": "Gastvorschau öffnen"
+    "publicPreview": "Gastvorschau öffnen",
+    "signedInAs": "Angemeldet als {{name}} ({{role}})",
+    "role": {
+      "owner": "Owner",
+      "operator": "Operator",
+      "viewer": "Betrachter"
+    },
+    "usersTitle": "Benutzer",
+    "usersDescription": "Konten, die sich an diesem Manager anmelden können. Owner verwalten Benutzer; Operatoren steuern den Server; Betrachter haben nur Lesezugriff.",
+    "userName": "Name",
+    "userNamePlaceholder": "z. B. moderator",
+    "userPassword": "Passwort",
+    "userAdd": "Benutzer hinzufügen",
+    "userCreated": "Benutzer erstellt: {{name}}",
+    "userDeleted": "Benutzer gelöscht",
+    "userCreatedAt": "Hinzugefügt",
+    "userResetPassword": "Passwort zurücksetzen",
+    "userNewPassword": "Neues Passwort",
+    "userDeleteTitle": "Benutzer löschen",
+    "userDeleteQuestion": "Löschen?",
+    "userYou": "Du",
+    "auditTitle": "Audit-Protokoll",
+    "auditDescription": "Aktuelle Änderungsaktionen des Managers — Start/Stopp, Konfigurationen, Backups, Mods, Benutzer und mehr.",
+    "auditFilterPlaceholder": "Nach Akteur, Pfad, IP filtern…",
+    "auditUnavailable": "Das Audit-Protokoll ist nicht verfügbar.",
+    "auditEmpty": "Noch keine Einträge.",
+    "auditTime": "Zeit",
+    "auditActor": "Akteur",
+    "auditRequest": "Anfrage",
+    "auditStatus": "Status",
+    "auditIp": "IP",
+    "auditToken": "Token",
+    "auditTruncated": "Die neuesten {{max}} Einträge werden angezeigt."
   },
   "players": {
     "notRunning": "Der Server läuft nicht — Whitelist- und Moderationsbefehle brauchen einen laufenden Server.",

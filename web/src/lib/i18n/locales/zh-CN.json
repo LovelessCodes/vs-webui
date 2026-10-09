@@ -119,7 +119,9 @@
     "password": "密码",
     "placeholder": "Web 界面密码",
     "signIn": "登录",
-    "hint": "密码由环境变量 VS_WEB_PASSWORD 设置，或在首次启动时生成并打印到容器日志中。"
+    "hint": "账户在“设置 → 用户”中管理。首个所有者由 VS_WEB_PASSWORD 创建，或在首次启动时生成并输出到容器日志。",
+    "username": "用户名",
+    "usernamePlaceholder": "admin"
   },
   "dashboard": {
     "server": "服务器",
@@ -472,7 +474,39 @@
     "publicSectionInfo": "服务器信息",
     "publicSectionPlayers": "在线玩家",
     "publicSectionHistory": "玩家历史",
-    "publicPreview": "打开访客预览"
+    "publicPreview": "打开访客预览",
+    "signedInAs": "当前登录：{{name}}（{{role}}）",
+    "role": {
+      "owner": "所有者",
+      "operator": "操作员",
+      "viewer": "只读"
+    },
+    "usersTitle": "用户",
+    "usersDescription": "可登录此管理面板的账户。所有者管理用户；操作员控制服务器；只读用户仅能查看。",
+    "userName": "名称",
+    "userNamePlaceholder": "例如 moderator",
+    "userPassword": "密码",
+    "userAdd": "添加用户",
+    "userCreated": "已创建用户：{{name}}",
+    "userDeleted": "用户已删除",
+    "userCreatedAt": "添加时间",
+    "userResetPassword": "重置密码",
+    "userNewPassword": "新密码",
+    "userDeleteTitle": "删除用户",
+    "userDeleteQuestion": "删除？",
+    "userYou": "你",
+    "auditTitle": "审计日志",
+    "auditDescription": "管理器记录的最近变更操作——启动/停止、配置保存、备份、模组、用户等。",
+    "auditFilterPlaceholder": "按操作者、路径、IP 筛选…",
+    "auditUnavailable": "审计日志不可用。",
+    "auditEmpty": "暂无记录。",
+    "auditTime": "时间",
+    "auditActor": "操作者",
+    "auditRequest": "请求",
+    "auditStatus": "状态",
+    "auditIp": "IP",
+    "auditToken": "令牌",
+    "auditTruncated": "仅显示最近 {{max}} 条记录。"
   },
   "players": {
     "notRunning": "服务器未运行 — 白名单与管理命令需要服务器处于运行状态。",

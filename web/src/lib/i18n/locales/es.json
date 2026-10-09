@@ -119,7 +119,9 @@
     "password": "Contraseña",
     "placeholder": "Contraseña de la interfaz",
     "signIn": "Entrar",
-    "hint": "La contraseña se define con la variable de entorno VS_WEB_PASSWORD o se genera en el primer arranque y se imprime en los logs del contenedor."
+    "hint": "Las cuentas se gestionan en Ajustes → Usuarios. El primer propietario se crea desde VS_WEB_PASSWORD o se genera en el primer arranque y se imprime en los registros del contenedor.",
+    "username": "Usuario",
+    "usernamePlaceholder": "admin"
   },
   "dashboard": {
     "server": "Servidor",
@@ -472,7 +474,39 @@
     "publicSectionInfo": "Información del servidor",
     "publicSectionPlayers": "Jugadores en línea",
     "publicSectionHistory": "Historial de jugadores",
-    "publicPreview": "Abrir vista de invitado"
+    "publicPreview": "Abrir vista de invitado",
+    "signedInAs": "Sesión iniciada como {{name}} ({{role}})",
+    "role": {
+      "owner": "Propietario",
+      "operator": "Operador",
+      "viewer": "Lector"
+    },
+    "usersTitle": "Usuarios",
+    "usersDescription": "Cuentas que pueden iniciar sesión en este gestor. Los propietarios gestionan usuarios; los operadores controlan el servidor; los lectores son de solo lectura.",
+    "userName": "Nombre",
+    "userNamePlaceholder": "p. ej. moderator",
+    "userPassword": "Contraseña",
+    "userAdd": "Añadir usuario",
+    "userCreated": "Usuario creado: {{name}}",
+    "userDeleted": "Usuario eliminado",
+    "userCreatedAt": "Añadido",
+    "userResetPassword": "Restablecer contraseña",
+    "userNewPassword": "Nueva contraseña",
+    "userDeleteTitle": "Eliminar usuario",
+    "userDeleteQuestion": "¿Eliminar?",
+    "userYou": "Tú",
+    "auditTitle": "Registro de auditoría",
+    "auditDescription": "Acciones recientes que modifican el estado — inicio/parada, configuraciones, copias, mods, usuarios y más.",
+    "auditFilterPlaceholder": "Filtrar por actor, ruta, IP…",
+    "auditUnavailable": "El registro de auditoría no está disponible.",
+    "auditEmpty": "Aún no hay entradas.",
+    "auditTime": "Hora",
+    "auditActor": "Actor",
+    "auditRequest": "Petición",
+    "auditStatus": "Estado",
+    "auditIp": "IP",
+    "auditToken": "token",
+    "auditTruncated": "Mostrando las {{max}} entradas más recientes."
   },
   "players": {
     "notRunning": "El servidor no está en ejecución — los comandos de lista blanca y moderación lo requieren.",

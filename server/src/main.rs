@@ -1,4 +1,5 @@
 mod api;
+mod audit;
 mod auth;
 mod backups;
 mod configs;
@@ -77,6 +78,7 @@ async fn main() -> anyhow::Result<()> {
         layout: layout.clone(),
         settings: settings.clone(),
         auth,
+        audit: audit::AuditStore::load(&layout),
         supervisor,
         versions: versions::VersionCache::new(http_client.clone()),
         moddb: mods::ModDbCache::new(http_client.clone()),

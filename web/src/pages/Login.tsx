@@ -12,10 +12,11 @@ import { errorMessage } from "@/lib/format";
 export default function Login() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const login = useMutation({
-    mutationFn: () => api.login(password),
+    mutationFn: () => api.login(username.trim(), password),
     onSuccess: (data) => {
       if (data.csrf) setCsrf(data.csrf);
       setPassword("");
@@ -41,9 +42,21 @@ export default function Login() {
 
         <form className="grid gap-4 p-6" onSubmit={onSubmit}>
           <div className="grid gap-1.5">
+            <Label htmlFor="username">{t("login.username")}</Label>
+            <Input
+              autoComplete="username"
+              autoFocus
+              id="username"
+              onChange={(event) => setUsername(event.target.value)}
+              placeholder={t("login.usernamePlaceholder")}
+              value={username}
+            />
+          </div>
+
+          <div className="grid gap-1.5">
             <Label htmlFor="password">{t("login.password")}</Label>
             <Input
-              autoFocus
+              autoComplete="current-password"
               id="password"
               onChange={(event) => setPassword(event.target.value)}
               placeholder={t("login.placeholder")}

@@ -4,9 +4,13 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
-use axum::extract::{ConnectInfo, DefaultBodyLimit, FromRequestParts, Multipart, Path as UrlPath, Query, State};
+use axum::extract::{
+    ConnectInfo, DefaultBodyLimit, FromRequestParts, Multipart, Path as UrlPath, Query, Request,
+    State,
+};
 use axum::http::request::Parts;
 use axum::http::{header, HeaderMap, StatusCode};
+use axum::middleware::{from_fn_with_state, Next};
 use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, get, post, put};
@@ -17,6 +21,8 @@ use serde_json::{json, Value};
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
 
+use crate::audit::AuditEntry;
+use crate::auth::{Actor, Role};
 use crate::console::LogLine;
 use crate::mods::{self, InstalledMod, NewJob};
 use crate::state::SharedState;
@@ -39,6 +45,9 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/me", get(me))
         .route("/api/logout", post(logout))
         .route("/api/password", put(change_password))
+        .route("/api/users", get(list_users).post(create_user))
+        .route("/api/users/{id}", put(update_user).delete(delete_user))
+        .route("/api/audit", get(list_audit))
         .route("/api/status", get(status))
         .route("/api/server/start", post(start))
         .route("/api/server/stop", post(stop))
@@ -104,6 +113,7 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/logs/{name}", get(read_log))
         .route("/api/logs/{name}/download", get(download_log))
         .fallback_service(ServeDir::new(&dist).fallback(ServeFile::new(&index)))
+        .layer(from_fn_with_state(state.clone(), audit_middleware))
         .layer(TraceLayer::new_for_http())
         .with_state(state)
 }
@@ -173,10 +183,25 @@ fn clear_cookie() -> String {
     format!("{COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0")
 }
 
-/// Valid session (or auth disabled). Mutating methods must carry the CSRF header.
+/// Valid session (or auth disabled). Mutating methods must carry the CSRF
+/// header; viewers may only perform read requests (plus their own session).
 pub struct Authed {
     pub token: Option<String>,
+    pub actor: Actor,
 }
+
+impl Authed {
+    pub fn require_owner(&self) -> Result<(), ApiError> {
+        if self.actor.role.is_some_and(Role::is_owner) {
+            Ok(())
+        } else {
+            Err(ApiError::forbidden())
+        }
+    }
+}
+
+/// Mutations a viewer is still allowed to make (their own session).
+const VIEWER_MUTATIONS: [&str; 2] = ["/api/logout", "/api/password"];
 
 impl FromRequestParts<SharedState> for Authed {
     type Rejection = ApiError;
@@ -186,20 +211,21 @@ impl FromRequestParts<SharedState> for Authed {
         state: &SharedState,
     ) -> Result<Self, Self::Rejection> {
         if !state.auth.enabled() {
-            return Ok(Self { token: None });
+            return Ok(Self::system());
         }
         // Bearer tokens authenticate automation; there is no cookie to protect
-        // against CSRF, so the header check does not apply to them.
-        let bearer = parts
-            .headers
-            .get(axum::http::header::AUTHORIZATION)
-            .and_then(|value| value.to_str().ok())
-            .and_then(|value| value.strip_prefix("Bearer "))
-            .map(str::trim)
-            .filter(|value| !value.is_empty());
-        if let Some(bearer) = bearer {
-            if state.auth.verify_token(bearer) {
-                return Ok(Self { token: None });
+        // against CSRF, so the header check does not apply to them. Tokens act
+        // as operators (no user management).
+        if let Some(bearer) = bearer_token(&parts.headers) {
+            if let Some(label) = state.auth.verify_token(bearer) {
+                return Ok(Self {
+                    token: None,
+                    actor: Actor {
+                        name: label,
+                        role: Some(Role::Operator),
+                        kind: "token",
+                    },
+                });
             }
             return Err(ApiError::unauthorized());
         }
@@ -208,6 +234,11 @@ impl FromRequestParts<SharedState> for Authed {
             .auth
             .session(&token)
             .ok_or_else(ApiError::unauthorized)?;
+        let Some(role) = state.auth.role_of(&session.user) else {
+            // The account was deleted; the session is dead.
+            state.auth.logout(&token);
+            return Err(ApiError::unauthorized());
+        };
         if parts.method != axum::http::Method::GET && parts.method != axum::http::Method::HEAD {
             let csrf = parts
                 .headers
@@ -217,15 +248,121 @@ impl FromRequestParts<SharedState> for Authed {
             if csrf != session.csrf {
                 return Err(ApiError::forbidden());
             }
+            if role == Role::Viewer && !VIEWER_MUTATIONS.contains(&parts.uri.path()) {
+                return Err(ApiError::forbidden());
+            }
         }
-        Ok(Self { token: Some(token) })
+        Ok(Self {
+            token: Some(token),
+            actor: Actor {
+                name: session.user,
+                role: Some(role),
+                kind: "session",
+            },
+        })
     }
+}
+
+impl Authed {
+    /// Acting identity when authentication is disabled (`VS_WEB_AUTH=off`).
+    fn system() -> Self {
+        Self {
+            token: None,
+            actor: Actor {
+                name: "proxy".into(),
+                role: Some(Role::Owner),
+                kind: "system",
+            },
+        }
+    }
+}
+
+fn bearer_token(headers: &HeaderMap) -> Option<&str> {
+    headers
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.strip_prefix("Bearer "))
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+}
+
+/// Resolves the acting identity for audit logging without rejecting requests.
+fn actor_from_headers(state: &SharedState, headers: &HeaderMap) -> Option<Actor> {
+    if !state.auth.enabled() {
+        return Some(Authed::system().actor);
+    }
+    if let Some(bearer) = bearer_token(headers) {
+        return state.auth.verify_token(bearer).map(|label| Actor {
+            name: label,
+            role: Some(Role::Operator),
+            kind: "token",
+        });
+    }
+    let token = cookie_token(headers)?;
+    let session = state.auth.session(&token)?;
+    let role = state.auth.role_of(&session.user)?;
+    Some(Actor {
+        name: session.user,
+        role: Some(role),
+        kind: "session",
+    })
+}
+
+/// Client IP for the audit log, honouring one layer of reverse proxy.
+fn client_ip(headers: &HeaderMap, addr: SocketAddr) -> String {
+    headers
+        .get("x-forwarded-for")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.split(',').next())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .or_else(|| {
+            headers
+                .get("x-real-ip")
+                .and_then(|value| value.to_str().ok())
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+        })
+        .map(str::to_string)
+        .unwrap_or_else(|| addr.ip().to_string())
+}
+
+/// Records every mutating `/api/*` request (except login, recorded by the
+/// handler itself) into the audit log once the response status is known.
+async fn audit_middleware(
+    State(state): State<SharedState>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    request: Request,
+    next: Next,
+) -> Response {
+    let method = request.method().clone();
+    let path = request.uri().path().to_string();
+    let mutating = method != axum::http::Method::GET && method != axum::http::Method::HEAD;
+    let audited = mutating
+        && path.starts_with("/api/")
+        && path != "/api/login"
+        && path != "/api/ws";
+    let actor = audited.then(|| actor_from_headers(&state, request.headers())).flatten();
+    let ip = client_ip(request.headers(), addr);
+
+    let response = next.run(request).await;
+    if audited {
+        let status = response.status().as_u16();
+        let entry = match actor {
+            Some(actor) => AuditEntry::new(&actor, method.as_str(), &path, status, &ip),
+            None => AuditEntry::anonymous("anonymous", method.as_str(), &path, status, &ip),
+        };
+        state.audit.record(entry);
+    }
+    response
 }
 
 // ── request bodies ──────────────────────────────────────────────────────────
 
 #[derive(Deserialize)]
 struct LoginReq {
+    #[serde(default)]
+    username: String,
     password: String,
 }
 
@@ -278,6 +415,27 @@ struct SettingsReq {
 struct PasswordReq {
     current: Option<String>,
     new: String,
+}
+
+#[derive(Deserialize)]
+struct CreateUserReq {
+    name: String,
+    password: String,
+    role: String,
+}
+
+#[derive(Deserialize)]
+struct UpdateUserReq {
+    #[serde(default)]
+    role: Option<String>,
+    #[serde(default)]
+    password: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct AuditQuery {
+    #[serde(default)]
+    limit: Option<usize>,
 }
 
 #[derive(Deserialize)]
@@ -353,15 +511,25 @@ async fn me(State(state): State<SharedState>, headers: HeaderMap) -> Json<Value>
             "authenticated": true,
             "auth_disabled": true,
             "csrf": null,
+            "user": { "name": "proxy", "role": "owner" },
             "public": { "enabled": public },
         }));
     }
-    match cookie_token(&headers).and_then(|token| state.auth.session(&token)) {
-        Some(session) => Json(json!({
-            "authenticated": true,
-            "csrf": session.csrf,
-            "public": { "enabled": public },
-        })),
+    let session = cookie_token(&headers).and_then(|token| state.auth.session(&token));
+    match session {
+        Some(session) => match state.auth.role_of(&session.user) {
+            Some(role) => Json(json!({
+                "authenticated": true,
+                "csrf": session.csrf,
+                "user": { "name": session.user, "role": role.as_str() },
+                "public": { "enabled": public },
+            })),
+            None => Json(json!({
+                "authenticated": false,
+                "csrf": null,
+                "public": { "enabled": public },
+            })),
+        },
         None => Json(json!({
             "authenticated": false,
             "csrf": null,
@@ -378,19 +546,49 @@ async fn login(
     if !state.auth.enabled() {
         return Ok(Json(json!({ "ok": true })).into_response());
     }
-    match state.auth.login(&req.password, &addr.ip().to_string()) {
+    let ip = addr.ip().to_string();
+    match state.auth.login(&req.username, &req.password, &ip) {
         Ok(ok) => {
+            let actor = Actor {
+                name: ok.user.clone(),
+                role: Some(ok.role),
+                kind: "session",
+            };
+            state.audit.record(
+                AuditEntry::new(&actor, "POST", "/api/login", 200, &ip).with_action("auth.login"),
+            );
             let mut response = Json(json!({ "ok": true, "csrf": ok.csrf })).into_response();
             if let Ok(value) = session_cookie(&ok.token).parse() {
                 response.headers_mut().insert(header::SET_COOKIE, value);
             }
             Ok(response)
         }
-        Err("too_many_attempts") => Err(ApiError::new(
-            StatusCode::TOO_MANY_REQUESTS,
-            "Too many attempts. Try again in a minute.",
-        )),
-        Err(_) => Err(ApiError::new(StatusCode::UNAUTHORIZED, "Invalid password.")),
+        Err("too_many_attempts") => {
+            state.audit.record(
+                AuditEntry::anonymous("anonymous", "POST", "/api/login", 429, &ip)
+                    .with_action("auth.login_rate_limited"),
+            );
+            Err(ApiError::new(
+                StatusCode::TOO_MANY_REQUESTS,
+                "Too many attempts. Try again in a minute.",
+            ))
+        }
+        Err(_) => {
+            let attempted = req.username.trim();
+            let name = if attempted.is_empty() {
+                "anonymous"
+            } else {
+                attempted
+            };
+            state.audit.record(
+                AuditEntry::anonymous(name, "POST", "/api/login", 401, &ip)
+                    .with_action("auth.login_failed"),
+            );
+            Err(ApiError::new(
+                StatusCode::UNAUTHORIZED,
+                "Invalid username or password.",
+            ))
+        }
     }
 }
 
@@ -407,14 +605,85 @@ async fn logout(State(state): State<SharedState>, authed: Authed) -> Result<Resp
 
 async fn change_password(
     State(state): State<SharedState>,
-    _authed: Authed,
+    authed: Authed,
     Json(req): Json<PasswordReq>,
 ) -> Result<Json<Value>, ApiError> {
+    if authed.actor.kind != "session" {
+        return Err(ApiError::bad_request(
+            "password changes require a browser session",
+        ));
+    }
     state
         .auth
-        .change_password(req.current.as_deref(), &req.new)
+        .change_password(
+            &authed.actor.name,
+            req.current.as_deref(),
+            &req.new,
+            authed.token.as_deref(),
+        )
         .map_err(ApiError::bad_request)?;
     Ok(Json(json!({ "ok": true })))
+}
+
+// ── users & audit ───────────────────────────────────────────────────────────
+
+async fn list_users(State(state): State<SharedState>, authed: Authed) -> Result<Json<Value>, ApiError> {
+    authed.require_owner()?;
+    Ok(Json(json!({ "users": state.auth.users() })))
+}
+
+async fn create_user(
+    State(state): State<SharedState>,
+    authed: Authed,
+    Json(req): Json<CreateUserReq>,
+) -> Result<Json<Value>, ApiError> {
+    authed.require_owner()?;
+    let role = Role::parse(&req.role).ok_or_else(|| ApiError::bad_request("unknown role"))?;
+    let user = state
+        .auth
+        .create_user(&req.name, &req.password, role)
+        .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true, "user": user })))
+}
+
+async fn update_user(
+    State(state): State<SharedState>,
+    authed: Authed,
+    UrlPath(id): UrlPath<String>,
+    Json(req): Json<UpdateUserReq>,
+) -> Result<Json<Value>, ApiError> {
+    authed.require_owner()?;
+    let role = match req.role.as_deref() {
+        Some(value) => Some(Role::parse(value).ok_or_else(|| ApiError::bad_request("unknown role"))?),
+        None => None,
+    };
+    let user = state
+        .auth
+        .update_user(&id, role, req.password.as_deref())
+        .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true, "user": user })))
+}
+
+async fn delete_user(
+    State(state): State<SharedState>,
+    authed: Authed,
+    UrlPath(id): UrlPath<String>,
+) -> Result<Json<Value>, ApiError> {
+    authed.require_owner()?;
+    state
+        .auth
+        .delete_user(&id, &authed.actor.name)
+        .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+async fn list_audit(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Query(query): Query<AuditQuery>,
+) -> Json<Value> {
+    let limit = query.limit.unwrap_or(200).clamp(1, 2_000);
+    Json(json!({ "entries": state.audit.list(limit) }))
 }
 
 /// Update notices from the warmed caches (see `spawn_cache_warmer`); never

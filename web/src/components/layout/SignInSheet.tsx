@@ -26,10 +26,11 @@ export default function SignInSheet({
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const login = useMutation({
-    mutationFn: () => api.login(password),
+    mutationFn: () => api.login(username.trim(), password),
     onSuccess: (data) => {
       if (data.csrf) setCsrf(data.csrf);
       setPassword("");
@@ -52,8 +53,19 @@ export default function SignInSheet({
         </SheetHeader>
         <form className="grid gap-4 p-4" onSubmit={onSubmit}>
           <div className="grid gap-1.5">
+            <Label htmlFor="guest-username">{t("login.username")}</Label>
+            <Input
+              autoComplete="username"
+              id="guest-username"
+              onChange={(event) => setUsername(event.target.value)}
+              placeholder={t("login.usernamePlaceholder")}
+              value={username}
+            />
+          </div>
+          <div className="grid gap-1.5">
             <Label htmlFor="guest-password">{t("login.password")}</Label>
             <Input
+              autoComplete="current-password"
               autoFocus
               id="guest-password"
               onChange={(event) => setPassword(event.target.value)}

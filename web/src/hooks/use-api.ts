@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { api, setCsrf } from "@/lib/api";
+import { api, setCsrf, type UserRole } from "@/lib/api";
 import { errorMessage } from "@/lib/format";
 import i18n from "@/lib/i18n";
 import { toast } from "@/lib/notify";
@@ -15,6 +15,65 @@ export function useMe() {
     },
     staleTime: 30_000,
     retry: false,
+  });
+}
+
+export function useUsers(enabled = true) {
+  return useQuery({
+    queryKey: ["users"],
+    queryFn: api.users,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useCreateUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Parameters<typeof api.createUser>[0]) => api.createUser(body),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: (data) => toast.success(i18n.t("settings.userCreated", { name: data.user.name })),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+}
+
+export function useUpdateUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: string; role?: UserRole; password?: string }) =>
+      api.updateUser(id, body),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: () => toast.success(i18n.t("common.saved")),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+}
+
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteUser(id),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: () => toast.success(i18n.t("settings.userDeleted")),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+}
+
+export function useAudit(enabled = true) {
+  return useQuery({
+    queryKey: ["audit"],
+    queryFn: () => api.audit(300),
+    retry: false,
+    enabled,
+    refetchInterval: 30_000,
   });
 }
 

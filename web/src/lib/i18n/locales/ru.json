@@ -119,7 +119,9 @@
     "password": "Пароль",
     "placeholder": "Пароль веб-интерфейса",
     "signIn": "Войти",
-    "hint": "Пароль задаётся переменной окружения VS_WEB_PASSWORD или генерируется при первом запуске и печатается в логах контейнера."
+    "hint": "Аккаунты управляются в Настройки → Пользователи. Первый владелец создаётся из VS_WEB_PASSWORD или генерируется при первом запуске и выводится в журнале контейнера.",
+    "username": "Имя пользователя",
+    "usernamePlaceholder": "admin"
   },
   "dashboard": {
     "server": "Сервер",
@@ -472,7 +474,39 @@
     "publicSectionInfo": "Информация о сервере",
     "publicSectionPlayers": "Игроки онлайн",
     "publicSectionHistory": "История игроков",
-    "publicPreview": "Открыть гостевой предпросмотр"
+    "publicPreview": "Открыть гостевой предпросмотр",
+    "signedInAs": "Вы вошли как {{name}} ({{role}})",
+    "role": {
+      "owner": "Владелец",
+      "operator": "Оператор",
+      "viewer": "Наблюдатель"
+    },
+    "usersTitle": "Пользователи",
+    "usersDescription": "Аккаунты для входа в панель. Владельцы управляют пользователями; операторы управляют сервером; наблюдатели имеют доступ только для чтения.",
+    "userName": "Имя",
+    "userNamePlaceholder": "напр. moderator",
+    "userPassword": "Пароль",
+    "userAdd": "Добавить",
+    "userCreated": "Пользователь создан: {{name}}",
+    "userDeleted": "Пользователь удалён",
+    "userCreatedAt": "Добавлен",
+    "userResetPassword": "Сбросить пароль",
+    "userNewPassword": "Новый пароль",
+    "userDeleteTitle": "Удалить пользователя",
+    "userDeleteQuestion": "Удалить?",
+    "userYou": "Вы",
+    "auditTitle": "Журнал аудита",
+    "auditDescription": "Недавние изменяющие действия — запуск/остановка, конфиги, резервные копии, моды, пользователи и другое.",
+    "auditFilterPlaceholder": "Фильтр по аккаунту, пути, IP…",
+    "auditUnavailable": "Журнал аудита недоступен.",
+    "auditEmpty": "Записей пока нет.",
+    "auditTime": "Время",
+    "auditActor": "Аккаунт",
+    "auditRequest": "Запрос",
+    "auditStatus": "Статус",
+    "auditIp": "IP",
+    "auditToken": "токен",
+    "auditTruncated": "Показаны последние {{max}} записей."
   },
   "players": {
     "notRunning": "Сервер не запущен — команды белого списка и модерации требуют работающего сервера.",

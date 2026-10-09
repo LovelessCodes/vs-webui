@@ -262,13 +262,15 @@ at the bottom of this file.
 
 #### Access & trust
 
-- [ ] **User accounts & roles** — replace the single shared password with owner/operator/viewer
-      accounts (argon2, per-user sessions); viewers get a read-only UI and cannot mutate.
+- [x] **User accounts & roles** — owner/operator/viewer accounts with per-user passwords and
+      sessions; viewers get a read-only UI and cannot mutate. The legacy single-password file
+      migrates into the first owner; tokens act as operators.
 - [ ] **Scoped API tokens** — read-only vs full scope so dashboards and scrapers can poll
       `/api/*` without being able to stop the server or change settings.
-- [ ] **Audit log** — append-only record of mutations (start/stop/restart, config saves, restores,
+- [x] **Audit log** — append-only record of mutations (start/stop/restart, config saves, restores,
       mod changes, token create/revoke) with actor (user or token label), timestamp and origin;
-      browsable under Settings with filtering.
+      browsable under Settings with filtering. Implemented as a mutation middleware plus
+      explicit login records; JSONL in `/data/config/audit.jsonl`.
 - [ ] **Session management & 2FA** — list active sessions with IP and last-seen, revoke one or
       all; optional TOTP two-factor for privileged accounts.
 
