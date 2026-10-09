@@ -506,7 +506,15 @@
     "auditStatus": "状态",
     "auditIp": "IP",
     "auditToken": "令牌",
-    "auditTruncated": "仅显示最近 {{max}} 条记录。"
+    "auditTruncated": "仅显示最近 {{max}} 条记录。",
+    "alertsTitle": "阈值告警",
+    "alertsDescription": "告警会显示在通知菜单中；配置了 Webhook 时会同时推送，与上方的通知事件选择无关。",
+    "alertTps": "刻速率告警",
+    "alertTpsHint": "当刻速率连续两分钟低于阈值时触发。",
+    "alertDisk": "磁盘空间告警",
+    "alertDiskHint": "当可用空间低于阈值时触发。",
+    "alertBackup": "备份失败告警",
+    "alertBackupHint": "当计划备份失败时触发。"
   },
   "players": {
     "notRunning": "服务器未运行 — 白名单与管理命令需要服务器处于运行状态。",
@@ -658,5 +666,26 @@
     "lost": "连接已断开",
     "hint": "正在尝试重新连接到服务器管理器…",
     "retry": "立即重试"
+  },
+  "notifications": {
+    "title": "通知",
+    "description": "服务器事件与阈值告警，最新在前。",
+    "empty": "暂无通知。",
+    "clear": "全部清除",
+    "count": "{{n}} 条记录",
+    "readOnOpen": "打开时标记为已读",
+    "event": {
+      "start": "服务器已启动",
+      "stop": "服务器已停止",
+      "crash": "服务器崩溃",
+      "player_join": "玩家加入",
+      "player_leave": "玩家离开",
+      "backup": "备份已创建",
+      "backup_failed": "备份失败",
+      "tps_low": "刻速率过低",
+      "tps_recovered": "刻速率已恢复",
+      "disk_low": "磁盘空间不足",
+      "disk_recovered": "磁盘空间已恢复"
+    }
   }
 }

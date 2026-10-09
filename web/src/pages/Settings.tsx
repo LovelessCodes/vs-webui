@@ -44,6 +44,11 @@ export default function Settings() {
   const [collectTps, setCollectTps] = useState(true);
   const [publicView, setPublicView] = useState(false);
   const [publicSections, setPublicSections] = useState<string[]>([]);
+  const [alertTps, setAlertTps] = useState(true);
+  const [alertTpsMin, setAlertTpsMin] = useState(15);
+  const [alertDisk, setAlertDisk] = useState(true);
+  const [alertDiskPercent, setAlertDiskPercent] = useState(10);
+  const [alertBackup, setAlertBackup] = useState(true);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -69,6 +74,11 @@ export default function Settings() {
       setCollectTps(settings.data.collect_tps ?? true);
       setPublicView(settings.data.public_view ?? false);
       setPublicSections(settings.data.public_sections ?? []);
+      setAlertTps(settings.data.alert_tps ?? true);
+      setAlertTpsMin(settings.data.alert_tps_min ?? 15);
+      setAlertDisk(settings.data.alert_disk ?? true);
+      setAlertDiskPercent(settings.data.alert_disk_percent ?? 10);
+      setAlertBackup(settings.data.alert_backup ?? true);
     }
   }, [settings.data]);
 
@@ -87,6 +97,11 @@ export default function Settings() {
         collect_tps: collectTps,
         public_view: publicView,
         public_sections: publicSections,
+        alert_tps: alertTps,
+        alert_tps_min: alertTpsMin,
+        alert_disk: alertDisk,
+        alert_disk_percent: alertDiskPercent,
+        alert_backup: alertBackup,
       }),
     onSuccess: () => {
       toast.success(t("common.saved"));
@@ -342,6 +357,75 @@ export default function Settings() {
                   {t(labelKey)}
                 </label>
               ))}
+            </div>
+          </div>
+
+          <div className="grid gap-3 border-t border-border pt-4">
+            <div>
+              <p className="text-xs font-medium">{t("settings.alertsTitle")}</p>
+              <p className="text-muted-foreground text-[11px]">
+                {t("settings.alertsDescription")}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <Label htmlFor="alert-tps">{t("settings.alertTps")}</Label>
+                <p className="text-muted-foreground text-[11px]">{t("settings.alertTpsHint")}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  aria-label={t("settings.alertTps")}
+                  className="w-20"
+                  id="alert-tps-min"
+                  max={30}
+                  min={1}
+                  onChange={(event) =>
+                    setAlertTpsMin(
+                      Math.max(1, Math.min(30, Number(event.target.value) || 15)),
+                    )
+                  }
+                  type="number"
+                  value={alertTpsMin}
+                />
+                <span className="text-[11px] text-muted-foreground">TPS</span>
+                <Switch checked={alertTps} id="alert-tps" onCheckedChange={setAlertTps} />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <Label htmlFor="alert-disk">{t("settings.alertDisk")}</Label>
+                <p className="text-muted-foreground text-[11px]">{t("settings.alertDiskHint")}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  aria-label={t("settings.alertDisk")}
+                  className="w-20"
+                  id="alert-disk-percent"
+                  max={90}
+                  min={1}
+                  onChange={(event) =>
+                    setAlertDiskPercent(
+                      Math.max(1, Math.min(90, Number(event.target.value) || 10)),
+                    )
+                  }
+                  type="number"
+                  value={alertDiskPercent}
+                />
+                <span className="text-[11px] text-muted-foreground">%</span>
+                <Switch checked={alertDisk} id="alert-disk" onCheckedChange={setAlertDisk} />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <Label htmlFor="alert-backup">{t("settings.alertBackup")}</Label>
+                <p className="text-muted-foreground text-[11px]">
+                  {t("settings.alertBackupHint")}
+                </p>
+              </div>
+              <Switch checked={alertBackup} id="alert-backup" onCheckedChange={setAlertBackup} />
             </div>
           </div>
 

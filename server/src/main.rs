@@ -79,6 +79,7 @@ async fn main() -> anyhow::Result<()> {
         settings: settings.clone(),
         auth,
         audit: audit::AuditStore::load(&layout),
+        notifications: notifications::NotificationStore::load(&layout.config_dir()),
         supervisor,
         versions: versions::VersionCache::new(http_client.clone()),
         moddb: mods::ModDbCache::new(http_client.clone()),
@@ -94,6 +95,7 @@ async fn main() -> anyhow::Result<()> {
     spawn_schedulers(state.clone());
     metrics::spawn_collector(state.clone());
     metrics::spawn_tps_collector(state.clone());
+    metrics::spawn_alert_monitor(state.clone());
     spawn_cache_warmer(state.clone());
 
     // Forward supervisor events (starts, stops, crashes, players) to the
@@ -326,6 +328,13 @@ async fn run_scheduled_backup(state: &SharedState) {
                 .supervisor
                 .console
                 .push(format!("[manager] scheduled backup failed: {error}"));
+            if state.settings.lock().unwrap().alert_backup {
+                notifications::alert(
+                    state,
+                    "backup_failed",
+                    format!("Scheduled backup failed: {error}"),
+                );
+            }
         }
         Err(error) => {
             tracing::warn!("scheduled backup task failed: {error}");
@@ -333,6 +342,13 @@ async fn run_scheduled_backup(state: &SharedState) {
                 .supervisor
                 .console
                 .push(format!("[manager] scheduled backup task failed: {error}"));
+            if state.settings.lock().unwrap().alert_backup {
+                notifications::alert(
+                    state,
+                    "backup_failed",
+                    format!("Scheduled backup task failed: {error}"),
+                );
+            }
         }
     }
 }

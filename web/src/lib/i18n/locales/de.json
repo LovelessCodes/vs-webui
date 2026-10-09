@@ -506,7 +506,15 @@
     "auditStatus": "Status",
     "auditIp": "IP",
     "auditToken": "Token",
-    "auditTruncated": "Die neuesten {{max}} Einträge werden angezeigt."
+    "auditTruncated": "Die neuesten {{max}} Einträge werden angezeigt.",
+    "alertsTitle": "Schwellenwert-Alarme",
+    "alertsDescription": "Alarme erscheinen im Glockenmenü und werden an den Webhook gesendet, sofern konfiguriert — unabhängig von der Ereignisauswahl oben.",
+    "alertTps": "Tickrate-Alarm",
+    "alertTpsHint": "Wenn die Tickrate zwei Minuten unter dem Schwellenwert bleibt.",
+    "alertDisk": "Wenig-Speicherplatz-Alarm",
+    "alertDiskHint": "Wenn freier Speicherplatz unter den Schwellenwert fällt.",
+    "alertBackup": "Backup-Fehler-Alarm",
+    "alertBackupHint": "Wenn ein geplantes Backup fehlschlägt."
   },
   "players": {
     "notRunning": "Der Server läuft nicht — Whitelist- und Moderationsbefehle brauchen einen laufenden Server.",
@@ -658,5 +666,26 @@
     "lost": "Verbindung verloren",
     "hint": "Verbindung zum Server-Manager wird wiederhergestellt…",
     "retry": "Jetzt erneut versuchen"
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "description": "Serverereignisse und Schwellenwert-Alarme, neueste zuerst.",
+    "empty": "Noch keine Benachrichtigungen.",
+    "clear": "Alle löschen",
+    "count": "{{n}} Einträge",
+    "readOnOpen": "Beim Öffnen als gelesen markiert",
+    "event": {
+      "start": "Server gestartet",
+      "stop": "Server gestoppt",
+      "crash": "Server abgestürzt",
+      "player_join": "Spieler beigetreten",
+      "player_leave": "Spieler verlassen",
+      "backup": "Backup erstellt",
+      "backup_failed": "Backup fehlgeschlagen",
+      "tps_low": "Niedrige Tickrate",
+      "tps_recovered": "Tickrate erholt",
+      "disk_low": "Wenig Speicherplatz",
+      "disk_recovered": "Speicherplatz erholt"
+    }
   }
 }

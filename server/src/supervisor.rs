@@ -344,10 +344,23 @@ async fn run(
                     text: if clean {
                         format!("Server stopped (uptime {uptime}s)")
                     } else {
-                        format!(
+                        let mut text = format!(
                             "Server crashed (code {}, uptime {uptime}s)",
                             code.map(|c| c.to_string()).unwrap_or_else(|| "unknown".into())
-                        )
+                        );
+                        // Append the console tail so the alert/webhook carries
+                        // a first clue without opening the log viewer.
+                        let tail: Vec<String> = console
+                            .history(12)
+                            .into_iter()
+                            .filter(|entry| !entry.internal)
+                            .map(|entry| entry.line.chars().take(200).collect())
+                            .collect();
+                        if !tail.is_empty() {
+                            text.push('\n');
+                            text.push_str(&tail.join("\n"));
+                        }
+                        text
                     },
                     player: None,
                 });

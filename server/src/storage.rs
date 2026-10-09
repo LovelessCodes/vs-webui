@@ -107,7 +107,7 @@ pub fn dir_size(path: &Path) -> u64 {
 }
 
 /// Free/total bytes of the disk holding `path` (best effort).
-fn disk_space(path: &Path) -> (u64, u64) {
+pub fn disk_space(path: &Path) -> (u64, u64) {
     let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
     let disks = sysinfo::Disks::new_with_refreshed_list();
     let mut best: Option<(&sysinfo::Disk, usize)> = None;

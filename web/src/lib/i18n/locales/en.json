@@ -506,7 +506,15 @@
     "auditStatus": "Status",
     "auditIp": "IP",
     "auditToken": "token",
-    "auditTruncated": "Showing the newest {{max}} entries."
+    "auditTruncated": "Showing the newest {{max}} entries.",
+    "alertsTitle": "Threshold alerts",
+    "alertsDescription": "Alerts appear in the bell menu and are sent to the webhook when one is configured — regardless of the event selection above.",
+    "alertTps": "Tick rate alert",
+    "alertTpsHint": "When the tick rate stays below the threshold for two minutes.",
+    "alertDisk": "Low disk space alert",
+    "alertDiskHint": "When free disk space drops below the threshold.",
+    "alertBackup": "Backup failure alert",
+    "alertBackupHint": "When a scheduled backup fails."
   },
   "players": {
     "notRunning": "The server is not running — whitelist and moderation commands need a running server.",
@@ -658,5 +666,26 @@
     "lost": "Connection lost",
     "hint": "Trying to reconnect to the server manager…",
     "retry": "Retry now"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "description": "Server events and threshold alerts, newest first.",
+    "empty": "No notifications yet.",
+    "clear": "Clear all",
+    "count": "{{n}} entries",
+    "readOnOpen": "Marked read on open",
+    "event": {
+      "start": "Server started",
+      "stop": "Server stopped",
+      "crash": "Server crashed",
+      "player_join": "Player joined",
+      "player_leave": "Player left",
+      "backup": "Backup created",
+      "backup_failed": "Backup failed",
+      "tps_low": "Low tick rate",
+      "tps_recovered": "Tick rate recovered",
+      "disk_low": "Low disk space",
+      "disk_recovered": "Disk space recovered"
+    }
   }
 }

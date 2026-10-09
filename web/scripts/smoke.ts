@@ -71,7 +71,15 @@ async function main() {
     await page.waitForSelector("text=smoke-mod", { timeout: 5_000 });
     await page.getByRole("button", { name: "Refresh" }).last().click();
     await page.waitForSelector("text=api/users", { timeout: 5_000 });
-    console.log("users + audit ok");
+    await page.waitForSelector("text=Threshold alerts", { timeout: 5_000 });
+    console.log("users + audit + alerts ok");
+
+    // Notification bell (empty history on a fresh data dir).
+    await page.getByRole("button", { name: "Notifications" }).click();
+    await page.waitForSelector("text=No notifications yet.", { timeout: 5_000 });
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(300);
+    console.log("notification bell ok");
 
     // Language dropdown (Base UI menu with group label).
     await page.goto(`http://localhost:${PORT}/`);

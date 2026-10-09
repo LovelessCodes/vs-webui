@@ -56,8 +56,10 @@ All captures in [`web/screenshots/`](web/screenshots/) (English + `de/`), regene
   management, read-only viewers, and an audit log of every mutating action with actor, method,
   status and origin; REST API with bearer **API tokens**.
 - **Automation & monitoring** — **webhook notifications**
-  (Discord, Slack or generic JSON) for start/stop/crash/join/leave/backup, live CPU/memory/TPS
-  sparklines on the dashboard and a **Prometheus** endpoint at `GET /metrics`.
+  (Discord, Slack or generic JSON) for start/stop/crash/join/leave/backup with crash log tails,
+  **threshold alerts** for low tick rate, low disk space and failed scheduled backups, a
+  persistent notification history in the bell menu, live CPU/memory/TPS sparklines on the
+  dashboard and a **Prometheus** endpoint at `GET /metrics`.
 - **7 languages** — English, German, Spanish, French, Brazilian Portuguese, Russian, Simplified
   Chinese, with a theme reveal transition and light/dark mode.
 
@@ -213,7 +215,10 @@ scrape_configs:
 Configure a URL and event selection under **Settings → Notifications**; Discord and Slack URLs
 receive their native payloads, anything else gets generic JSON
 (`{event, text, timestamp}`). Events: `start`, `stop`, `crash`, `player_join`, `player_leave`,
-`backup`. **Send test** verifies the endpoint.
+`backup`. **Send test** verifies the endpoint. The `crash` payload includes the exit code,
+uptime and the tail of the console. Threshold alerts (low tick rate, low disk space, failed
+scheduled backups) are delivered whenever a webhook URL is set — they have their own toggles
+next to the event list. Everything is also recorded in the bell menu's notification history.
 
 ## Reverse proxies
 

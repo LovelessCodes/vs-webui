@@ -166,6 +166,92 @@ fn first_number(text: &str) -> Option<f32> {
     number.trim_end_matches('.').parse().ok()
 }
 
+/// Watches tick rate and free disk space against the configured thresholds.
+/// Alerts fire once when crossing below and once on recovery (with hysteresis
+/// for disk), so a sustained problem does not spam the history or webhook.
+pub fn spawn_alert_monitor(state: SharedState) {
+    tokio::spawn(async move {
+        let mut tps_low_streak: u32 = 0;
+        let mut tps_active = false;
+        let mut disk_active = false;
+        let mut tick: u64 = 0;
+        loop {
+            tokio::time::sleep(Duration::from_secs(60)).await;
+            tick += 1;
+            let (alert_tps, tps_min, alert_disk, disk_percent) = {
+                let settings = state.settings.lock().unwrap();
+                (
+                    settings.alert_tps,
+                    settings.alert_tps_min,
+                    settings.alert_disk,
+                    settings.alert_disk_percent,
+                )
+            };
+
+            // Tick rate: two consecutive low samples (the probe runs every
+            // minute) before alerting.
+            if state.supervisor.is_running() {
+                if alert_tps {
+                    if let Some(tps) = state.metrics.last_tps() {
+                        if tps < tps_min {
+                            tps_low_streak += 1;
+                            if tps_low_streak >= 2 && !tps_active {
+                                tps_active = true;
+                                crate::notifications::alert(
+                                    &state,
+                                    "tps_low",
+                                    format!(
+                                        "Server tick rate is {tps:.1} TPS (below {tps_min:.0} TPS)"
+                                    ),
+                                );
+                            }
+                        } else {
+                            tps_low_streak = 0;
+                            if tps_active {
+                                tps_active = false;
+                                crate::notifications::alert(
+                                    &state,
+                                    "tps_recovered",
+                                    format!("Server tick rate recovered: {tps:.1} TPS"),
+                                );
+                            }
+                        }
+                    }
+                }
+            } else {
+                tps_low_streak = 0;
+                tps_active = false;
+            }
+
+            // Disk space: checked every five minutes.
+            if alert_disk && tick % 5 == 0 {
+                let (free, total) = crate::storage::disk_space(&state.layout.root);
+                if total > 0 {
+                    let percent = (free as f64 / total as f64) * 100.0;
+                    if percent < disk_percent as f64 && !disk_active {
+                        disk_active = true;
+                        crate::notifications::alert(
+                            &state,
+                            "disk_low",
+                            format!(
+                                "Only {percent:.1}% disk space left ({:.1} GB free, threshold {disk_percent}%)",
+                                free as f64 / 1_073_741_824.0
+                            ),
+                        );
+                    } else if percent >= disk_percent as f64 + 2.0 && disk_active {
+                        disk_active = false;
+                        crate::notifications::alert(
+                            &state,
+                            "disk_recovered",
+                            format!("Disk space recovered: {percent:.1}% free"),
+                        );
+                    }
+                }
+            }
+        }
+    });
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

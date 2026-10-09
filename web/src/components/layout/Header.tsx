@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import ThemeToggle from "@/components/common/ThemeToggle";
 import DownloadsButton from "@/components/downloads/DownloadsButton";
+import NotificationBell from "@/components/layout/NotificationBell";
 import ServerControls from "@/components/layout/ServerControls";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,6 +46,7 @@ export default function Header({ onOpenPalette }: { onOpenPalette?: () => void }
 
       <div className="flex items-center gap-1">
         <DownloadsButton />
+        <NotificationBell />
 
         <Button
           className="gap-2 text-muted-foreground"

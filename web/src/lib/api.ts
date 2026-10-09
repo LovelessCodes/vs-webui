@@ -68,6 +68,15 @@ export interface AuditEntry {
   ip: string;
 }
 
+export interface Notification {
+  id: number;
+  ts: number;
+  event: string;
+  severity: "info" | "warning" | "error";
+  text: string;
+  read: boolean;
+}
+
 export interface ServerStatus {
   status: "not_installed" | "stopped" | "starting" | "running" | "stopping" | "crashed";
   pid: number | null;
@@ -103,6 +112,11 @@ export interface Settings {
   webhook_events?: string[];
   collect_tps?: boolean;
   backup_retention?: number;
+  alert_tps?: boolean;
+  alert_tps_min?: number;
+  alert_disk?: boolean;
+  alert_disk_percent?: number;
+  alert_backup?: boolean;
   restart_required?: boolean;
 }
 
@@ -119,6 +133,7 @@ export interface StatusResponse {
   install: InstallStatus | null;
   config: ConfigSummary | null;
   updates?: { game?: string | null; stratum?: string | null };
+  unread_notifications?: number;
   manager: {
     version: string;
     uptime: number;
@@ -425,6 +440,15 @@ export const api = {
     request<{ ok: boolean }>(`/api/users/${encodeURIComponent(id)}`, { method: "DELETE" }),
   audit: (limit = 200) => request<{ entries: AuditEntry[] }>(`/api/audit?limit=${limit}`),
 
+  notifications: () => request<{ notifications: Notification[]; unread: number }>("/api/notifications"),
+  markNotificationsRead: (ids?: number[]) =>
+    request<{ ok: boolean; unread: number }>("/api/notifications/read", {
+      method: "POST",
+      body: JSON.stringify(ids ? { ids } : {}),
+    }),
+  clearNotifications: () =>
+    request<{ ok: boolean }>("/api/notifications", { method: "DELETE" }),
+
   status: () => request<StatusResponse>("/api/status"),
   start: () => request<{ ok: boolean }>("/api/server/start", { method: "POST" }),
   stop: () => request<{ ok: boolean }>("/api/server/stop", { method: "POST" }),
@@ -462,6 +486,11 @@ export const api = {
     collect_tps: boolean;
     public_view: boolean;
     public_sections: string[];
+    alert_tps: boolean;
+    alert_tps_min: number;
+    alert_disk: boolean;
+    alert_disk_percent: number;
+    alert_backup: boolean;
   }) =>
     request<Settings>("/api/settings", {
       method: "PUT",

@@ -21,6 +21,22 @@ fn default_true() -> bool {
     true
 }
 
+fn default_tps_min() -> f32 {
+    15.0
+}
+
+fn is_default_tps_min(value: &f32) -> bool {
+    *value == default_tps_min()
+}
+
+fn default_disk_percent() -> u32 {
+    10
+}
+
+fn is_default_disk_percent(value: &u32) -> bool {
+    *value == default_disk_percent()
+}
+
 /// Manager settings, persisted as `config/settings.json`.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Settings {
@@ -74,6 +90,22 @@ pub struct Settings {
     /// How many backups of each kind to keep.
     #[serde(default = "default_retention")]
     pub backup_retention: u32,
+    /// Alert (in-app + webhook) when the tick rate stays below `alert_tps_min`.
+    #[serde(default = "default_true", skip_serializing_if = "is_true")]
+    pub alert_tps: bool,
+    #[serde(default = "default_tps_min", skip_serializing_if = "is_default_tps_min")]
+    pub alert_tps_min: f32,
+    /// Alert when free disk space drops below this percentage.
+    #[serde(default = "default_true", skip_serializing_if = "is_true")]
+    pub alert_disk: bool,
+    #[serde(
+        default = "default_disk_percent",
+        skip_serializing_if = "is_default_disk_percent"
+    )]
+    pub alert_disk_percent: u32,
+    /// Alert when a scheduled backup fails.
+    #[serde(default = "default_true", skip_serializing_if = "is_true")]
+    pub alert_backup: bool,
     /// Set when an apply-on-restart change happened while the server was
     /// running; cleared by the supervisor on the next start.
     #[serde(default, skip_serializing_if = "is_false")]
@@ -108,6 +140,11 @@ impl Default for Settings {
             public_view: false,
             public_sections: Vec::new(),
             backup_retention: default_retention(),
+            alert_tps: true,
+            alert_tps_min: default_tps_min(),
+            alert_disk: true,
+            alert_disk_percent: default_disk_percent(),
+            alert_backup: true,
             restart_required: false,
         }
     }

@@ -77,6 +77,39 @@ export function useAudit(enabled = true) {
   });
 }
 
+export function useNotifications(enabled = true) {
+  return useQuery({
+    queryKey: ["notifications"],
+    queryFn: api.notifications,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useMarkNotificationsRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids?: number[]) => api.markNotificationsRead(ids),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      void queryClient.invalidateQueries({ queryKey: ["status"] });
+    },
+  });
+}
+
+export function useClearNotifications() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.clearNotifications(),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      void queryClient.invalidateQueries({ queryKey: ["status"] });
+    },
+  });
+}
+
 export function useStatus(enabled = true) {
   return useQuery({
     queryKey: ["status"],

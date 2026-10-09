@@ -506,7 +506,15 @@
     "auditStatus": "Statut",
     "auditIp": "IP",
     "auditToken": "jeton",
-    "auditTruncated": "Affichage des {{max}} entrées les plus récentes."
+    "auditTruncated": "Affichage des {{max}} entrées les plus récentes.",
+    "alertsTitle": "Alertes de seuil",
+    "alertsDescription": "Les alertes apparaissent dans le menu cloche et sont envoyées au webhook si configuré, indépendamment de la sélection ci-dessus.",
+    "alertTps": "Alerte de tick rate",
+    "alertTpsHint": "Quand le tick rate reste sous le seuil pendant deux minutes.",
+    "alertDisk": "Alerte d'espace disque",
+    "alertDiskHint": "Quand l'espace libre passe sous le seuil.",
+    "alertBackup": "Alerte d'échec de sauvegarde",
+    "alertBackupHint": "Quand une sauvegarde planifiée échoue."
   },
   "players": {
     "notRunning": "Le serveur n'est pas en cours — les commandes de liste blanche et de modération l'exigent.",
@@ -658,5 +666,26 @@
     "lost": "Connexion perdue",
     "hint": "Nouvelle tentative de connexion au gestionnaire…",
     "retry": "Réessayer"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "description": "Événements du serveur et alertes de seuil, les plus récentes d'abord.",
+    "empty": "Aucune notification pour l'instant.",
+    "clear": "Tout effacer",
+    "count": "{{n}} entrées",
+    "readOnOpen": "Marquées comme lues à l'ouverture",
+    "event": {
+      "start": "Serveur démarré",
+      "stop": "Serveur arrêté",
+      "crash": "Serveur planté",
+      "player_join": "Joueur connecté",
+      "player_leave": "Joueur déconnecté",
+      "backup": "Sauvegarde créée",
+      "backup_failed": "Échec de la sauvegarde",
+      "tps_low": "Tick rate faible",
+      "tps_recovered": "Tick rate rétabli",
+      "disk_low": "Espace disque faible",
+      "disk_recovered": "Espace disque rétabli"
+    }
   }
 }

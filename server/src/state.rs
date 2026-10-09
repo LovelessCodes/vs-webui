@@ -5,6 +5,7 @@ use crate::audit::AuditStore;
 use crate::auth::AuthStore;
 use crate::metrics::MetricsStore;
 use crate::mods::{ModDbCache, ModsManager};
+use crate::notifications::NotificationStore;
 use crate::paths::Layout;
 use crate::playerhistory::PlayerHistory;
 use crate::settings::Settings;
@@ -17,6 +18,7 @@ pub struct AppState {
     pub settings: Arc<Mutex<Settings>>,
     pub auth: AuthStore,
     pub audit: AuditStore,
+    pub notifications: NotificationStore,
     pub supervisor: Supervisor,
     pub versions: VersionCache,
     pub moddb: ModDbCache,

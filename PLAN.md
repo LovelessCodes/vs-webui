@@ -4,8 +4,9 @@ Single-container Vintage Story dedicated server with a browser UI inspired by St
 Supports vanilla and **Stratum** (patched server runtime) flavors, mod browsing/updating and
 mod config editing.
 
-Status: phases 1–5 implemented. Phase 6 (post-v1 backlog) is planned work, not yet started.
-Phase progress at the bottom of this file.
+Status: phases 1–5 implemented. Phase 6 (post-v1 backlog) is in progress — world creation
+wizard, user accounts & roles, audit log, threshold alerts, crash diagnostics and the
+notification history are done. Phase progress at the bottom of this file.
 
 ## Decisions
 
@@ -290,12 +291,13 @@ at the bottom of this file.
 
 #### Alerting depth
 
-- [ ] **Threshold alerts** — webhook and in-app alert when TPS stays below a configured floor,
-      free disk drops below a threshold, or a scheduled backup fails.
-- [ ] **Crash diagnostics payload** — include exit code, uptime and the last N console lines
+- [x] **Threshold alerts** — webhook and in-app alert when TPS stays below a configured floor,
+      free disk drops below a threshold, or a scheduled backup fails. Fires once on crossing
+      and once on recovery; checked every minute (disk every five).
+- [x] **Crash diagnostics payload** — include exit code, uptime and the last N console lines
       (tail of `server-main.txt`) in the `crash` notification.
-- [ ] **Notification history** — persist fired notifications/events with unread state in a bell
-      menu instead of transient toasts only.
+- [x] **Notification history** — persist fired notifications/events with unread state in a bell
+      menu instead of transient toasts only. `/data/config/notifications.json`, 200 entries.
 
 #### Backups
 

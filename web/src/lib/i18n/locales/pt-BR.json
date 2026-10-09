@@ -506,7 +506,15 @@
     "auditStatus": "Status",
     "auditIp": "IP",
     "auditToken": "token",
-    "auditTruncated": "Mostrando as {{max}} entradas mais recentes."
+    "auditTruncated": "Mostrando as {{max}} entradas mais recentes.",
+    "alertsTitle": "Alertas de limite",
+    "alertsDescription": "Os alertas aparecem no menu do sino e são enviados ao webhook, se configurado — independentemente da seleção acima.",
+    "alertTps": "Alerta de tick rate",
+    "alertTpsHint": "Quando o tick rate fica abaixo do limite por dois minutos.",
+    "alertDisk": "Alerta de pouco espaço",
+    "alertDiskHint": "Quando o espaço livre cai abaixo do limite.",
+    "alertBackup": "Alerta de falha no backup",
+    "alertBackupHint": "Quando um backup agendado falha."
   },
   "players": {
     "notRunning": "O servidor não está em execução — comandos de lista e moderação exigem ele ativo.",
@@ -658,5 +666,26 @@
     "lost": "Conexão perdida",
     "hint": "Tentando reconectar ao gerenciador do servidor…",
     "retry": "Tentar novamente"
+  },
+  "notifications": {
+    "title": "Notificações",
+    "description": "Eventos do servidor e alertas de limite, mais recentes primeiro.",
+    "empty": "Ainda sem notificações.",
+    "clear": "Limpar tudo",
+    "count": "{{n}} entradas",
+    "readOnOpen": "Marcadas como lidas ao abrir",
+    "event": {
+      "start": "Servidor iniciado",
+      "stop": "Servidor parado",
+      "crash": "Servidor travou",
+      "player_join": "Jogador entrou",
+      "player_leave": "Jogador saiu",
+      "backup": "Backup criado",
+      "backup_failed": "Falha no backup",
+      "tps_low": "Tick rate baixo",
+      "tps_recovered": "Tick rate recuperado",
+      "disk_low": "Pouco espaço em disco",
+      "disk_recovered": "Espaço em disco recuperado"
+    }
   }
 }

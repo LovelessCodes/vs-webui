@@ -48,6 +48,11 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/users", get(list_users).post(create_user))
         .route("/api/users/{id}", put(update_user).delete(delete_user))
         .route("/api/audit", get(list_audit))
+        .route(
+            "/api/notifications",
+            get(list_notifications).delete(clear_notifications),
+        )
+        .route("/api/notifications/read", post(mark_notifications_read))
         .route("/api/status", get(status))
         .route("/api/server/start", post(start))
         .route("/api/server/stop", post(stop))
@@ -409,6 +414,16 @@ struct SettingsReq {
     public_view: Option<bool>,
     #[serde(default)]
     public_sections: Option<Vec<String>>,
+    #[serde(default)]
+    alert_tps: Option<bool>,
+    #[serde(default)]
+    alert_tps_min: Option<f32>,
+    #[serde(default)]
+    alert_disk: Option<bool>,
+    #[serde(default)]
+    alert_disk_percent: Option<u32>,
+    #[serde(default)]
+    alert_backup: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -436,6 +451,12 @@ struct UpdateUserReq {
 struct AuditQuery {
     #[serde(default)]
     limit: Option<usize>,
+}
+
+#[derive(Deserialize)]
+struct MarkReadReq {
+    #[serde(default)]
+    ids: Option<Vec<u64>>,
 }
 
 #[derive(Deserialize)]
@@ -686,6 +707,29 @@ async fn list_audit(
     Json(json!({ "entries": state.audit.list(limit) }))
 }
 
+// ── notification history ────────────────────────────────────────────────────
+
+async fn list_notifications(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {
+    Json(json!({
+        "notifications": state.notifications.list(200),
+        "unread": state.notifications.unread(),
+    }))
+}
+
+async fn mark_notifications_read(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Json(req): Json<MarkReadReq>,
+) -> Json<Value> {
+    state.notifications.mark_read(req.ids.as_deref());
+    Json(json!({ "ok": true, "unread": state.notifications.unread() }))
+}
+
+async fn clear_notifications(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {
+    state.notifications.clear();
+    Json(json!({ "ok": true, "unread": 0 }))
+}
+
 /// Update notices from the warmed caches (see `spawn_cache_warmer`); never
 /// does network I/O, so status and the guest view stay instant.
 async fn update_notices(state: &SharedState) -> (Option<String>, Option<String>) {
@@ -826,6 +870,7 @@ async fn status(State(state): State<SharedState>) -> Json<Value> {
             "game": game_update,
             "stratum": stratum_update,
         },
+        "unread_notifications": state.notifications.unread(),
         "manager": {
             "version": env!("CARGO_PKG_VERSION"),
             "uptime": state.started.elapsed().as_secs(),
@@ -1094,6 +1139,20 @@ async fn put_settings(
             ))
         }
     };
+    if let Some(minimum) = req.alert_tps_min {
+        if !(1.0..=30.0).contains(&minimum) {
+            return Err(ApiError::bad_request(
+                "tick rate alert must be between 1 and 30 TPS",
+            ));
+        }
+    }
+    if let Some(percent) = req.alert_disk_percent {
+        if !(1..=90).contains(&percent) {
+            return Err(ApiError::bad_request(
+                "disk alert must be between 1 and 90 percent",
+            ));
+        }
+    }
     let settings = {
         let mut guard = state.settings.lock().unwrap();
         guard.auto_start = req.auto_start;
@@ -1128,6 +1187,21 @@ async fn put_settings(
         }
         if let Some(retention) = retention {
             guard.backup_retention = retention;
+        }
+        if let Some(enabled) = req.alert_tps {
+            guard.alert_tps = enabled;
+        }
+        if let Some(minimum) = req.alert_tps_min {
+            guard.alert_tps_min = minimum;
+        }
+        if let Some(enabled) = req.alert_disk {
+            guard.alert_disk = enabled;
+        }
+        if let Some(percent) = req.alert_disk_percent {
+            guard.alert_disk_percent = percent;
+        }
+        if let Some(enabled) = req.alert_backup {
+            guard.alert_backup = enabled;
         }
         guard
             .save(&state.layout.settings_path())

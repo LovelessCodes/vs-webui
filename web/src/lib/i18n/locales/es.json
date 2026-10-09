@@ -506,7 +506,15 @@
     "auditStatus": "Estado",
     "auditIp": "IP",
     "auditToken": "token",
-    "auditTruncated": "Mostrando las {{max}} entradas más recientes."
+    "auditTruncated": "Mostrando las {{max}} entradas más recientes.",
+    "alertsTitle": "Alertas de umbral",
+    "alertsDescription": "Las alertas aparecen en el menú de campana y se envían al webhook si hay uno configurado, independientemente de la selección de eventos.",
+    "alertTps": "Alerta de tick rate",
+    "alertTpsHint": "Cuando el tick rate se mantiene bajo el umbral durante dos minutos.",
+    "alertDisk": "Alerta de poco espacio",
+    "alertDiskHint": "Cuando el espacio libre cae por debajo del umbral.",
+    "alertBackup": "Alerta de fallo de copia",
+    "alertBackupHint": "Cuando falla una copia programada."
   },
   "players": {
     "notRunning": "El servidor no está en ejecución — los comandos de lista blanca y moderación lo requieren.",
@@ -658,5 +666,26 @@
     "lost": "Conexión perdida",
     "hint": "Reconectando con el gestor del servidor…",
     "retry": "Reintentar ahora"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "description": "Eventos del servidor y alertas de umbral, lo más reciente primero.",
+    "empty": "Aún no hay notificaciones.",
+    "clear": "Borrar todo",
+    "count": "{{n}} entradas",
+    "readOnOpen": "Marcadas como leídas al abrir",
+    "event": {
+      "start": "Servidor iniciado",
+      "stop": "Servidor detenido",
+      "crash": "Servidor caído",
+      "player_join": "Jugador conectado",
+      "player_leave": "Jugador desconectado",
+      "backup": "Copia creada",
+      "backup_failed": "Copia fallida",
+      "tps_low": "Tick rate bajo",
+      "tps_recovered": "Tick rate recuperado",
+      "disk_low": "Poco espacio en disco",
+      "disk_recovered": "Espacio en disco recuperado"
+    }
   }
 }
