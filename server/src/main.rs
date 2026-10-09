@@ -2,6 +2,7 @@ mod api;
 mod audit;
 mod auth;
 mod backups;
+mod chat;
 mod configs;
 mod console;
 mod logfiles;
@@ -12,6 +13,7 @@ mod offsite;
 mod paths;
 mod playerhistory;
 mod players;
+mod profiles;
 mod saves;
 mod serverconfig;
 mod settings;
@@ -89,6 +91,8 @@ async fn main() -> anyhow::Result<()> {
         stratum: stratum::StratumCache::new(http_client),
         metrics: metrics::MetricsStore::default(),
         player_history: playerhistory::PlayerHistory::load(&layout.config_dir()),
+        chat: Default::default(),
+        profiles: profiles::ProfilesStore::load(&layout.config_dir()),
         restore: Default::default(),
         install: Mutex::new(None),
         started: std::time::Instant::now(),
@@ -101,12 +105,26 @@ async fn main() -> anyhow::Result<()> {
     metrics::spawn_alert_monitor(state.clone());
     spawn_cache_warmer(state.clone());
 
+    // Chat timeline: every console line is parsed into the chat page model.
+    {
+        let chat = state.chat.clone();
+        let mut receiver = state.supervisor.console.subscribe();
+        tokio::spawn(async move {
+            while let Ok(line) = receiver.recv().await {
+                chat.ingest(&line);
+            }
+        });
+    }
+
     // Forward supervisor events (starts, stops, crashes, players) to the
     // configured webhook, when one is set.
     {
         let notify_state = state.clone();
         tokio::spawn(async move {
             while let Some(event) = events_rx.recv().await {
+                if event.kind == "crash" {
+                    notify_state.metrics.bump_crashes();
+                }
                 if let Some(player) = event.player.as_deref() {
                     match event.kind {
                         "player_join" => notify_state.player_history.join(player),

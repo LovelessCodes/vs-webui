@@ -60,7 +60,8 @@
     "versions": "Versões",
     "settings": "Configurações",
     "navigation": "Navegação",
-    "worlds": "Mundos"
+    "worlds": "Mundos",
+    "chat": "Chat"
   },
   "brand": {
     "name": "VS WEBUI",
@@ -220,7 +221,10 @@
     "announceDescription": "Envia uma mensagem para todos no servidor.",
     "announcePlaceholder": "Mensagem para todos os jogadores",
     "announceSend": "Enviar",
-    "automationTimezone": "Fuso horário"
+    "automationTimezone": "Fuso horário",
+    "range15m": "15m",
+    "range24h": "24h",
+    "range7d": "7d"
   },
   "console": {
     "live": "ao vivo",
@@ -628,7 +632,25 @@
     "whitelistError": "Não foi possível ler playerwhitelist.json.",
     "unknownName": "(nome desconhecido)",
     "whitelistPlayer": "Adicionar à lista",
-    "addToWhitelist": "Adicionar à lista"
+    "addToWhitelist": "Adicionar à lista",
+    "details": "Detalhes",
+    "notes": "Notas",
+    "notesPlaceholder": "Notas privadas sobre este jogador…",
+    "noteUpdated": "Atualizado {{date}}",
+    "moderationHistory": "Histórico de moderação",
+    "noModeration": "Nenhuma ação de moderação registrada.",
+    "moderationHint": "Ações de kick/ban/op enviadas por este gerenciador são registradas aqui.",
+    "bans": "Banimentos",
+    "bansDescription": "Banimentos persistentes de Playerdata/playersbanned.json.",
+    "noBans": "Nenhum jogador banido.",
+    "bansHint": "Desbanir usa o console com o servidor rodando e edita o arquivo de banimentos quando parado.",
+    "unbanned": "Jogador desbanido",
+    "roleNone": "Sem função",
+    "roleAssigned": "Função atribuída",
+    "sortPlaytime": "Ordenar: tempo de jogo",
+    "sortLastSeen": "Ordenar: visto por último",
+    "sortFirstSeen": "Ordenar: visto primeiro",
+    "sortName": "Ordenar: nome"
   },
   "backups": {
     "title": "Backups",
@@ -788,5 +810,14 @@
       "disk_low": "Pouco espaço em disco",
       "disk_recovered": "Espaço em disco recuperado"
     }
+  },
+  "chat": {
+    "title": "Chat",
+    "description": "Chat do jogo, entradas e anúncios do console do servidor.",
+    "empty": "Ainda sem chat — as mensagens aparecem quando os jogadores falam.",
+    "composerPlaceholder": "Mensagem para anunciar…",
+    "composerStopped": "O servidor não está rodando",
+    "send": "Anunciar",
+    "composerHint": "As mensagens são transmitidas com /announce e aparecem para todos os jogadores."
   }
 }

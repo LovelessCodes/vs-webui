@@ -334,15 +334,21 @@ at the bottom of this file.
 
 #### Community surface
 
-- [ ] **In-game chat view** — parse join/leave and chat lines into a dedicated timeline with
-      per-player colors; send messages from the same composer.
+- [x] **In-game chat view** — parse join/leave and chat lines into a dedicated timeline with
+      per-player colors; send messages from the same composer (broadcast via `/announce`).
 - [ ] **Two-way Discord bridge** — optional bot token; relay chat/join/leave to a channel and
-      Discord messages back into the game.
-- [ ] **Player notes & moderation history** — freeform notes plus kick/ban history per player.
-- [ ] **Role/privilege editor** — assign VS roles (whitelisted/moderator/admin) visually instead
-      of `op`/`deop` console commands.
-- [ ] **Ban list UI** — view and lift persistent bans without the console.
-- [ ] **Leaderboard aggregation** — sortable playtime/session aggregates from player history.
+      Discord messages back into the game. Deferred: needs a real bot token to verify the
+      gateway/polling path; the one-way webhook covers the relay-to-Discord direction already.
+- [x] **Player notes & moderation history** — freeform notes plus kick/ban history per player.
+      Actions sent through the manager are recorded (with the acting user); notes persist in
+      `config/player-profiles.json`.
+- [x] **Role/privilege editor** — assign VS roles (whitelisted/moderator/admin) visually instead
+      of `op`/`deop` console commands: role list from `serverroles.json`, current assignment
+      from `playerdata.json`, console command while running, file edit while stopped.
+- [x] **Ban list UI** — view and lift persistent bans without the console (console `/unban` while
+      running, ban-file edit while stopped).
+- [x] **Leaderboard aggregation** — sortable playtime/session aggregates from player history with
+      ranks on the players page.
 
 #### Observability
 

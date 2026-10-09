@@ -60,7 +60,8 @@
     "versions": "Versionen",
     "settings": "Einstellungen",
     "navigation": "Navigation",
-    "worlds": "Welten"
+    "worlds": "Welten",
+    "chat": "Chat"
   },
   "brand": {
     "name": "VS WEBUI",
@@ -220,7 +221,10 @@
     "announceDescription": "Sendet eine Nachricht an alle auf dem Server.",
     "announcePlaceholder": "Nachricht an alle Spieler",
     "announceSend": "Senden",
-    "automationTimezone": "Zeitzone"
+    "automationTimezone": "Zeitzone",
+    "range15m": "15m",
+    "range24h": "24h",
+    "range7d": "7d"
   },
   "console": {
     "live": "live",
@@ -628,7 +632,25 @@
     "whitelistError": "playerwhitelist.json konnte nicht gelesen werden.",
     "unknownName": "(unbekannter Name)",
     "whitelistPlayer": "Spieler auf die Whitelist",
-    "addToWhitelist": "Zur Whitelist hinzufügen"
+    "addToWhitelist": "Zur Whitelist hinzufügen",
+    "details": "Details",
+    "notes": "Notizen",
+    "notesPlaceholder": "Private Notizen zu diesem Spieler…",
+    "noteUpdated": "Aktualisiert {{date}}",
+    "moderationHistory": "Moderationsverlauf",
+    "noModeration": "Keine Moderationsaktionen erfasst.",
+    "moderationHint": "Kick/Bann/Op-Aktionen über diesen Manager werden hier erfasst.",
+    "bans": "Banns",
+    "bansDescription": "Dauerhafte Banns aus Playerdata/playersbanned.json.",
+    "noBans": "Keine gebannten Spieler.",
+    "bansHint": "Entbannen nutzt die Konsole, solange der Server läuft, und bearbeitet die Bann-Datei im gestoppten Zustand.",
+    "unbanned": "Spieler entbannt",
+    "roleNone": "Keine Rolle",
+    "roleAssigned": "Rolle zugewiesen",
+    "sortPlaytime": "Sortierung: Spielzeit",
+    "sortLastSeen": "Sortierung: zuletzt gesehen",
+    "sortFirstSeen": "Sortierung: zuerst gesehen",
+    "sortName": "Sortierung: Name"
   },
   "backups": {
     "title": "Backups",
@@ -788,5 +810,14 @@
       "disk_low": "Wenig Speicherplatz",
       "disk_recovered": "Speicherplatz erholt"
     }
+  },
+  "chat": {
+    "title": "Chat",
+    "description": "Ingame-Chat, Beitritte und Ankündigungen aus der Serverkonsole.",
+    "empty": "Noch kein Chat — Nachrichten erscheinen, wenn Spieler schreiben.",
+    "composerPlaceholder": "Nachricht zum Ankündigen…",
+    "composerStopped": "Server läuft nicht",
+    "send": "Ankündigen",
+    "composerHint": "Nachrichten werden per /announce gesendet und sind für alle Spieler sichtbar."
   }
 }

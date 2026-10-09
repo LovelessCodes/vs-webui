@@ -60,7 +60,8 @@
     "versions": "Versions",
     "settings": "Paramètres",
     "navigation": "Navigation",
-    "worlds": "Mondes"
+    "worlds": "Mondes",
+    "chat": "Chat"
   },
   "brand": {
     "name": "VS WEBUI",
@@ -220,7 +221,10 @@
     "announceDescription": "Envoie un message à tous les joueurs du serveur.",
     "announcePlaceholder": "Message à tous les joueurs",
     "announceSend": "Envoyer",
-    "automationTimezone": "Fuseau horaire"
+    "automationTimezone": "Fuseau horaire",
+    "range15m": "15m",
+    "range24h": "24h",
+    "range7d": "7j"
   },
   "console": {
     "live": "en direct",
@@ -628,7 +632,25 @@
     "whitelistError": "playerwhitelist.json est illisible.",
     "unknownName": "(nom inconnu)",
     "whitelistPlayer": "Ajouter à la liste blanche",
-    "addToWhitelist": "Ajouter à la liste"
+    "addToWhitelist": "Ajouter à la liste",
+    "details": "Détails",
+    "notes": "Notes",
+    "notesPlaceholder": "Notes privées sur ce joueur…",
+    "noteUpdated": "Mis à jour {{date}}",
+    "moderationHistory": "Historique de modération",
+    "noModeration": "Aucune action de modération enregistrée.",
+    "moderationHint": "Les actions kick/ban/op envoyées via ce gestionnaire sont enregistrées ici.",
+    "bans": "Bannissements",
+    "bansDescription": "Bannissements persistants depuis Playerdata/playersbanned.json.",
+    "noBans": "Aucun joueur banni.",
+    "bansHint": "Le débannissement utilise la console quand le serveur tourne et modifie le fichier quand il est arrêté.",
+    "unbanned": "Joueur débanni",
+    "roleNone": "Aucun rôle",
+    "roleAssigned": "Rôle attribué",
+    "sortPlaytime": "Tri : temps de jeu",
+    "sortLastSeen": "Tri : dernière connexion",
+    "sortFirstSeen": "Tri : première connexion",
+    "sortName": "Tri : nom"
   },
   "backups": {
     "title": "Sauvegardes",
@@ -788,5 +810,14 @@
       "disk_low": "Espace disque faible",
       "disk_recovered": "Espace disque rétabli"
     }
+  },
+  "chat": {
+    "title": "Chat",
+    "description": "Chat en jeu, connexions et annonces depuis la console du serveur.",
+    "empty": "Pas encore de chat — les messages apparaissent quand les joueurs parlent.",
+    "composerPlaceholder": "Message à annoncer…",
+    "composerStopped": "Le serveur n'est pas démarré",
+    "send": "Annoncer",
+    "composerHint": "Les messages sont diffusés via /announce et visibles par tous les joueurs."
   }
 }

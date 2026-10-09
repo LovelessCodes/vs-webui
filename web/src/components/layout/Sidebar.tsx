@@ -5,6 +5,7 @@ import {
   Earth,
   FileJson2,
   Gauge,
+  MessageSquare,
   Package,
   Settings,
   Terminal,
@@ -40,6 +41,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { to: "/", labelKey: "nav.dashboard", icon: Gauge, exact: true },
   { to: "/console", labelKey: "nav.console", icon: Terminal },
+  { to: "/chat", labelKey: "nav.chat", icon: MessageSquare },
   { to: "/mods", labelKey: "nav.mods", icon: Package },
   { to: "/config", labelKey: "nav.configs", icon: FileJson2 },
   { to: "/players", labelKey: "nav.players", icon: Users },

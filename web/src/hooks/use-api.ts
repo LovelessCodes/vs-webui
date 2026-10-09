@@ -792,6 +792,95 @@ export function useRestoreStatus(enabled: boolean) {
   });
 }
 
+export function useChat(after: number | null) {
+  return useQuery({
+    queryKey: ["chat", after],
+    queryFn: () => api.chat(after ?? undefined),
+    retry: false,
+    refetchInterval: 2_000,
+  });
+}
+
+export function usePlayerProfiles(enabled = true) {
+  return useQuery({
+    queryKey: ["player-profiles"],
+    queryFn: api.playerProfiles,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useSetPlayerNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ name, notes }: { name: string; notes: string }) =>
+      api.setPlayerNote(name, notes),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: () => toast.success(i18n.t("common.saved")),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["player-profiles"] });
+    },
+  });
+}
+
+export function usePlayerBans(enabled = true) {
+  return useQuery({
+    queryKey: ["player-bans"],
+    queryFn: api.playerBans,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useRemoveBan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: { name?: string; uid?: string }) => api.removeBan(body),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: () => toast.success(i18n.t("players.unbanned")),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["player-bans"] });
+      void queryClient.invalidateQueries({ queryKey: ["player-profiles"] });
+    },
+  });
+}
+
+export function usePlayerRoles(enabled = true) {
+  return useQuery({
+    queryKey: ["player-roles"],
+    queryFn: api.playerRoles,
+    retry: false,
+    enabled,
+  });
+}
+
+export function useSetPlayerRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ name, code }: { name: string; code: string }) =>
+      api.setPlayerRole(name, code),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: () => toast.success(i18n.t("players.roleAssigned")),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["player-roles"] });
+      void queryClient.invalidateQueries({ queryKey: ["player-profiles"] });
+    },
+  });
+}
+
+export function useMetricsHistory(hours: number, enabled: boolean) {
+  return useQuery({
+    queryKey: ["metrics-history", hours],
+    queryFn: () => api.metricsHistory(hours),
+    retry: false,
+    enabled,
+    staleTime: 60_000,
+  });
+}
+
 export function useMetrics(enabled = true) {
   return useQuery({
     queryKey: ["metrics"],

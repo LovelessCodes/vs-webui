@@ -52,7 +52,9 @@ All captures in [`web/screenshots/`](web/screenshots/) (English + `de/`), regene
 - **Config editors** — `ModConfig/*.json` with a live form editor and a bundled Monaco editor
   (JSON5-safe), `serverconfig.json` as a form plus raw JSON, and the Stratum configs.
 - **Players** — online list from join/leave events, whitelist read/write and moderation
-  commands (kick, ban, op, …).
+  commands (kick, ban, op, …), a **chat timeline** with per-player colors and an announce
+  composer, per-player notes and moderation history, ban-list management, role assignment and a
+  sortable playtime leaderboard.
 - **Backups** — manual and scheduled (daily `HH:MM`) server/mods backups, optional pre-restart
   and automatic pre-version/flavor-change backups, restore (stopped server only, or
   stop-restore-start in one action with a progress bar), CRC verification of every archive,

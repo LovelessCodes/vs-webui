@@ -60,7 +60,8 @@
     "versions": "Versions",
     "settings": "Settings",
     "navigation": "Navigation",
-    "worlds": "Worlds"
+    "worlds": "Worlds",
+    "chat": "Chat"
   },
   "brand": {
     "name": "VS WEBUI",
@@ -220,7 +221,10 @@
     "announceDescription": "Sends a message to everyone on the server.",
     "announcePlaceholder": "Message to all players",
     "announceSend": "Send",
-    "automationTimezone": "Timezone"
+    "automationTimezone": "Timezone",
+    "range15m": "15m",
+    "range24h": "24h",
+    "range7d": "7d"
   },
   "console": {
     "live": "live",
@@ -628,7 +632,25 @@
     "whitelistError": "playerwhitelist.json could not be read.",
     "unknownName": "(unknown name)",
     "whitelistPlayer": "Whitelist a player",
-    "addToWhitelist": "Add to whitelist"
+    "addToWhitelist": "Add to whitelist",
+    "details": "Details",
+    "notes": "Notes",
+    "notesPlaceholder": "Private notes about this player…",
+    "noteUpdated": "Updated {{date}}",
+    "moderationHistory": "Moderation history",
+    "noModeration": "No moderation actions recorded.",
+    "moderationHint": "Kick/ban/op actions sent through this manager are recorded here.",
+    "bans": "Bans",
+    "bansDescription": "Persistent bans from Playerdata/playersbanned.json.",
+    "noBans": "No banned players.",
+    "bansHint": "Unbanning uses the console while the server runs and edits the ban file when it is stopped.",
+    "unbanned": "Player unbanned",
+    "roleNone": "No role",
+    "roleAssigned": "Role assigned",
+    "sortPlaytime": "Sort: playtime",
+    "sortLastSeen": "Sort: last seen",
+    "sortFirstSeen": "Sort: first seen",
+    "sortName": "Sort: name"
   },
   "backups": {
     "title": "Backups",
@@ -788,5 +810,14 @@
       "disk_low": "Low disk space",
       "disk_recovered": "Disk space recovered"
     }
+  },
+  "chat": {
+    "title": "Chat",
+    "description": "In-game chat, joins and announcements from the server console.",
+    "empty": "No chat yet — messages appear as players talk.",
+    "composerPlaceholder": "Message to announce…",
+    "composerStopped": "Server is not running",
+    "send": "Announce",
+    "composerHint": "Messages are broadcast with /announce and appear for every player."
   }
 }

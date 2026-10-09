@@ -1,4 +1,4 @@
-import { AlertTriangle, Loader2, ShieldCheck, Users, Wrench } from "lucide-react";
+import { AlertTriangle, Ban, ChevronDown, Loader2, ShieldCheck, Users, Wrench } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -9,27 +9,53 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Switch } from "@/components/ui/switch";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  usePlayerBans,
   usePlayerHistory,
+  usePlayerProfiles,
+  usePlayerRoles,
   usePlayers,
+  useRemoveBan,
   useRemoveWhitelistEntry,
   useServerCommand,
+  useSetPlayerNote,
+  useSetPlayerRole,
   useSetWhitelistMode,
   useStatus,
 } from "@/hooks/use-api";
 import { errorMessage, formatDuration } from "@/lib/format";
+import { cn } from "cn";
+
+type SortBy = "playtime" | "last_seen" | "first_seen" | "name";
 
 export default function Players() {
   const { t } = useTranslation();
   const players = usePlayers();
   const history = usePlayerHistory();
+  const profiles = usePlayerProfiles();
+  const bans = usePlayerBans();
+  const roles = usePlayerRoles();
   const status = useStatus();
   const command = useServerCommand();
   const mode = useSetWhitelistMode();
   const removeEntry = useRemoveWhitelistEntry();
+  const setNote = useSetPlayerNote();
+  const removeBan = useRemoveBan();
+  const setRole = useSetPlayerRole();
   const [newName, setNewName] = useState("");
   const [target, setTarget] = useState("");
+  const [sortBy, setSortBy] = useState<SortBy>("playtime");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState("");
 
   const running = status.data?.status.status === "running";
   const whitelist = players.data?.whitelist;
@@ -41,8 +67,39 @@ export default function Players() {
       .filter((name): name is string => Boolean(name)),
   );
 
+  const sorted = [...known].sort((a, b) => {
+    switch (sortBy) {
+      case "name":
+        return a.name.localeCompare(b.name);
+      case "last_seen":
+        return b.last_seen - a.last_seen;
+      case "first_seen":
+        return b.first_seen - a.first_seen;
+      default:
+        return b.seconds - a.seconds;
+    }
+  });
+
+  const roleItems = (roles.data?.roles ?? []).map((role) => ({
+    value: role.code,
+    label: role.name,
+  }));
+  const moderationFor = (name: string) =>
+    (profiles.data?.moderation ?? []).filter(
+      (entry) => entry.player.toLowerCase() === name.toLowerCase(),
+    );
+
   function send(cmd: string) {
     command.mutate(cmd);
+  }
+
+  function toggleExpanded(name: string) {
+    if (expanded === name) {
+      setExpanded(null);
+      return;
+    }
+    setExpanded(name);
+    setNoteDraft(profiles.data?.notes[name]?.text ?? "");
   }
 
   return (
@@ -249,12 +306,36 @@ export default function Players() {
           </CardContent>
         </Card>
 
-        <Card className="self-start">
+        <Card className="self-start lg:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="size-4 text-muted-foreground" />
-              {t("players.knownPlayers")}
-            </CardTitle>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle className="flex items-center gap-2">
+                <Users className="size-4 text-muted-foreground" />
+                {t("players.knownPlayers")}
+              </CardTitle>
+              <Select
+                items={[
+                  { value: "playtime", label: t("players.sortPlaytime") },
+                  { value: "last_seen", label: t("players.sortLastSeen") },
+                  { value: "first_seen", label: t("players.sortFirstSeen") },
+                  { value: "name", label: t("players.sortName") },
+                ]}
+                onValueChange={(value) => {
+                  if (typeof value === "string") setSortBy(value as SortBy);
+                }}
+                value={sortBy}
+              >
+                <SelectTrigger size="sm" className="w-44">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent alignItemWithTrigger={false}>
+                  <SelectItem value="playtime">{t("players.sortPlaytime")}</SelectItem>
+                  <SelectItem value="last_seen">{t("players.sortLastSeen")}</SelectItem>
+                  <SelectItem value="first_seen">{t("players.sortFirstSeen")}</SelectItem>
+                  <SelectItem value="name">{t("players.sortName")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <CardDescription>{t("players.knownPlayersDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
@@ -267,44 +348,211 @@ export default function Players() {
             {history.data && known.length === 0 && (
               <p className="text-xs text-muted-foreground">{t("players.noHistory")}</p>
             )}
-            {known.length > 0 && (
+            {sorted.length > 0 && (
               <div className="divide-y divide-border border border-border">
-                {known.map((record) => {
+                {sorted.map((record, index) => {
                   const whitelisted = whitelistedNames.has(record.name.toLowerCase());
+                  const isExpanded = expanded === record.name;
+                  const moderation = moderationFor(record.name);
+                  const note = profiles.data?.notes[record.name];
                   return (
-                    <div className="flex items-center gap-3 px-3 py-2" key={record.name}>
-                      <div className="min-w-0 flex-1">
-                        <p className="flex items-center gap-2 truncate text-xs font-medium">
-                          {record.name}
-                          {whitelisted && (
-                            <Badge className="border-success/40 text-success" variant="outline">
-                              {t("players.whitelist")}
-                            </Badge>
-                          )}
-                        </p>
-                        <p className="truncate text-[10px] text-muted-foreground">
-                          {t("players.firstSeen")}:{" "}
-                          {new Date(record.first_seen * 1000).toLocaleDateString()} ·{" "}
-                          {t("players.lastSeen")}:{" "}
-                          {new Date(record.last_seen * 1000).toLocaleString()} ·{" "}
-                          {t("players.playtime")}: {formatDuration(record.seconds)}
-                        </p>
-                      </div>
-                      {!whitelisted && (
+                    <div key={record.name}>
+                      <div className="flex flex-wrap items-center gap-3 px-3 py-2">
+                        {sortBy === "playtime" && (
+                          <span className="w-6 shrink-0 text-right font-mono text-[11px] text-muted-foreground">
+                            #{index + 1}
+                          </span>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="flex items-center gap-2 truncate text-xs font-medium">
+                            {record.name}
+                            {whitelisted && (
+                              <Badge className="border-success/40 text-success" variant="outline">
+                                {t("players.whitelist")}
+                              </Badge>
+                            )}
+                          </p>
+                          <p className="truncate text-[10px] text-muted-foreground">
+                            {t("players.firstSeen")}:{" "}
+                            {new Date(record.first_seen * 1000).toLocaleDateString()} ·{" "}
+                            {t("players.lastSeen")}:{" "}
+                            {new Date(record.last_seen * 1000).toLocaleString()} ·{" "}
+                            {t("players.playtime")}: {formatDuration(record.seconds)}
+                          </p>
+                        </div>
+                        {roleItems.length > 0 && (
+                          <Select
+                            items={roleItems}
+                            onValueChange={(value) => {
+                              if (typeof value === "string" && value) {
+                                setRole.mutate({ name: record.name, code: value });
+                              }
+                            }}
+                            value={roles.data?.assignments[record.name] ?? ""}
+                          >
+                            <SelectTrigger size="sm" className="w-36">
+                              <SelectValue placeholder={t("players.roleNone")} />
+                            </SelectTrigger>
+                            <SelectContent alignItemWithTrigger={false}>
+                              {roleItems.map((item) => (
+                                <SelectItem key={item.value} value={item.value}>
+                                  {item.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                        {!whitelisted && (
+                          <Button
+                            disabled={!running || command.isPending}
+                            onClick={() => send(`/player ${record.name} whitelist on`)}
+                            size="sm"
+                            variant="outline"
+                          >
+                            {t("players.addToWhitelist")}
+                          </Button>
+                        )}
                         <Button
-                          disabled={!running || command.isPending}
-                          onClick={() => send(`/player ${record.name} whitelist on`)}
-                          size="sm"
-                          variant="outline"
+                          onClick={() => toggleExpanded(record.name)}
+                          size="icon-sm"
+                          title={t("players.details")}
+                          variant="ghost"
                         >
-                          {t("players.addToWhitelist")}
+                          <ChevronDown
+                            className={cn("transition-transform", isExpanded && "rotate-180")}
+                          />
                         </Button>
+                      </div>
+                      {isExpanded && (
+                        <div className="grid gap-4 border-t border-border bg-muted/20 px-4 py-3">
+                          <div className="grid gap-1.5">
+                            <Label htmlFor={`note-${record.name}`}>{t("players.notes")}</Label>
+                            <Textarea
+                              id={`note-${record.name}`}
+                              onChange={(event) => setNoteDraft(event.target.value)}
+                              placeholder={t("players.notesPlaceholder")}
+                              rows={2}
+                              value={noteDraft}
+                            />
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Button
+                                disabled={setNote.isPending}
+                                onClick={() =>
+                                  setNote.mutate({ name: record.name, notes: noteDraft })
+                                }
+                                size="sm"
+                                variant="outline"
+                              >
+                                {t("common.save")}
+                              </Button>
+                              {note && note.updated > 0 && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  {t("players.noteUpdated", {
+                                    date: new Date(note.updated * 1000).toLocaleString(),
+                                  })}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="grid gap-1.5">
+                            <Label>{t("players.moderationHistory")}</Label>
+                            {moderation.length === 0 ? (
+                              <p className="text-[11px] text-muted-foreground">
+                                {t("players.noModeration")}
+                              </p>
+                            ) : (
+                              <div className="divide-y divide-border border border-border bg-card">
+                                {moderation.map((entry, position) => (
+                                  <div
+                                    className="flex items-center gap-3 px-3 py-1.5 text-[11px]"
+                                    key={`${entry.ts}-${position}`}
+                                  >
+                                    <Badge
+                                      variant={
+                                        entry.action === "ban"
+                                          ? "error"
+                                          : entry.action === "unban"
+                                            ? "success"
+                                            : "outline"
+                                      }
+                                    >
+                                      {entry.action}
+                                    </Badge>
+                                    <span className="text-muted-foreground">{entry.by}</span>
+                                    <span className="ml-auto font-mono text-muted-foreground">
+                                      {new Date(entry.ts * 1000).toLocaleString()}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <p className="text-[10px] text-muted-foreground">
+                              {t("players.moderationHint")}
+                            </p>
+                          </div>
+                        </div>
                       )}
                     </div>
                   );
                 })}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        <Card className="self-start lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Ban className="size-4 text-muted-foreground" />
+              {t("players.bans")}
+            </CardTitle>
+            <CardDescription>{t("players.bansDescription")}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            {bans.isLoading && !bans.data && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+                {t("common.loading")}
+              </div>
+            )}
+            {bans.data && bans.data.bans.length === 0 && (
+              <p className="text-xs text-muted-foreground">{t("players.noBans")}</p>
+            )}
+            {(bans.data?.bans.length ?? 0) > 0 && (
+              <div className="divide-y divide-border border border-border">
+                {bans.data?.bans.map((ban, index) => (
+                  <div className="flex flex-wrap items-center gap-3 px-3 py-2" key={`${ban.uid}-${index}`}>
+                    <span className="min-w-0 flex-1 truncate text-xs">
+                      {ban.name ?? ban.uid ?? t("players.unknownName")}
+                    </span>
+                    {ban.reason && (
+                      <span className="hidden max-w-56 truncate text-[10px] text-muted-foreground sm:block">
+                        {ban.reason}
+                      </span>
+                    )}
+                    {ban.until && (
+                      <span className="hidden font-mono text-[10px] text-muted-foreground md:block">
+                        {ban.until}
+                      </span>
+                    )}
+                    <Button
+                      disabled={removeBan.isPending || (!ban.name && !ban.uid)}
+                      onClick={() =>
+                        removeBan.mutate({
+                          name: ban.name ?? undefined,
+                          uid: ban.uid ?? undefined,
+                        })
+                      }
+                      size="sm"
+                      variant="outline"
+                    >
+                      {t("players.unban")}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-[11px] text-muted-foreground">{t("players.bansHint")}</p>
           </CardContent>
         </Card>
       </div>

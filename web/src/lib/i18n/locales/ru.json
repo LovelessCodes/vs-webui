@@ -60,7 +60,8 @@
     "versions": "Версии",
     "settings": "Настройки",
     "navigation": "Навигация",
-    "worlds": "Миры"
+    "worlds": "Миры",
+    "chat": "Чат"
   },
   "brand": {
     "name": "VS WEBUI",
@@ -220,7 +221,10 @@
     "announceDescription": "Отправляет сообщение всем на сервере.",
     "announcePlaceholder": "Сообщение всем игрокам",
     "announceSend": "Отправить",
-    "automationTimezone": "Часовой пояс"
+    "automationTimezone": "Часовой пояс",
+    "range15m": "15м",
+    "range24h": "24ч",
+    "range7d": "7д"
   },
   "console": {
     "live": "в эфире",
@@ -628,7 +632,25 @@
     "whitelistError": "Не удалось прочитать playerwhitelist.json.",
     "unknownName": "(имя неизвестно)",
     "whitelistPlayer": "Добавить игрока в белый список",
-    "addToWhitelist": "Добавить в список"
+    "addToWhitelist": "Добавить в список",
+    "details": "Подробности",
+    "notes": "Заметки",
+    "notesPlaceholder": "Личные заметки об игроке…",
+    "noteUpdated": "Обновлено {{date}}",
+    "moderationHistory": "История модерации",
+    "noModeration": "Действий модерации не зафиксировано.",
+    "moderationHint": "Действия kick/ban/op, отправленные из панели, записываются здесь.",
+    "bans": "Баны",
+    "bansDescription": "Постоянные баны из Playerdata/playersbanned.json.",
+    "noBans": "Забаненных игроков нет.",
+    "bansHint": "Разбан выполняется через консоль при запущенном сервере и правкой файла при остановленном.",
+    "unbanned": "Игрок разбанен",
+    "roleNone": "Без роли",
+    "roleAssigned": "Роль назначена",
+    "sortPlaytime": "Сортировка: время игры",
+    "sortLastSeen": "Сортировка: последний вход",
+    "sortFirstSeen": "Сортировка: первый вход",
+    "sortName": "Сортировка: имя"
   },
   "backups": {
     "title": "Бэкапы",
@@ -788,5 +810,14 @@
       "disk_low": "Мало места на диске",
       "disk_recovered": "Место на диске восстановлено"
     }
+  },
+  "chat": {
+    "title": "Чат",
+    "description": "Игровой чат, входы и объявления из консоли сервера.",
+    "empty": "Чата пока нет — сообщения появятся, когда игроки начнут писать.",
+    "composerPlaceholder": "Сообщение для объявления…",
+    "composerStopped": "Сервер не запущен",
+    "send": "Объявить",
+    "composerHint": "Сообщения рассылаются командой /announce и видны всем игрокам."
   }
 }

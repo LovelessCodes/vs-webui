@@ -13,6 +13,16 @@ pub fn read(layout: &Layout) -> Option<String> {
     std::fs::read_to_string(config_path(layout)).ok()
 }
 
+/// The server's configured game port, from `serverconfig.json`.
+pub fn port(layout: &Layout) -> Option<u16> {
+    let content = read(layout)?;
+    let value: Value = serde_json::from_str(&content).ok()?;
+    value
+        .get("Port")
+        .and_then(Value::as_u64)
+        .and_then(|port| u16::try_from(port).ok())
+}
+
 /// Validate and atomically write the raw `serverconfig.json`.
 pub fn write(layout: &Layout, content: &str) -> Result<(), String> {
     serde_json::from_str::<Value>(content).map_err(|e| format!("Invalid JSON: {e}"))?;

@@ -60,7 +60,8 @@
     "versions": "版本",
     "settings": "设置",
     "navigation": "导航",
-    "worlds": "世界"
+    "worlds": "世界",
+    "chat": "聊天"
   },
   "brand": {
     "name": "VS WEBUI",
@@ -220,7 +221,10 @@
     "announceDescription": "向服务器上的所有人发送消息。",
     "announcePlaceholder": "发送给所有玩家的消息",
     "announceSend": "发送",
-    "automationTimezone": "时区"
+    "automationTimezone": "时区",
+    "range15m": "15分",
+    "range24h": "24时",
+    "range7d": "7天"
   },
   "console": {
     "live": "实时",
@@ -628,7 +632,25 @@
     "whitelistError": "无法读取 playerwhitelist.json。",
     "unknownName": "（未知名称）",
     "whitelistPlayer": "将玩家加入白名单",
-    "addToWhitelist": "加入白名单"
+    "addToWhitelist": "加入白名单",
+    "details": "详情",
+    "notes": "备注",
+    "notesPlaceholder": "关于该玩家的私人备注…",
+    "noteUpdated": "更新于 {{date}}",
+    "moderationHistory": "管理历史",
+    "noModeration": "暂无管理操作记录。",
+    "moderationHint": "通过此管理器发送的 kick/ban/op 操作会记录在这里。",
+    "bans": "封禁列表",
+    "bansDescription": "来自 Playerdata/playersbanned.json 的永久封禁。",
+    "noBans": "没有被封禁的玩家。",
+    "bansHint": "服务器运行时通过控制台解封，停止时直接编辑封禁文件。",
+    "unbanned": "玩家已解封",
+    "roleNone": "无角色",
+    "roleAssigned": "角色已分配",
+    "sortPlaytime": "排序：游戏时长",
+    "sortLastSeen": "排序：最近在线",
+    "sortFirstSeen": "排序：首次出现",
+    "sortName": "排序：名称"
   },
   "backups": {
     "title": "备份",
@@ -788,5 +810,14 @@
       "disk_low": "磁盘空间不足",
       "disk_recovered": "磁盘空间已恢复"
     }
+  },
+  "chat": {
+    "title": "聊天",
+    "description": "来自服务器控制台的游戏内聊天、加入与公告。",
+    "empty": "暂无聊天——玩家发言后会显示在这里。",
+    "composerPlaceholder": "要公告的消息…",
+    "composerStopped": "服务器未运行",
+    "send": "公告",
+    "composerHint": "消息通过 /announce 广播，所有玩家都能看到。"
   }
 }

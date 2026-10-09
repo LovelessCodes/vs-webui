@@ -29,10 +29,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   useConsolePreview,
   useCreateBackup,
   useMetrics,
+  useMetricsHistory,
   usePlayers,
   useServerCommand,
   useServerRestart,
@@ -41,8 +43,11 @@ import {
   useStatus,
   useStorage,
 } from "@/hooks/use-api";
+import type { MetricSample } from "@/lib/api";
 import { errorMessage, formatBytes, formatDuration } from "@/lib/format";
 import { cn } from "cn";
+
+type MetricsRange = "15m" | "24h" | "7d";
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -52,6 +57,8 @@ export default function Dashboard() {
   const stop = useServerStop();
   const restart = useServerRestart();
   const metrics = useMetrics();
+  const [metricsRange, setMetricsRange] = useState<MetricsRange>("15m");
+  const history = useMetricsHistory(metricsRange === "24h" ? 24 : 168, metricsRange !== "15m");
   const storage = useStorage();
   const players = usePlayers();
   const command = useServerCommand();
@@ -99,7 +106,16 @@ export default function Dashboard() {
   const installing = install && install.phase !== "done" && install.phase !== "error";
   const actionError = start.error ?? stop.error ?? restart.error;
 
-  const metricsSamples = metrics.data?.samples ?? [];
+  const metricsSamples: MetricSample[] =
+    metricsRange === "15m"
+      ? (metrics.data?.samples ?? [])
+      : (history.data?.points ?? []).map((point) => ({
+          ts: point.ts,
+          cpu: point.cpu,
+          memory: point.memory,
+          tps: point.tps,
+          players: Math.round(point.players),
+        }));
   const online = players.data?.online ?? [];
 
   return (
@@ -231,11 +247,19 @@ export default function Dashboard() {
                 <Activity className="size-4 text-muted-foreground" />
                 {t("dashboard.performance")}
               </CardTitle>
-              {metricsSamples.length > 0 && (
-                <span className="text-muted-foreground text-[10px] tracking-widest uppercase">
-                  {t("dashboard.performanceWindow")}
-                </span>
-              )}
+              <ToggleGroup
+                onValueChange={(value) => {
+                  const next = value[0];
+                  if (next === "15m" || next === "24h" || next === "7d") setMetricsRange(next);
+                }}
+                size="sm"
+                value={[metricsRange]}
+                variant="outline"
+              >
+                <ToggleGroupItem value="15m">{t("dashboard.range15m")}</ToggleGroupItem>
+                <ToggleGroupItem value="24h">{t("dashboard.range24h")}</ToggleGroupItem>
+                <ToggleGroupItem value="7d">{t("dashboard.range7d")}</ToggleGroupItem>
+              </ToggleGroup>
             </div>
             <CardDescription>{t("dashboard.performanceDescription")}</CardDescription>
           </CardHeader>

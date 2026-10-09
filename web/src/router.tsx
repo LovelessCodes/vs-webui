@@ -2,6 +2,7 @@ import { createRootRoute, createRoute, createRouter } from "@tanstack/react-rout
 
 import AppShell from "@/components/layout/AppShell";
 import Backups from "@/pages/Backups";
+import Chat from "@/pages/Chat";
 import Configs from "@/pages/Configs";
 import Console from "@/pages/Console";
 import Dashboard from "@/pages/Dashboard";
@@ -26,6 +27,12 @@ const consoleRoute = createRoute({
     logs: search.logs === "1" || search.logs === 1 ? ("1" as const) : undefined,
   }),
   component: Console,
+});
+
+const chatRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/chat",
+  component: Chat,
 });
 
 const versionsRoute = createRoute({
@@ -73,6 +80,7 @@ const worldsRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   consoleRoute,
+  chatRoute,
   modsRoute,
   configsRoute,
   playersRoute,

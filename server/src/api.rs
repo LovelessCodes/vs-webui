@@ -23,7 +23,7 @@ use tower_http::trace::TraceLayer;
 
 use crate::audit::AuditEntry;
 use crate::auth::{Actor, Role};
-use crate::console::LogLine;
+use crate::console::{now_unix, LogLine};
 use crate::mods::{self, InstalledMod, NewJob};
 use crate::state::SharedState;
 use crate::versions::{InstallStatus, CHANNELS};
@@ -78,6 +78,7 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/tokens", get(list_tokens).post(create_token))
         .route("/api/tokens/{id}", delete(revoke_token))
         .route("/api/metrics", get(metrics_history))
+        .route("/api/metrics/history", get(metrics_history_range))
         .route("/metrics", get(prometheus_metrics))
         .route(
             "/api/serverconfig",
@@ -106,6 +107,12 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/server/flavor", post(set_flavor))
         .route("/api/players", get(players_view))
         .route("/api/players/history", get(players_history))
+        .route("/api/chat", get(chat_history))
+        .route("/api/players/profiles", get(player_profiles))
+        .route("/api/players/bans", get(player_bans).post(remove_ban))
+        .route("/api/players/roles", get(player_roles_view))
+        .route("/api/players/{name}/notes", put(set_player_note))
+        .route("/api/players/{name}/role", post(set_player_role))
         .route("/api/saves", get(list_saves))
         .route("/api/saves/create", post(create_save))
         .route(
@@ -1074,12 +1081,15 @@ async fn restart(State(state): State<SharedState>, _authed: Authed) -> Json<Valu
 
 async fn command(
     State(state): State<SharedState>,
-    _authed: Authed,
+    authed: Authed,
     Json(req): Json<CommandReq>,
 ) -> Result<Json<Value>, ApiError> {
     let command = req.command.trim().to_string();
     if command.is_empty() {
         return Err(ApiError::bad_request("empty command"));
+    }
+    if let Some((action, player)) = crate::players::moderation_action(&command) {
+        state.profiles.record(&action, &player, &authed.actor.name);
     }
     state.supervisor.command(command).await;
     Ok(Json(json!({ "ok": true })))
@@ -1511,13 +1521,45 @@ async fn metrics_history(State(state): State<SharedState>, _authed: Authed) -> J
     }))
 }
 
+#[derive(Deserialize)]
+struct MetricsHistoryQuery {
+    #[serde(default)]
+    hours: Option<u64>,
+}
+
+/// Persisted, downsampled metrics for long-range charts.
+async fn metrics_history_range(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Query(query): Query<MetricsHistoryQuery>,
+) -> Result<Json<Value>, ApiError> {
+    let hours = query.hours.unwrap_or(24).clamp(1, 720);
+    let config_dir = state.layout.config_dir();
+    let points = tokio::task::spawn_blocking(move || crate::metrics::history(&config_dir, hours))
+        .await
+        .map_err(|e| ApiError::internal(format!("metrics task failed: {e}")))?;
+    Ok(Json(json!({ "hours": hours, "points": points })))
+}
+
 async fn prometheus_metrics(
     State(state): State<SharedState>,
     _authed: Authed,
 ) -> impl axum::response::IntoResponse {
     let running = state.supervisor.is_running();
+    let status = state.supervisor.status();
     let last = state.metrics.last();
     let tps = state.metrics.last_tps();
+    let players_total = state.player_history.list().len();
+    let world_bytes = state.metrics.world_bytes();
+    let backup_age = crate::backups::list_backups(&state.layout)
+        .first()
+        .map(|backup| now_unix().saturating_sub(backup.modified))
+        .unwrap_or(0);
+    let uptime = status
+        .started_at
+        .map(|started| now_unix().saturating_sub(started))
+        .filter(|_| running)
+        .unwrap_or(0);
     let body = format!(
         "# HELP vs_webui_server_running Whether the game server process is running.\n\
          # TYPE vs_webui_server_running gauge\n\
@@ -1531,15 +1573,35 @@ async fn prometheus_metrics(
          # HELP vs_webui_server_tps Ticks per second reported by /stats.\n\
          # TYPE vs_webui_server_tps gauge\n\
          vs_webui_server_tps {}\n\
+         # HELP vs_webui_server_uptime_seconds Uptime of the current server process.\n\
+         # TYPE vs_webui_server_uptime_seconds gauge\n\
+         vs_webui_server_uptime_seconds {}\n\
          # HELP vs_webui_players_online Players currently online.\n\
          # TYPE vs_webui_players_online gauge\n\
-         vs_webui_players_online {}\n",
+         vs_webui_players_online {}\n\
+         # HELP vs_webui_players_total Distinct players ever seen.\n\
+         # TYPE vs_webui_players_total gauge\n\
+         vs_webui_players_total {}\n\
+         # HELP vs_webui_world_bytes Size of the Saves directory (refreshed every 5 minutes).\n\
+         # TYPE vs_webui_world_bytes gauge\n\
+         vs_webui_world_bytes {}\n\
+         # HELP vs_webui_backup_age_seconds Seconds since the newest backup was written.\n\
+         # TYPE vs_webui_backup_age_seconds gauge\n\
+         vs_webui_backup_age_seconds {}\n\
+         # HELP vs_webui_crashes_total Server crashes seen by the manager since it started.\n\
+         # TYPE vs_webui_crashes_total counter\n\
+         vs_webui_crashes_total {}\n",
         if running { 1 } else { 0 },
         last.as_ref().map(|sample| sample.cpu).unwrap_or_default(),
         last.as_ref().map(|sample| sample.memory).unwrap_or_default(),
         tps.map(|value| format!("{value:.2}"))
             .unwrap_or_else(|| "NaN".into()),
+        uptime,
         state.supervisor.online_players().len(),
+        players_total,
+        world_bytes,
+        backup_age,
+        state.metrics.crashes(),
     );
     (
         [(header::CONTENT_TYPE, "text/plain; version=0.0.4; charset=utf-8")],
@@ -2453,6 +2515,156 @@ async fn upload_save(
 
 async fn players_history(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {
     Json(json!({ "players": state.player_history.list() }))
+}
+
+// ── chat, profiles, bans & roles ────────────────────────────────────────────
+
+#[derive(Deserialize)]
+struct ChatQuery {
+    #[serde(default)]
+    after: Option<u64>,
+    #[serde(default)]
+    limit: Option<usize>,
+}
+
+async fn chat_history(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Query(query): Query<ChatQuery>,
+) -> Json<Value> {
+    let limit = query.limit.unwrap_or(200).clamp(1, 500);
+    Json(json!({ "entries": state.chat.list(query.after, limit) }))
+}
+
+async fn player_profiles(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {
+    let (notes, moderation) = state.profiles.snapshot(200);
+    Json(json!({ "notes": notes, "moderation": moderation }))
+}
+
+#[derive(Deserialize)]
+struct NoteReq {
+    #[serde(default)]
+    notes: String,
+}
+
+async fn set_player_note(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(name): UrlPath<String>,
+    Json(req): Json<NoteReq>,
+) -> Result<Json<Value>, ApiError> {
+    let name = name.trim();
+    if name.is_empty() || name.chars().count() > 32 {
+        return Err(ApiError::bad_request("invalid player name"));
+    }
+    state.profiles.set_note(name, &req.notes);
+    Ok(Json(json!({ "ok": true })))
+}
+
+async fn player_bans(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {
+    let layout = state.layout.clone();
+    let bans = tokio::task::spawn_blocking(move || {
+        crate::players::read_bans(&layout.server_dir())
+    })
+    .await
+    .unwrap_or_default();
+    Json(json!({ "bans": bans }))
+}
+
+#[derive(Deserialize)]
+struct BanRemoveReq {
+    #[serde(default)]
+    name: Option<String>,
+    #[serde(default)]
+    uid: Option<String>,
+}
+
+/// Unbans through the console while running, through the file when stopped.
+async fn remove_ban(
+    State(state): State<SharedState>,
+    authed: Authed,
+    Json(req): Json<BanRemoveReq>,
+) -> Result<Json<Value>, ApiError> {
+    if state.supervisor.is_running() {
+        let name = req
+            .name
+            .clone()
+            .ok_or_else(|| ApiError::bad_request("unban by name while the server is running"))?;
+        state
+            .supervisor
+            .command(format!("/unban {}", name.trim()))
+            .await;
+        state.profiles.record("unban", name.trim(), &authed.actor.name);
+    } else {
+        let layout = state.layout.clone();
+        let name = req.name.clone();
+        let uid = req.uid.clone();
+        let removed = tokio::task::spawn_blocking(move || {
+            crate::players::remove_ban_file(&layout.server_dir(), uid.as_deref(), name.as_deref())
+        })
+        .await
+        .map_err(|e| ApiError::internal(format!("ban task failed: {e}")))?
+        .map_err(ApiError::bad_request)?;
+        if removed {
+            if let Some(name) = req.name.as_deref() {
+                state.profiles.record("unban", name.trim(), &authed.actor.name);
+            }
+        }
+    }
+    Ok(Json(json!({ "ok": true })))
+}
+
+async fn player_roles_view(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {
+    let layout = state.layout.clone();
+    let (roles, assignments) = tokio::task::spawn_blocking(move || {
+        (
+            crate::players::read_roles(&layout.server_dir()),
+            crate::players::player_roles(&layout.server_dir()),
+        )
+    })
+    .await
+    .unwrap_or_default();
+    Json(json!({ "roles": roles, "assignments": assignments }))
+}
+
+#[derive(Deserialize)]
+struct RoleReq {
+    code: String,
+}
+
+/// Assigns a role through the console while running, through playerdata when
+/// stopped.
+async fn set_player_role(
+    State(state): State<SharedState>,
+    authed: Authed,
+    UrlPath(name): UrlPath<String>,
+    Json(req): Json<RoleReq>,
+) -> Result<Json<Value>, ApiError> {
+    let name = name.trim().to_string();
+    let code = req.code.trim().to_string();
+    if name.is_empty() || name.chars().count() > 32 {
+        return Err(ApiError::bad_request("invalid player name"));
+    }
+    if code.is_empty() || code.chars().count() > 32 {
+        return Err(ApiError::bad_request("invalid role code"));
+    }
+    if state.supervisor.is_running() {
+        state
+            .supervisor
+            .command(format!("/player {name} role {code}"))
+            .await;
+    } else {
+        let layout = state.layout.clone();
+        let role_name = name.clone();
+        tokio::task::spawn_blocking(move || {
+            crate::players::set_player_role_file(&layout.server_dir(), &role_name, &code)
+        })
+        .await
+        .map_err(|e| ApiError::internal(format!("role task failed: {e}")))?
+        .map_err(ApiError::bad_request)?;
+    }
+    state.profiles.record("role", &name, &authed.actor.name);
+    Ok(Json(json!({ "ok": true })))
 }
 
 #[derive(Deserialize)]

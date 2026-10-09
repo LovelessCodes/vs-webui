@@ -14,7 +14,7 @@ import { PASSWORD, seedData, startManager, stopManager, waitForHealth } from "./
 const PORT = 18097;
 const DATA_DIR = join(tmpdir(), "vs-webui-smoke");
 
-const ROUTES = ["/", "/console", "/mods", "/config", "/players", "/backups", "/worlds", "/versions", "/settings"];
+const ROUTES = ["/", "/console", "/chat", "/mods", "/config", "/players", "/backups", "/worlds", "/versions", "/settings"];
 
 async function main() {
   seedData(DATA_DIR);
@@ -83,6 +83,16 @@ async function main() {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(300);
     console.log("notification bell ok");
+
+    // Chat page renders (no server running in the smoke fixture).
+    await page.goto(`http://localhost:${PORT}/chat`);
+    await page.waitForSelector("text=No chat yet", { timeout: 5_000 });
+    console.log("chat page ok");
+
+    // Players page shows the bans card.
+    await page.goto(`http://localhost:${PORT}/players`);
+    await page.waitForSelector("text=Bans", { timeout: 5_000 });
+    console.log("players bans ok");
 
     // Language dropdown (Base UI menu with group label).
     await page.goto(`http://localhost:${PORT}/`);

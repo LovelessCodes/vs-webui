@@ -4,11 +4,13 @@ use std::time::Instant;
 use crate::audit::AuditStore;
 use crate::auth::AuthStore;
 use crate::backups::RestoreProgressHandle;
+use crate::chat::ChatLog;
 use crate::metrics::MetricsStore;
 use crate::mods::{ModDbCache, ModsManager};
 use crate::notifications::NotificationStore;
 use crate::paths::Layout;
 use crate::playerhistory::PlayerHistory;
+use crate::profiles::ProfilesStore;
 use crate::settings::Settings;
 use crate::stratum::StratumCache;
 use crate::supervisor::Supervisor;
@@ -27,6 +29,8 @@ pub struct AppState {
     pub stratum: StratumCache,
     pub metrics: MetricsStore,
     pub player_history: PlayerHistory,
+    pub chat: ChatLog,
+    pub profiles: ProfilesStore,
     pub restore: RestoreProgressHandle,
     pub install: Mutex<Option<InstallStatus>>,
     pub started: Instant,

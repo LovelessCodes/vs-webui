@@ -376,6 +376,47 @@ export interface RestoreProgress {
   finished: boolean;
 }
 
+export interface ChatEntry {
+  id: number;
+  ts: number;
+  kind: "chat" | "join" | "leave" | "announce";
+  player?: string | null;
+  text: string;
+}
+
+export interface PlayerNote {
+  text: string;
+  updated: number;
+}
+
+export interface ModerationEntry {
+  ts: number;
+  action: string;
+  player: string;
+  by: string;
+}
+
+export interface BanEntry {
+  name?: string | null;
+  uid?: string | null;
+  reason?: string | null;
+  until?: string | null;
+}
+
+export interface RoleEntry {
+  code: string;
+  name: string;
+  level?: number | null;
+}
+
+export interface HistoryPoint {
+  ts: number;
+  cpu: number;
+  memory: number;
+  tps: number | null;
+  players: number;
+}
+
 export interface LogFileEntry {
   name: string;
   size: number;
@@ -605,6 +646,32 @@ export const api = {
     request<{ ok: boolean }>(`/api/stratum/${encodeURIComponent(tag)}`, { method: "DELETE" }),
 
   playerHistory: () => request<{ players: PlayerRecord[] }>("/api/players/history"),
+  chat: (after?: number) =>
+    request<{ entries: ChatEntry[] }>(`/api/chat?limit=300${after ? `&after=${after}` : ""}`),
+  playerProfiles: () =>
+    request<{ notes: Record<string, PlayerNote>; moderation: ModerationEntry[] }>(
+      "/api/players/profiles",
+    ),
+  setPlayerNote: (name: string, notes: string) =>
+    request<{ ok: boolean }>(`/api/players/${encodeURIComponent(name)}/notes`, {
+      method: "PUT",
+      body: JSON.stringify({ notes }),
+    }),
+  playerBans: () => request<{ bans: BanEntry[] }>("/api/players/bans"),
+  removeBan: (body: { name?: string; uid?: string }) =>
+    request<{ ok: boolean }>("/api/players/bans", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  playerRoles: () =>
+    request<{ roles: RoleEntry[]; assignments: Record<string, string> }>("/api/players/roles"),
+  setPlayerRole: (name: string, code: string) =>
+    request<{ ok: boolean }>(`/api/players/${encodeURIComponent(name)}/role`, {
+      method: "POST",
+      body: JSON.stringify({ code }),
+    }),
+  metricsHistory: (hours: number) =>
+    request<{ hours: number; points: HistoryPoint[] }>(`/api/metrics/history?hours=${hours}`),
   removeWhitelistEntry: (body: { uid?: string; name?: string }) =>
     request<{ ok: boolean; mode: string; removed?: boolean }>("/api/whitelist/remove", {
       method: "POST",
