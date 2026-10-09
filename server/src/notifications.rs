@@ -139,7 +139,7 @@ impl NotificationStore {
 /// Severity used for the history and push styling.
 fn severity_for(event: &str) -> &'static str {
     match event {
-        "crash" | "tps_low" | "disk_low" | "backup_failed" => "error",
+        "crash" | "tps_low" | "disk_low" | "backup_failed" | "offsite_failed" => "error",
         "stop" | "restart" => "warning",
         _ => "info",
     }

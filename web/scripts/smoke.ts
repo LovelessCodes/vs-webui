@@ -74,7 +74,8 @@ async function main() {
     await page.waitForSelector("text=Two-factor authentication", { timeout: 5_000 });
     await page.waitForSelector("text=Active sessions", { timeout: 5_000 });
     await page.waitForSelector("text=Scheduled tasks", { timeout: 5_000 });
-    console.log("users + audit + alerts + sessions + schedule ok");
+    await page.waitForSelector("text=Offsite mirror", { timeout: 5_000 });
+    console.log("users + audit + alerts + sessions + schedule + offsite ok");
 
     // Notification bell (empty history on a fresh data dir).
     await page.getByRole("button", { name: "Notifications" }).click();

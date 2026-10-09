@@ -37,6 +37,64 @@ fn is_default_disk_percent(value: &u32) -> bool {
     *value == default_disk_percent()
 }
 
+/// Mirrors finished backups to WebDAV or S3-compatible storage.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct OffsiteConfig {
+    /// `webdav` or `s3`.
+    pub kind: String,
+    /// WebDAV base URL or S3 endpoint (e.g. `https://s3.eu-central-1.amazonaws.com`).
+    pub url: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub user: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub password: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub bucket: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub region: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub access_key: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub secret_key: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub prefix: String,
+}
+
+/// Validates and normalizes an offsite target from the settings API.
+pub fn validate_offsite(config: &OffsiteConfig) -> Result<OffsiteConfig, String> {
+    let mut config = config.clone();
+    config.kind = config.kind.trim().to_ascii_lowercase();
+    config.url = config.url.trim().trim_end_matches('/').to_string();
+    config.user = config.user.trim().to_string();
+    config.password = config.password.trim().to_string();
+    config.bucket = config.bucket.trim().trim_matches('/').to_string();
+    config.region = config.region.trim().to_string();
+    config.access_key = config.access_key.trim().to_string();
+    config.secret_key = config.secret_key.trim().to_string();
+    config.prefix = config.prefix.trim().trim_matches('/').to_string();
+
+    if config.kind != "webdav" && config.kind != "s3" {
+        return Err("offsite kind must be webdav or s3".into());
+    }
+    let parsed = reqwest::Url::parse(&config.url)
+        .map_err(|error| format!("invalid offsite URL: {error}"))?;
+    if parsed.scheme() != "http" && parsed.scheme() != "https" {
+        return Err("offsite URL must be http(s)".into());
+    }
+    if config.prefix.contains("..") {
+        return Err("offsite prefix must not contain '..'".into());
+    }
+    if config.kind == "s3"
+        && (config.bucket.is_empty()
+            || config.region.is_empty()
+            || config.access_key.is_empty()
+            || config.secret_key.is_empty())
+    {
+        return Err("S3 needs bucket, region, access key and secret key".into());
+    }
+    Ok(config)
+}
+
 /// One scheduled action: restart, server backup or console command.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ScheduledTask {
@@ -239,6 +297,9 @@ pub struct Settings {
     /// Optional cap on the total size of all backups, in MB (0/None = no cap).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub backup_max_mb: Option<u32>,
+    /// Mirror finished backups to WebDAV or S3-compatible storage.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub offsite: Option<OffsiteConfig>,
     /// Alert (in-app + webhook) when the tick rate stays below `alert_tps_min`.
     #[serde(default = "default_true", skip_serializing_if = "is_true")]
     pub alert_tps: bool,
@@ -292,6 +353,7 @@ impl Default for Settings {
             public_sections: Vec::new(),
             backup_retention: default_retention(),
             backup_max_mb: None,
+            offsite: None,
             alert_tps: true,
             alert_tps_min: default_tps_min(),
             alert_disk: true,

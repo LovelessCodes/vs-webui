@@ -8,6 +8,7 @@ mod logfiles;
 mod metrics;
 mod mods;
 mod notifications;
+mod offsite;
 mod paths;
 mod playerhistory;
 mod players;
@@ -440,6 +441,7 @@ async fn run_scheduled_backup(state: &SharedState) {
                 .console
                 .push(format!("[manager] scheduled backup created: {name}"));
             notifications::notify(state, "backup", format!("Backup created: {name}"));
+            offsite::spawn_upload(state, name);
         }
         Ok(Err(error)) => {
             tracing::warn!("scheduled backup failed: {error}");

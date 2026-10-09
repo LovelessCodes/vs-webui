@@ -116,6 +116,18 @@ export interface TaskSummary {
   backup_before: boolean;
 }
 
+export interface OffsiteConfig {
+  kind: "webdav" | "s3";
+  url: string;
+  user?: string;
+  password?: string;
+  bucket?: string;
+  region?: string;
+  access_key?: string;
+  secret_key?: string;
+  prefix?: string;
+}
+
 export interface Settings {
   version?: string | null;
   flavor?: string;
@@ -136,6 +148,7 @@ export interface Settings {
   collect_tps?: boolean;
   backup_retention?: number;
   backup_max_mb?: number | null;
+  offsite?: OffsiteConfig | null;
   alert_tps?: boolean;
   alert_tps_min?: number;
   alert_disk?: boolean;
@@ -546,6 +559,7 @@ export const api = {
     timezone: string;
     backup_retention: number;
     backup_max_mb: number;
+    offsite: OffsiteConfig | null;
     webhook_url: string;
     webhook_events: string[];
     collect_tps: boolean;
@@ -571,6 +585,7 @@ export const api = {
       `/api/logs/${encodeURIComponent(name)}?tail=${tail}`,
     ),
   testWebhook: () => request<{ ok: boolean }>("/api/webhook/test", { method: "POST" }),
+  testOffsite: () => request<{ ok: boolean }>("/api/offsite/test", { method: "POST" }),
 
   tokens: () => request<{ tokens: ApiToken[] }>("/api/tokens"),
   createToken: (label: string, scope: "full" | "read") =>

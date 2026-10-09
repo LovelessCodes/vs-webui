@@ -74,6 +74,7 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/storage", get(storage_view))
         .route("/api/settings", get(get_settings).put(put_settings))
         .route("/api/webhook/test", post(test_webhook))
+        .route("/api/offsite/test", post(test_offsite))
         .route("/api/tokens", get(list_tokens).post(create_token))
         .route("/api/tokens/{id}", delete(revoke_token))
         .route("/api/metrics", get(metrics_history))
@@ -445,6 +446,9 @@ struct SettingsReq {
     backup_retention: Option<u32>,
     #[serde(default)]
     backup_max_mb: Option<u32>,
+    /// `null` clears the offsite target; omitting it leaves it untouched.
+    #[serde(default, deserialize_with = "deserialize_double_option")]
+    offsite: Option<Option<crate::settings::OffsiteConfig>>,
     #[serde(default)]
     webhook_url: Option<String>,
     #[serde(default)]
@@ -521,6 +525,18 @@ struct HistoryQuery {
 
 fn default_channel() -> String {
     "stable".into()
+}
+
+/// Distinguishes a missing field (leave untouched) from an explicit `null`
+/// (clear) for nested optional settings.
+fn deserialize_double_option<'de, D, T>(
+    deserializer: D,
+) -> Result<Option<Option<T>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: serde::Deserialize<'de>,
+{
+    Option::<T>::deserialize(deserializer).map(Some)
 }
 
 // ── handlers ────────────────────────────────────────────────────────────────
@@ -1283,6 +1299,13 @@ async fn put_settings(
             Some(crate::settings::validate_timezone(&value).map_err(ApiError::bad_request)?)
         }
     };
+    let offsite = match req.offsite {
+        None => None,
+        Some(None) => Some(None),
+        Some(Some(config)) => Some(Some(
+            crate::settings::validate_offsite(&config).map_err(ApiError::bad_request)?,
+        )),
+    };
     let webhook_url = match req.webhook_url {
         None => None,
         Some(value) if value.trim().is_empty() => Some(None),
@@ -1365,6 +1388,9 @@ async fn put_settings(
         if let Some(max_mb) = req.backup_max_mb {
             guard.backup_max_mb = (max_mb > 0).then_some(max_mb);
         }
+        if let Some(offsite) = offsite {
+            guard.offsite = offsite;
+        }
         if let Some(enabled) = req.alert_tps {
             guard.alert_tps = enabled;
         }
@@ -1400,6 +1426,24 @@ async fn test_webhook(
         .clone()
         .ok_or_else(|| ApiError::bad_request("no webhook URL configured"))?;
     crate::notifications::send(&url, "test", "vs-webui test notification")
+        .await
+        .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true })))
+}
+
+/// Uploads a small marker file to the configured offsite target.
+async fn test_offsite(
+    State(state): State<SharedState>,
+    _authed: Authed,
+) -> Result<Json<Value>, ApiError> {
+    let config = state
+        .settings
+        .lock()
+        .unwrap()
+        .offsite
+        .clone()
+        .ok_or_else(|| ApiError::bad_request("no offsite target configured"))?;
+    crate::offsite::test(&config)
         .await
         .map_err(ApiError::bad_request)?;
     Ok(Json(json!({ "ok": true })))
@@ -1719,10 +1763,14 @@ async fn create_backup_blocking(state: &SharedState) -> Result<String, ApiError>
             settings.backup_max_bytes(),
         )
     };
-    tokio::task::spawn_blocking(move || mods::create_mods_backup(&layout, retention, max_bytes))
-        .await
-        .map_err(|e| ApiError::internal(format!("backup task failed: {e}")))?
-        .map_err(ApiError::internal)
+    let name = tokio::task::spawn_blocking(move || {
+        mods::create_mods_backup(&layout, retention, max_bytes)
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("backup task failed: {e}")))?
+    .map_err(ApiError::internal)?;
+    crate::offsite::spawn_upload(state, name.clone());
+    Ok(name)
 }
 
 /// Server backup taken before a runtime change (version or flavor). Aborts the
@@ -1746,6 +1794,7 @@ async fn pre_change_backup(state: &SharedState) -> Result<Option<String>, ApiErr
     .map_err(|e| ApiError::internal(format!("backup task failed: {e}")))?
     .map_err(|e| ApiError::internal(format!("pre-change backup failed: {e}")))?;
     crate::notifications::notify(state, "backup", format!("Backup created: {name}"));
+    crate::offsite::spawn_upload(state, name.clone());
     Ok(Some(name))
 }
 
@@ -2546,6 +2595,7 @@ async fn create_backup(
     .map_err(|e| ApiError::internal(format!("backup task failed: {e}")))?
     .map_err(ApiError::internal)?;
     crate::notifications::notify(&state, "backup", format!("Backup created: {name}"));
+    crate::offsite::spawn_upload(&state, name.clone());
     Ok(Json(json!({ "ok": true, "name": name })))
 }
 

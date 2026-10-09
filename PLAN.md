@@ -305,8 +305,11 @@ at the bottom of this file.
 
 #### Backups
 
-- [ ] **Offsite targets** — mirror completed backups to S3-compatible storage or WebDAV
-      (credentials in settings); schedule and retention shared with local backups.
+- [x] **Offsite targets** — mirror completed backups to S3-compatible storage or WebDAV
+      (credentials in settings); schedule and retention shared with local backups. Uploads run
+      after every finished backup; failures raise an `offsite_failed` alert, and a Test button
+      verifies the target. S3 uses hand-rolled SigV4 validated against the AWS documentation
+      example.
 - [x] **Integrity verification** — zip-walk check after creation (creation fails and removes the
       archive when the check fails); a Verify action does the full CRC walk on demand, results
       are persisted and surfaced in the UI, and corrupt archives are excluded from count-based

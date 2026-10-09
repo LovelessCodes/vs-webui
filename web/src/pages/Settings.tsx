@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import ServerConfigForm from "@/components/config/ServerConfigForm";
 import AuditCard from "@/components/settings/AuditCard";
+import OffsiteCard from "@/components/settings/OffsiteCard";
 import ScheduleCard from "@/components/settings/ScheduleCard";
 import SessionsCard from "@/components/settings/SessionsCard";
 import TwoFactorCard from "@/components/settings/TwoFactorCard";
@@ -412,6 +413,8 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
+
+      <OffsiteCard />
 
       <Card className="self-start lg:col-span-2">
         <CardHeader>
