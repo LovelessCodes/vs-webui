@@ -599,7 +599,9 @@
     "stopToRestore": "Server stoppen zum Wiederherstellen",
     "restoreTitle": "Dieses Backup wiederherstellen",
     "deleteTitle": "Löschen",
-    "footer": "Zum Wiederherstellen muss der Server gestoppt sein. Server-Backups überschreiben Welt, Mods, Konfigs und Spielerdaten; Mods-Backups ersetzen nur Mods/."
+    "footer": "Zum Wiederherstellen muss der Server gestoppt sein. Server-Backups überschreiben Welt, Mods, Konfigs und Spielerdaten; Mods-Backups ersetzen nur Mods/.",
+    "restoreStartTitle": "Wiederherstellen und starten",
+    "restoreStartQuestion": "Stoppen, wiederherstellen, starten?"
   },
   "language": {
     "label": "Sprache",
@@ -686,7 +688,17 @@
       "standard": "Standard",
       "superflat": "Superflach"
     },
-    "pending": "Erstellt beim Start"
+    "pending": "Erstellt beim Start",
+    "duplicate": "Duplizieren",
+    "duplicateTitle": "{{name}} duplizieren",
+    "duplicateDescription": "Erstellt eine unabhängige Kopie der Weltdatei. Die Kopie wird nicht aktiviert.",
+    "duplicated": "Welt kopiert: {{name}}",
+    "rename": "Umbenennen",
+    "renameTitle": "{{name}} umbenennen",
+    "renameDescription": "Benennt die Weltdatei um. Die konfigurierte Welt wird automatisch angepasst.",
+    "renamed": "Welt umbenannt: {{name}}",
+    "configCreationHint": "Dies ist die Erstellungsvorlage: Diese Einstellungen gelten, wenn die Welt zum ersten Mal erzeugt wird.",
+    "configExistingHint": "Die Engine liest diese Einstellungen nur beim Erstellen der Welt. Für eine bestehende Welt ändere sie im Spiel über /worldconfig (geht auch über die Konsolenseite)."
   },
   "public": {
     "infoTitle": "Server-Infos",

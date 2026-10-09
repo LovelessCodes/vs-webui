@@ -88,6 +88,32 @@ fn validate_name(name: &str) -> Result<&str, String> {
     Ok(trimmed)
 }
 
+/// Validates a world name and its length (shared by create/duplicate/rename).
+fn validate_world_name(name: &str) -> Result<&str, String> {
+    let name = validate_name(name)?;
+    if name.chars().count() > MAX_WORLD_NAME {
+        return Err(format!(
+            "world name is too long (max {MAX_WORLD_NAME} characters)"
+        ));
+    }
+    Ok(name)
+}
+
+/// Refuses names that are taken on disk or already configured as the target.
+fn ensure_name_available(layout: &Layout, name: &str) -> Result<(), String> {
+    let saves = saves_dir(layout);
+    if saves.join(format!("{name}.{WORLD_EXT}")).exists() || saves.join(name).exists() {
+        return Err(format!("a world named {name} already exists"));
+    }
+    if active_world(layout)
+        .as_deref()
+        .is_some_and(|active| active.eq_ignore_ascii_case(name))
+    {
+        return Err(format!("a world named {name} is already configured"));
+    }
+    Ok(())
+}
+
 /// Path of a world: `<name>.vcdbs` (modern) or the legacy `<name>/` folder.
 pub fn world_path(layout: &Layout, name: &str) -> Result<PathBuf, String> {
     let name = validate_name(name)?;
@@ -314,22 +340,9 @@ pub fn write_world_config(layout: &Layout, _name: &str, content: &str) -> Result
 /// Writes a bootstrap `serverconfig.json` when the server has never run — the
 /// wizard fills the gap between install and the engine's first start.
 pub fn create_world(layout: &Layout, spec: &WorldSpec) -> Result<CreateOutcome, String> {
-    let name = validate_name(&spec.name)?;
-    if name.chars().count() > MAX_WORLD_NAME {
-        return Err(format!(
-            "world name is too long (max {MAX_WORLD_NAME} characters)"
-        ));
-    }
+    let name = validate_world_name(&spec.name)?;
+    ensure_name_available(layout, name)?;
     let saves = saves_dir(layout);
-    if saves.join(format!("{name}.{WORLD_EXT}")).exists() || saves.join(name).exists() {
-        return Err(format!("a world named {name} already exists"));
-    }
-    if active_world(layout)
-        .as_deref()
-        .is_some_and(|active| active.eq_ignore_ascii_case(name))
-    {
-        return Err(format!("a world named {name} is already configured"));
-    }
     let seed = match spec.seed.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
         Some(seed) if seed.chars().count() > MAX_SEED => {
             return Err(format!("seed is too long (max {MAX_SEED} characters)"));
@@ -409,6 +422,98 @@ pub fn create_world(layout: &Layout, spec: &WorldSpec) -> Result<CreateOutcome, 
         name: name.to_string(),
         first_boot,
     })
+}
+
+/// Copies a world (file plus sidecars, or a legacy folder) under a new name.
+/// The copy is independent; serverconfig is not touched.
+pub fn duplicate_save(layout: &Layout, name: &str, new_name: &str) -> Result<String, String> {
+    let source = world_path(layout, name)?;
+    let new = validate_world_name(new_name)?;
+    ensure_name_available(layout, new)?;
+    let saves = saves_dir(layout);
+    std::fs::create_dir_all(&saves).map_err(|e| format!("cannot create Saves dir: {e}"))?;
+
+    if source.is_dir() {
+        copy_dir(&source, &saves.join(new))?;
+    } else {
+        let target = saves.join(format!("{new}.{WORLD_EXT}"));
+        std::fs::copy(&source, &target).map_err(|e| format!("cannot copy world: {e}"))?;
+        for suffix in SIDECAR_SUFFIXES {
+            let sidecar = sidecar_path(&source, suffix);
+            if sidecar.is_file() {
+                std::fs::copy(&sidecar, sidecar_path(&target, suffix))
+                    .map_err(|e| format!("cannot copy world sidecar: {e}"))?;
+            }
+        }
+    }
+    Ok(new.to_string())
+}
+
+/// Renames a world on disk; when it was the configured world, serverconfig is
+/// repointed. Returns whether it was the active world.
+pub fn rename_save(layout: &Layout, name: &str, new_name: &str) -> Result<bool, String> {
+    let source = world_path(layout, name)?;
+    let new = validate_world_name(new_name)?;
+    if new.eq_ignore_ascii_case(name) {
+        return Err("the new name is the same as the current name".into());
+    }
+    ensure_name_available(layout, new)?;
+    let was_active = active_world(layout)
+        .as_deref()
+        .is_some_and(|active| active.eq_ignore_ascii_case(name));
+
+    let target = if source.is_dir() {
+        saves_dir(layout).join(new)
+    } else {
+        saves_dir(layout).join(format!("{new}.{WORLD_EXT}"))
+    };
+    std::fs::rename(&source, &target).map_err(|e| format!("cannot rename world: {e}"))?;
+    if !source.is_dir() {
+        for suffix in SIDECAR_SUFFIXES {
+            let sidecar = sidecar_path(&source, suffix);
+            if sidecar.is_file() {
+                let _ = std::fs::rename(&sidecar, sidecar_path(&target, suffix));
+            }
+        }
+    }
+
+    if was_active {
+        let path = serverconfig_path(layout);
+        let mut root = read_serverconfig(&path)?;
+        let location = format!(
+            "Saves/{}",
+            target
+                .file_name()
+                .map(|part| part.to_string_lossy().into_owned())
+                .unwrap_or_default()
+        );
+        let world_config = root
+            .entry("WorldConfig")
+            .or_insert_with(|| Value::Object(Default::default()))
+            .as_object_mut()
+            .ok_or("serverconfig.json WorldConfig is not an object")?;
+        world_config.insert("SaveFileLocation".into(), Value::String(location));
+        world_config.insert("WorldName".into(), Value::String(new.to_string()));
+        write_json_atomic(&path, &Value::Object(root))?;
+    }
+    Ok(was_active)
+}
+
+fn copy_dir(source: &Path, target: &Path) -> Result<(), String> {
+    std::fs::create_dir_all(target)
+        .map_err(|e| format!("cannot create {}: {e}", target.display()))?;
+    let entries =
+        std::fs::read_dir(source).map_err(|e| format!("cannot read {}: {e}", source.display()))?;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let out = target.join(entry.file_name());
+        if path.is_dir() {
+            copy_dir(&path, &out)?;
+        } else if path.is_file() {
+            std::fs::copy(&path, &out).map_err(|e| format!("cannot copy {}: {e}", path.display()))?;
+        }
+    }
+    Ok(())
 }
 
 fn play_style_lang_code(style: &str) -> &'static str {
@@ -889,6 +994,59 @@ mod tests {
         assert_eq!(saves.len(), 1);
         assert!(!saves[0].pending);
         assert!(saves[0].active);
+        let _ = std::fs::remove_dir_all(layout.root);
+    }
+
+    #[test]
+    fn duplicates_and_renames_worlds() {
+        let layout = test_layout("dupe");
+        let saves = saves_dir(&layout);
+        std::fs::create_dir_all(&saves).unwrap();
+        std::fs::write(saves.join("Home.vcdbs"), vec![1u8; 32]).unwrap();
+        std::fs::write(saves.join("Home.vcdbs-wal"), vec![2u8; 8]).unwrap();
+        std::fs::write(
+            serverconfig_path(&layout),
+            serde_json::json!({
+                "WorldConfig": { "WorldName": "Home", "SaveFileLocation": "Saves/Home.vcdbs" }
+            })
+            .to_string(),
+        )
+        .unwrap();
+
+        // Duplicate copies file + sidecar and refuses collisions.
+        assert_eq!(
+            duplicate_save(&layout, "Home", "Home Copy").unwrap(),
+            "Home Copy"
+        );
+        assert!(saves.join("Home Copy.vcdbs").exists());
+        assert!(saves.join("Home Copy.vcdbs-wal").exists());
+        assert!(duplicate_save(&layout, "Home", "Home Copy").is_err());
+
+        // Renaming the active world repoints serverconfig.
+        assert!(rename_save(&layout, "Home", "Home Renamed").unwrap());
+        assert!(!saves.join("Home.vcdbs").exists());
+        assert!(saves.join("Home Renamed.vcdbs").exists());
+        assert!(saves.join("Home Renamed.vcdbs-wal").exists());
+        let config: Value = serde_json::from_str(
+            &std::fs::read_to_string(serverconfig_path(&layout)).unwrap(),
+        )
+        .unwrap();
+        let location = config["WorldConfig"]["SaveFileLocation"].as_str().unwrap();
+        assert!(location.ends_with("Home Renamed.vcdbs"));
+        assert_eq!(config["WorldConfig"]["WorldName"], "Home Renamed");
+
+        // Renaming a non-active world leaves serverconfig alone.
+        let before = std::fs::read_to_string(serverconfig_path(&layout)).unwrap();
+        assert!(!rename_save(&layout, "Home Copy", "Copy 2").unwrap());
+        assert_eq!(
+            std::fs::read_to_string(serverconfig_path(&layout)).unwrap(),
+            before
+        );
+
+        // Collisions and no-op renames are refused.
+        assert!(rename_save(&layout, "Copy 2", "Home Renamed").is_err());
+        assert!(rename_save(&layout, "Copy 2", "Copy 2").is_err());
+        assert!(duplicate_save(&layout, "Copy 2", "Home Renamed").is_err());
         let _ = std::fs::remove_dir_all(layout.root);
     }
 

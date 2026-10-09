@@ -599,7 +599,9 @@
     "stopToRestore": "Stop the server to restore",
     "restoreTitle": "Restore this backup",
     "deleteTitle": "Delete",
-    "footer": "Restoring requires the server to be stopped. Server backups overwrite world, mods, configs and player data; mods backups only replace Mods/."
+    "footer": "Restoring requires the server to be stopped. Server backups overwrite world, mods, configs and player data; mods backups only replace Mods/.",
+    "restoreStartTitle": "Restore and start",
+    "restoreStartQuestion": "Stop, restore, start?"
   },
   "language": {
     "label": "Language",
@@ -686,7 +688,17 @@
       "standard": "Standard",
       "superflat": "Superflat"
     },
-    "pending": "Pending creation"
+    "pending": "Pending creation",
+    "duplicate": "Duplicate",
+    "duplicateTitle": "Duplicate {{name}}",
+    "duplicateDescription": "Creates an independent copy of the world file. The copy is not activated.",
+    "duplicated": "World copied: {{name}}",
+    "rename": "Rename",
+    "renameTitle": "Rename {{name}}",
+    "renameDescription": "Renames the world file. The configured world is repointed automatically.",
+    "renamed": "World renamed: {{name}}",
+    "configCreationHint": "This is the creation template: these settings are applied when the world is first generated.",
+    "configExistingHint": "The engine reads these settings only at world creation. For an existing world, change them in-game via /worldconfig (the console page works too)."
   },
   "public": {
     "infoTitle": "Server info",

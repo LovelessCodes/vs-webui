@@ -45,12 +45,15 @@ All captures in [`web/screenshots/`](web/screenshots/) (English + `de/`), regene
   relevance/trending/downloads/… sorting, favorites) with dependency-aware installs,
   update-all, pins, a downloads sheet, automatic pre-change backups and missing-dependency
   banners.
+- **Worlds** — creation wizard (seed, playstyle, world-generation overrides), duplicate/rename,
+  upload/download, active-world switching and the creation-template settings editor.
 - **Config editors** — `ModConfig/*.json` with a live form editor and a bundled Monaco editor
   (JSON5-safe), `serverconfig.json` as a form plus raw JSON, and the Stratum configs.
 - **Players** — online list from join/leave events, whitelist read/write and moderation
   commands (kick, ban, op, …).
 - **Backups** — manual and scheduled (daily `HH:MM`) server/mods backups, optional pre-restart
-  backup, restore, download and configurable retention.
+  and automatic pre-version/flavor-change backups, restore (stopped server only, or
+  stop-restore-start in one action), download and configurable retention.
 - **Users & access** — owner/operator/viewer accounts with per-user passwords (the first owner
   comes from `VS_WEB_PASSWORD`, or is generated on first boot and logged once), owner-only user
   management, read-only viewers, **optional TOTP two-factor** with one-time recovery codes,

@@ -147,6 +147,20 @@ impl Supervisor {
         let _ = self.tx.send(Cmd::Stop).await;
     }
 
+    /// Stops the server and waits until the process is gone (the graceful stop
+    /// can take ~15 s). Returns false when it did not stop in time.
+    pub async fn stop_and_wait(&self, timeout: Duration) -> bool {
+        self.stop().await;
+        let deadline = Instant::now() + timeout;
+        while Instant::now() < deadline {
+            if !self.is_running() {
+                return true;
+            }
+            tokio::time::sleep(Duration::from_millis(250)).await;
+        }
+        !self.is_running()
+    }
+
     pub async fn restart(&self) {
         let _ = self.tx.send(Cmd::Restart).await;
     }

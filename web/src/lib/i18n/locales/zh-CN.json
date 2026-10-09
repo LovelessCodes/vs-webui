@@ -599,7 +599,9 @@
     "stopToRestore": "停止服务器后才能恢复",
     "restoreTitle": "恢复此备份",
     "deleteTitle": "删除",
-    "footer": "恢复前必须停止服务器。服务器备份会覆盖世界、模组、配置和玩家数据；模组备份仅替换 Mods/。"
+    "footer": "恢复前必须停止服务器。服务器备份会覆盖世界、模组、配置和玩家数据；模组备份仅替换 Mods/。",
+    "restoreStartTitle": "恢复并启动",
+    "restoreStartQuestion": "停止、恢复并启动？"
   },
   "language": {
     "label": "语言",
@@ -686,7 +688,17 @@
       "standard": "标准",
       "superflat": "超平坦"
     },
-    "pending": "启动时生成"
+    "pending": "启动时生成",
+    "duplicate": "复制",
+    "duplicateTitle": "复制 {{name}}",
+    "duplicateDescription": "创建世界文件的独立副本；副本不会自动设为当前世界。",
+    "duplicated": "世界已复制：{{name}}",
+    "rename": "重命名",
+    "renameTitle": "重命名 {{name}}",
+    "renameDescription": "重命名世界文件；已配置的世界会自动指向新名称。",
+    "renamed": "世界已重命名：{{name}}",
+    "configCreationHint": "这是创建模板：这些设置会在世界首次生成时应用。",
+    "configExistingHint": "引擎仅在创建世界时读取这些设置。对于已存在的世界，请在游戏内通过 /worldconfig 修改（控制台页面同样可用）。"
   },
   "public": {
     "infoTitle": "服务器信息",

@@ -1,9 +1,11 @@
 import {
   AlertTriangle,
+  Copy,
   Download,
   FileJson2,
   HardDrive,
   Loader2,
+  Pencil,
   Plus,
   Trash2,
   Upload,
@@ -18,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ScrollArea } from "@/components/ui/scroll-area";
 import CreateWorldSheet from "@/components/worlds/CreateWorldSheet";
 import WorldConfigSheet from "@/components/worlds/WorldConfigSheet";
+import WorldNameSheet from "@/components/worlds/WorldNameSheet";
 import {
   useActivateSave,
   useDeleteSave,
@@ -39,6 +42,10 @@ export default function Worlds() {
   const [confirm, setConfirm] = useState<string | null>(null);
   const [configFor, setConfigFor] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [nameSheet, setNameSheet] = useState<{
+    mode: "duplicate" | "rename";
+    world: string;
+  } | null>(null);
 
   const running = status.data?.status.status === "running";
   const mutationError = activate.error ?? remove.error ?? upload.error;
@@ -184,6 +191,32 @@ export default function Worlds() {
                                 </Button>
                               )}
                               {!save.pending && (
+                                <Button
+                                  disabled={running}
+                                  onClick={() =>
+                                    setNameSheet({ mode: "duplicate", world: save.name })
+                                  }
+                                  size="icon-sm"
+                                  title={t("worlds.duplicate")}
+                                  variant="ghost"
+                                >
+                                  <Copy />
+                                </Button>
+                              )}
+                              {!save.pending && (
+                                <Button
+                                  disabled={running}
+                                  onClick={() =>
+                                    setNameSheet({ mode: "rename", world: save.name })
+                                  }
+                                  size="icon-sm"
+                                  title={t("worlds.rename")}
+                                  variant="ghost"
+                                >
+                                  <Pencil />
+                                </Button>
+                              )}
+                              {!save.pending && (
                                 <a
                                   className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }))}
                                   href={`/api/saves/${encodeURIComponent(save.name)}/download`}
@@ -227,8 +260,19 @@ export default function Worlds() {
           </CardContent>
         </Card>
 
-        <WorldConfigSheet name={configFor} onClose={() => setConfigFor(null)} />
+        <WorldConfigSheet
+          name={configFor}
+          onClose={() => setConfigFor(null)}
+          pending={
+            saves.data?.saves.find((save) => save.name === configFor)?.pending ?? false
+          }
+        />
         <CreateWorldSheet onOpenChange={setCreateOpen} open={createOpen} />
+        <WorldNameSheet
+          mode={nameSheet?.mode ?? null}
+          onClose={() => setNameSheet(null)}
+          world={nameSheet?.world ?? null}
+        />
       </div>
     </ScrollArea>
   );

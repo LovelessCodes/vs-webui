@@ -113,6 +113,8 @@ pub fn router(state: SharedState) -> Router {
         )
         .route("/api/saves/{name}/download", get(download_save))
         .route("/api/saves/{name}/activate", post(activate_save))
+        .route("/api/saves/{name}/duplicate", post(duplicate_save))
+        .route("/api/saves/{name}/rename", post(rename_save))
         .route("/api/saves/{name}/config", get(get_world_config).put(put_world_config))
         .route("/api/saves/{name}", delete(delete_save))
         .route("/api/whitelist/remove", post(remove_whitelist))
@@ -1179,6 +1181,8 @@ async fn install_version(
             req.version, req.channel
         )));
     }
+    // Protect the world before swapping the runtime.
+    pre_change_backup(&state).await?;
 
     {
         let mut guard = state.install.lock().unwrap();
@@ -1227,6 +1231,10 @@ async fn set_active_version(
             "version {} is not installed",
             req.version
         )));
+    }
+    let changing = state.settings.lock().unwrap().version.as_deref() != Some(req.version.as_str());
+    if changing {
+        pre_change_backup(&state).await?;
     }
     let settings = {
         let mut guard = state.settings.lock().unwrap();
@@ -1698,6 +1706,24 @@ async fn create_backup_blocking(state: &SharedState) -> Result<String, ApiError>
         .map_err(ApiError::internal)
 }
 
+/// Server backup taken before a runtime change (version or flavor). Aborts the
+/// change when the backup fails; skipped when no world exists yet.
+async fn pre_change_backup(state: &SharedState) -> Result<Option<String>, ApiError> {
+    if crate::saves::list_saves(&state.layout).is_empty() {
+        return Ok(None);
+    }
+    let layout = state.layout.clone();
+    let retention = state.settings.lock().unwrap().backup_retention.max(1) as usize;
+    let name = tokio::task::spawn_blocking(move || {
+        crate::backups::create_server_backup(&layout, retention)
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("backup task failed: {e}")))?
+    .map_err(|e| ApiError::internal(format!("pre-change backup failed: {e}")))?;
+    crate::notifications::notify(state, "backup", format!("Backup created: {name}"));
+    Ok(Some(name))
+}
+
 async fn mods_install(
     State(state): State<SharedState>,
     _authed: Authed,
@@ -1995,6 +2021,8 @@ async fn stratum_install(
         .release(&tag)
         .await
         .map_err(|message| ApiError::new(StatusCode::BAD_GATEWAY, message))?;
+    // Protect the world before swapping the runtime.
+    pre_change_backup(&state).await?;
 
     {
         let mut guard = state.install.lock().unwrap();
@@ -2063,6 +2091,10 @@ async fn set_flavor(
         if !installed {
             return Err(ApiError::bad_request("install a Stratum release first"));
         }
+    }
+    let changing = state.settings.lock().unwrap().flavor != flavor;
+    if changing {
+        pre_change_backup(&state).await?;
     }
     let settings = {
         let mut guard = state.settings.lock().unwrap();
@@ -2165,6 +2197,53 @@ async fn delete_save(
     .map_err(|e| ApiError::internal(format!("world task failed: {e}")))?
     .map_err(ApiError::bad_request)?;
     Ok(Json(json!({ "ok": true })))
+}
+
+#[derive(Deserialize)]
+struct WorldNameReq {
+    name: String,
+}
+
+async fn duplicate_save(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(name): UrlPath<String>,
+    Json(req): Json<WorldNameReq>,
+) -> Result<Json<Value>, ApiError> {
+    if state.supervisor.is_running() {
+        return Err(ApiError::bad_request(
+            "stop the server before copying worlds",
+        ));
+    }
+    let layout = state.layout.clone();
+    let new_name = tokio::task::spawn_blocking(move || {
+        crate::saves::duplicate_save(&layout, &name, &req.name)
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("world task failed: {e}")))?
+    .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true, "name": new_name })))
+}
+
+async fn rename_save(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    UrlPath(name): UrlPath<String>,
+    Json(req): Json<WorldNameReq>,
+) -> Result<Json<Value>, ApiError> {
+    if state.supervisor.is_running() {
+        return Err(ApiError::bad_request(
+            "stop the server before renaming worlds",
+        ));
+    }
+    let layout = state.layout.clone();
+    let (new_name, active) = tokio::task::spawn_blocking(move || {
+        crate::saves::rename_save(&layout, &name, &req.name).map(|active| (req.name, active))
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("world task failed: {e}")))?
+    .map_err(ApiError::bad_request)?;
+    Ok(Json(json!({ "ok": true, "name": new_name, "active": active })))
 }
 
 async fn get_world_config(
@@ -2439,23 +2518,47 @@ async fn create_backup(
     Ok(Json(json!({ "ok": true, "name": name })))
 }
 
+#[derive(Deserialize)]
+struct RestoreQuery {
+    /// Stop the server, restore, then start it again.
+    #[serde(default)]
+    start_after: Option<bool>,
+}
+
 async fn restore_backup(
     State(state): State<SharedState>,
     _authed: Authed,
     UrlPath(name): UrlPath<String>,
+    Query(query): Query<RestoreQuery>,
 ) -> Result<Json<Value>, ApiError> {
+    let start_after = query.start_after.unwrap_or(false);
     if state.supervisor.is_running() {
-        return Err(ApiError::new(
-            StatusCode::CONFLICT,
-            "stop the server before restoring a backup",
-        ));
+        if !start_after {
+            return Err(ApiError::new(
+                StatusCode::CONFLICT,
+                "stop the server before restoring a backup",
+            ));
+        }
+        // One confirmed action: stop, restore, start again.
+        if !state
+            .supervisor
+            .stop_and_wait(std::time::Duration::from_secs(45))
+            .await
+        {
+            return Err(ApiError::internal(
+                "the server would not stop; restore aborted",
+            ));
+        }
     }
     let layout = state.layout.clone();
     tokio::task::spawn_blocking(move || crate::backups::restore_backup(&layout, &name))
         .await
         .map_err(|e| ApiError::internal(format!("restore task failed: {e}")))?
         .map_err(ApiError::bad_request)?;
-    Ok(Json(json!({ "ok": true })))
+    if start_after {
+        state.supervisor.start().await;
+    }
+    Ok(Json(json!({ "ok": true, "started": start_after })))
 }
 
 async fn delete_backup(

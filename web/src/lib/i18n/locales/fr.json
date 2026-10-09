@@ -599,7 +599,9 @@
     "stopToRestore": "Arrêtez le serveur pour restaurer",
     "restoreTitle": "Restaurer cette sauvegarde",
     "deleteTitle": "Supprimer",
-    "footer": "La restauration exige le serveur arrêté. Les sauvegardes serveur écrasent monde, mods, configs et joueurs ; celles des mods ne remplacent que Mods/."
+    "footer": "La restauration exige le serveur arrêté. Les sauvegardes serveur écrasent monde, mods, configs et joueurs ; celles des mods ne remplacent que Mods/.",
+    "restoreStartTitle": "Restaurer et démarrer",
+    "restoreStartQuestion": "Arrêter, restaurer, démarrer ?"
   },
   "language": {
     "label": "Langue",
@@ -686,7 +688,17 @@
       "standard": "Standard",
       "superflat": "Superplat"
     },
-    "pending": "Créé au démarrage"
+    "pending": "Créé au démarrage",
+    "duplicate": "Dupliquer",
+    "duplicateTitle": "Dupliquer {{name}}",
+    "duplicateDescription": "Crée une copie indépendante du fichier de monde. La copie n'est pas activée.",
+    "duplicated": "Monde copié : {{name}}",
+    "rename": "Renommer",
+    "renameTitle": "Renommer {{name}}",
+    "renameDescription": "Renomme le fichier du monde. Le monde configuré est mis à jour automatiquement.",
+    "renamed": "Monde renommé : {{name}}",
+    "configCreationHint": "Ceci est le modèle de création : ces réglages s'appliquent lors de la première génération du monde.",
+    "configExistingHint": "Le moteur ne lit ces réglages qu'à la création du monde. Pour un monde existant, modifiez-les en jeu via /worldconfig (la page console fonctionne aussi)."
   },
   "public": {
     "infoTitle": "Infos serveur",

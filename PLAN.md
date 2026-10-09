@@ -284,11 +284,13 @@ at the bottom of this file.
       engine creates the requested world instead of defaults. Bootstraps a complete-enough
       config (bundled 1.22.x default roles) when the server has never run; the configured
       world shows as a pending entry until the server generates it.
-- [ ] **Edit inactive worlds** — open the WorldConfig editor (read + copy settings) for any
-      world, not just the active one; copy a config between worlds.
-- [ ] **Duplicate / rename world** — copy a `.vcdbs` plus SQLite sidecars and repoint
-      WorldConfig.
-- [ ] **Stop-restore-start flow** — one confirmed action that stops the server, restores the
+- [ ] **Edit inactive worlds** — the engine keeps existing-world settings inside the save (a
+      protobuf blob) and reads `serverconfig.json > WorldConfig` only at world creation, so the
+      settings sheet is now explicit about being a creation template. Follow-up: live editing of
+      the running world via `/worldconfig` commands (read values through the console probe).
+- [x] **Duplicate / rename world** — copy a `.vcdbs` plus SQLite sidecars (or a legacy folder)
+      and rename worlds; the configured world is repointed automatically.
+- [x] **Stop-restore-start flow** — one confirmed action that stops the server, restores the
       selected backup and starts again, with progress feedback.
 
 #### Alerting depth
@@ -308,8 +310,9 @@ at the bottom of this file.
 - [ ] **Integrity verification** — zip-walk check after creation; surface corrupt archives in
       the UI and exclude them from retention accounting.
 - [ ] **Size-based retention** — optional max total backup size in addition to count.
-- [ ] **Pre-runtime-change backups** — automatic backup before version install/switch and flavor
-      changes (mirrors the existing pre-mod-change backups).
+- [x] **Pre-runtime-change backups** — automatic backup before version install/switch and flavor
+      changes (mirrors the existing pre-mod-change backups). Aborts the change when the backup
+      fails.
 - [ ] **Restore progress** — stream extraction/import progress for large world restores.
 
 #### Scheduling

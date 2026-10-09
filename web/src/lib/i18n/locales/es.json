@@ -599,7 +599,9 @@
     "stopToRestore": "Detén el servidor para restaurar",
     "restoreTitle": "Restaurar esta copia",
     "deleteTitle": "Borrar",
-    "footer": "Restaurar requiere el servidor detenido. Las copias del servidor sobrescriben mundo, mods, configs y jugadores; las de mods solo reemplazan Mods/."
+    "footer": "Restaurar requiere el servidor detenido. Las copias del servidor sobrescriben mundo, mods, configs y jugadores; las de mods solo reemplazan Mods/.",
+    "restoreStartTitle": "Restaurar e iniciar",
+    "restoreStartQuestion": "¿Detener, restaurar e iniciar?"
   },
   "language": {
     "label": "Idioma",
@@ -686,7 +688,17 @@
       "standard": "Estándar",
       "superflat": "Superplano"
     },
-    "pending": "Se creará al iniciar"
+    "pending": "Se creará al iniciar",
+    "duplicate": "Duplicar",
+    "duplicateTitle": "Duplicar {{name}}",
+    "duplicateDescription": "Crea una copia independiente del archivo del mundo. La copia no se activa.",
+    "duplicated": "Mundo copiado: {{name}}",
+    "rename": "Renombrar",
+    "renameTitle": "Renombrar {{name}}",
+    "renameDescription": "Renombra el archivo del mundo. El mundo configurado se actualiza automáticamente.",
+    "renamed": "Mundo renombrado: {{name}}",
+    "configCreationHint": "Esta es la plantilla de creación: estos ajustes se aplican cuando el mundo se genera por primera vez.",
+    "configExistingHint": "El motor lee estos ajustes solo al crear el mundo. Para un mundo existente, cámbialos en el juego con /worldconfig (también sirve la página de consola)."
   },
   "public": {
     "infoTitle": "Información del servidor",

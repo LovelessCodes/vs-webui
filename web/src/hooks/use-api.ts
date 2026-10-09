@@ -565,6 +565,38 @@ export function useDeleteSave() {
   });
 }
 
+export function useDuplicateSave() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ name, newName }: { name: string; newName: string }) =>
+      api.duplicateSave(name, newName),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: (data) => toast.success(i18n.t("worlds.duplicated", { name: data.name })),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["saves"] });
+      void queryClient.invalidateQueries({ queryKey: ["storage"] });
+    },
+  });
+}
+
+export function useRenameSave() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ name, newName }: { name: string; newName: string }) =>
+      api.renameSave(name, newName),
+    onError: (error) =>
+      toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
+    onSuccess: (data) => toast.success(i18n.t("worlds.renamed", { name: data.name })),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["saves"] });
+      void queryClient.invalidateQueries({ queryKey: ["status"] });
+      void queryClient.invalidateQueries({ queryKey: ["serverconfig"] });
+      void queryClient.invalidateQueries({ queryKey: ["storage"] });
+    },
+  });
+}
+
 export function useWorldConfig(name: string | null) {
   return useQuery({
     queryKey: ["saves", name, "config"],
@@ -811,7 +843,8 @@ export function useCreateBackup() {
 export function useRestoreBackup() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (name: string) => api.restoreBackup(name),
+    mutationFn: ({ name, startAfter }: { name: string; startAfter?: boolean }) =>
+      api.restoreBackup(name, startAfter),
     onError: (error) =>
       toast.error(i18n.t("toasts.failed", { message: errorMessage(error) })),
     onSettled: () => {
@@ -822,7 +855,7 @@ export function useRestoreBackup() {
       void queryClient.invalidateQueries({ queryKey: ["serverconfig"] });
       void queryClient.invalidateQueries({ queryKey: ["status"] });
     },
-    onSuccess: (_data, name) => toast.success(i18n.t("toasts.restored", { name })),
+    onSuccess: (_data, { name }) => toast.success(i18n.t("toasts.restored", { name })),
   });
 }
 

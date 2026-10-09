@@ -16,12 +16,15 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useSaveWorldConfig, useWorldConfig } from "@/hooks/use-api";
 import { errorMessage } from "@/lib/format";
 
-/** Edits `worldconfig.json` inside a save folder (live form or Monaco). */
+/** Edits the world's creation settings (serverconfig.json > WorldConfig). */
 export default function WorldConfigSheet({
   name,
+  pending,
   onClose,
 }: {
   name: string | null;
+  /** The world has not been generated yet, so the config is its template. */
+  pending: boolean;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -64,6 +67,11 @@ export default function WorldConfigSheet({
         {config.data?.missing && (
           <p className="border-b border-warning/30 bg-warning/5 px-3 py-2 text-[11px] text-warning">
             {t("worlds.configMissing")}
+          </p>
+        )}
+        {!config.data?.missing && (
+          <p className="border-b border-border bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
+            {pending ? t("worlds.configCreationHint") : t("worlds.configExistingHint")}
           </p>
         )}
         {save.isError && (

@@ -587,6 +587,16 @@ export const api = {
       `/api/saves/${encodeURIComponent(name)}/activate`,
       { method: "POST" },
     ),
+  duplicateSave: (name: string, newName: string) =>
+    request<{ ok: boolean; name: string }>(
+      `/api/saves/${encodeURIComponent(name)}/duplicate`,
+      { method: "POST", body: JSON.stringify({ name: newName }) },
+    ),
+  renameSave: (name: string, newName: string) =>
+    request<{ ok: boolean; name: string; active: boolean }>(
+      `/api/saves/${encodeURIComponent(name)}/rename`,
+      { method: "POST", body: JSON.stringify({ name: newName }) },
+    ),
   deleteSave: (name: string) =>
     request<{ ok: boolean }>(`/api/saves/${encodeURIComponent(name)}`, { method: "DELETE" }),
   worldConfig: (name: string) =>
@@ -701,10 +711,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ kind }),
     }),
-  restoreBackup: (name: string) =>
-    request<{ ok: boolean }>(`/api/backups/${encodeURIComponent(name)}/restore`, {
-      method: "POST",
-    }),
+  restoreBackup: (name: string, startAfter = false) =>
+    request<{ ok: boolean; started: boolean }>(
+      `/api/backups/${encodeURIComponent(name)}/restore${startAfter ? "?start_after=true" : ""}`,
+      { method: "POST" },
+    ),
   deleteBackup: (name: string) =>
     request<{ ok: boolean }>(`/api/backups/${encodeURIComponent(name)}`, {
       method: "DELETE",

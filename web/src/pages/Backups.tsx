@@ -27,7 +27,7 @@ export default function Backups() {
   const remove = useDeleteBackup();
   const [confirm, setConfirm] = useState<{
     name: string;
-    action: "restore" | "delete";
+    action: "restore" | "restore-start" | "delete";
   } | null>(null);
 
   const running = status.data?.status.status === "running";
@@ -122,26 +122,32 @@ export default function Backups() {
                         {confirming ? (
                           <>
                             <span className="text-[11px] text-muted-foreground">
-                              {confirm?.action === "restore"
-                                ? t("backups.restoreQuestion")
-                                : t("backups.deleteQuestion")}
+                              {confirm?.action === "delete"
+                                ? t("backups.deleteQuestion")
+                                : confirm?.action === "restore-start"
+                                  ? t("backups.restoreStartQuestion")
+                                  : t("backups.restoreQuestion")}
                             </span>
                             <Button
                               disabled={restore.isPending || remove.isPending}
                               onClick={() => {
-                                if (confirm?.action === "restore") {
-                                  restore.mutate(backup.name, {
-                                    onSuccess: () => setConfirm(null),
-                                  });
-                                } else {
+                                if (confirm?.action === "delete") {
                                   remove.mutate(backup.name, {
                                     onSuccess: () => setConfirm(null),
                                   });
+                                } else {
+                                  restore.mutate(
+                                    {
+                                      name: backup.name,
+                                      startAfter: confirm?.action === "restore-start",
+                                    },
+                                    { onSuccess: () => setConfirm(null) },
+                                  );
                                 }
                               }}
                               size="sm"
                               variant={
-                                confirm?.action === "restore" ? "outline-warning" : "destructive"
+                                confirm?.action === "delete" ? "destructive" : "outline-warning"
                               }
                             >
                               {t("common.yes")}
@@ -160,11 +166,17 @@ export default function Backups() {
                               <Download />
                             </a>
                             <Button
-                              disabled={running}
-                              onClick={() => setConfirm({ name: backup.name, action: "restore" })}
+                              onClick={() =>
+                                setConfirm({
+                                  name: backup.name,
+                                  action: running ? "restore-start" : "restore",
+                                })
+                              }
                               size="icon-sm"
                               title={
-                                running ? t("backups.stopToRestore") : t("backups.restoreTitle")
+                                running
+                                  ? t("backups.restoreStartTitle")
+                                  : t("backups.restoreTitle")
                               }
                               variant="ghost"
                             >
