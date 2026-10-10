@@ -109,6 +109,7 @@ export default function LiveEditor({
           <div className="flex items-center gap-2">
             <Button
               aria-expanded={!isCollapsed}
+              aria-label={isCollapsed ? t("configs.expand") : t("configs.collapse")}
               onClick={() => toggleCollapse(path)}
               size="icon-xs"
               variant="outline"
@@ -133,6 +134,7 @@ export default function LiveEditor({
                 <div className="flex items-start gap-2" key={`${key}:${index}`}>
                   <div className="min-w-0 flex-1">{renderValue(item, [...path, index], index)}</div>
                   <Button
+                    aria-label={t("common.remove")}
                     onClick={() => removeArrayItem(path, index)}
                     size="icon-xs"
                     variant="destructive"
@@ -157,6 +159,7 @@ export default function LiveEditor({
           <div className="flex items-center gap-2">
             <Button
               aria-expanded={!isCollapsed}
+              aria-label={isCollapsed ? t("configs.expand") : t("configs.collapse")}
               onClick={() => toggleCollapse(path)}
               size="icon-xs"
               variant="outline"
@@ -211,9 +214,9 @@ export default function LiveEditor({
             value={value}
           >
             <NumberFieldGroup>
-              <NumberFieldDecrement />
+              <NumberFieldDecrement aria-label={t("configs.decrement")} />
               <NumberFieldInput />
-              <NumberFieldIncrement />
+              <NumberFieldIncrement aria-label={t("configs.increment")} />
             </NumberFieldGroup>
           </NumberField>
         </div>

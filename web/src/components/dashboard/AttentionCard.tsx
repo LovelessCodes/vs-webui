@@ -12,6 +12,8 @@ interface AttentionItem {
   severity: "error" | "warning" | "info";
   label: string;
   to?: "/console" | "/mods" | "/versions" | "/settings" | "/backups";
+  /** External link (e.g. the manager release page). */
+  href?: string;
 }
 
 const severityIcon = {
@@ -71,6 +73,14 @@ export default function AttentionCard() {
       severity: "info",
       label: t("dashboard.attentionStratumUpdate", { tag: data.updates.stratum }),
       to: "/versions",
+    });
+  }
+  if (data?.updates?.manager) {
+    items.push({
+      key: "managerUpdate",
+      severity: "info",
+      label: t("dashboard.attentionManagerUpdate", { version: data.updates.manager }),
+      href: "https://github.com/LovelessCodes/vs-webui/releases",
     });
   }
 
@@ -172,6 +182,15 @@ export default function AttentionCard() {
                     <Link className="hover:underline underline-offset-4" to={item.to}>
                       {body}
                     </Link>
+                  ) : item.href ? (
+                    <a
+                      className="hover:underline underline-offset-4"
+                      href={item.href}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      {body}
+                    </a>
                   ) : (
                     body
                   )}

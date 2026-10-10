@@ -93,6 +93,7 @@ async fn main() -> anyhow::Result<()> {
         player_history: playerhistory::PlayerHistory::load(&layout.config_dir()),
         chat: Default::default(),
         profiles: profiles::ProfilesStore::load(&layout.config_dir()),
+        manager_update: Mutex::new(None),
         restore: Default::default(),
         install: Mutex::new(None),
         started: std::time::Instant::now(),
@@ -104,6 +105,7 @@ async fn main() -> anyhow::Result<()> {
     metrics::spawn_tps_collector(state.clone());
     metrics::spawn_alert_monitor(state.clone());
     spawn_cache_warmer(state.clone());
+    spawn_update_checker(state.clone());
 
     // Chat timeline: every console line is parsed into the chat page model.
     {
@@ -490,6 +492,40 @@ async fn run_scheduled_backup(state: &SharedState) {
             }
         }
     }
+}
+
+/// Checks GitHub for a newer vs-webui release (env `VS_UPDATE_URL` overrides
+/// the endpoint, e.g. for tests); the result lands in `/api/status`.
+fn spawn_update_checker(state: SharedState) {
+    tokio::spawn(async move {
+        let url = std::env::var("VS_UPDATE_URL").unwrap_or_else(|_| {
+            "https://api.github.com/repos/LovelessCodes/vs-webui/releases/latest".into()
+        });
+        let Ok(client) = reqwest::Client::builder()
+            .user_agent(format!("vs-webui/{}", env!("CARGO_PKG_VERSION")))
+            .timeout(Duration::from_secs(15))
+            .build()
+        else {
+            return;
+        };
+        loop {
+            let update = async {
+                let response = client.get(&url).send().await.ok()?;
+                if !response.status().is_success() {
+                    return None;
+                }
+                let value: serde_json::Value = response.json().await.ok()?;
+                let tag = value.get("tag_name").and_then(|tag| tag.as_str())?;
+                let version = tag.trim_start_matches('v').trim().to_string();
+                (versions::compare_versions(&version, env!("CARGO_PKG_VERSION"))
+                    == std::cmp::Ordering::Greater)
+                    .then_some(version)
+            }
+            .await;
+            *state.manager_update.lock().unwrap() = update;
+            tokio::time::sleep(Duration::from_secs(6 * 3600)).await;
+        }
+    });
 }
 
 /// Keeps the version/Stratum caches warm so `status` can report update notices

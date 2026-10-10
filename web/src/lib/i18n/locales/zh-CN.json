@@ -113,6 +113,10 @@
     "worlds": {
       "title": "世界",
       "description": "存档与世界设置"
+    },
+    "chat": {
+      "title": "聊天",
+      "description": "游戏内聊天、加入与公告"
     }
   },
   "login": {
@@ -224,7 +228,15 @@
     "automationTimezone": "时区",
     "range15m": "15分",
     "range24h": "24时",
-    "range7d": "7天"
+    "range7d": "7天",
+    "onboardingTitle": "设置你的服务器",
+    "onboardingDescription": "几步之后玩家即可加入。",
+    "onboardingInstall": "安装游戏版本",
+    "onboardingSettings": "检查服务器设置",
+    "onboardingWorld": "创建或生成世界",
+    "onboardingStart": "启动服务器",
+    "onboardingHint": "首次启动时服务器会生成配置和默认世界；之后都可以调整。",
+    "attentionManagerUpdate": "管理器有可用更新：{{version}}"
   },
   "console": {
     "live": "实时",
@@ -244,7 +256,14 @@
     "viewingFile": "正在查看 {{name}}",
     "backToLive": "返回实时",
     "export": "导出",
-    "truncated": "已省略更早的行"
+    "truncated": "已省略更早的行",
+    "levelAll": "全部",
+    "levelWarnings": "警告",
+    "levelErrors": "错误",
+    "searchLogsPlaceholder": "搜索所有日志文件…",
+    "searchNoMatches": "日志中没有匹配项。",
+    "crashTitle": "崩溃报告——退出码 {{code}}，运行时长 {{uptime}}",
+    "crashCopy": "复制报告"
   },
   "mods": {
     "updateAll": "全部更新",
@@ -352,7 +371,11 @@
     "parseError": "解析错误：{{message}}",
     "emptyArray": "空数组",
     "rootPrimitive": "根值为原始类型。",
-    "autoSave": "更改会自动保存"
+    "autoSave": "更改会自动保存",
+    "expand": "展开",
+    "collapse": "折叠",
+    "decrement": "减少",
+    "increment": "增加"
   },
   "versions": {
     "flavor": "服务端变体",
@@ -602,7 +625,9 @@
     "offsiteTestOk": "测试上传成功",
     "offsiteTestFailed": "测试失败：{{message}}",
     "offsiteRemove": "移除目标",
-    "offsiteHint": "每次备份完成后都会上传；失败会显示在通知铃铛中。请先保存——测试使用已保存的配置。"
+    "offsiteHint": "每次备份完成后都会上传；失败会显示在通知铃铛中。请先保存——测试使用已保存的配置。",
+    "taskEnabled": "启用任务",
+    "roleLabel": "角色"
   },
   "players": {
     "notRunning": "服务器未运行 — 白名单与管理命令需要服务器处于运行状态。",
@@ -650,7 +675,9 @@
     "sortPlaytime": "排序：游戏时长",
     "sortLastSeen": "排序：最近在线",
     "sortFirstSeen": "排序：首次出现",
-    "sortName": "排序：名称"
+    "sortName": "排序：名称",
+    "roleLabel": "角色",
+    "sortBy": "排序玩家"
   },
   "backups": {
     "title": "备份",

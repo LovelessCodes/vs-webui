@@ -77,7 +77,7 @@ function TagChip({
       }
       type="button"
     >
-      {name}
+      {name || "?"}
     </button>
   );
 }
@@ -124,7 +124,7 @@ export default function ModBrowseRow({
       )}
     >
       <div className="flex shrink-0 flex-col items-center gap-1.5">
-        <a href={modUrl} rel="noreferrer" target="_blank">
+        <a aria-label={mod.name} href={modUrl} rel="noreferrer" target="_blank">
           <div className="flex size-12 items-center justify-center border border-border bg-muted">
             {mod.logo ? (
               <img
@@ -149,41 +149,43 @@ export default function ModBrowseRow({
         )}
       </div>
 
-      <button
-        className="min-w-0 flex-1 text-left"
-        data-slot="mod-row-summary"
-        onClick={onOpen}
-        type="button"
-      >
-        <div className="flex min-w-0 items-center gap-2">
-          <h3 className="truncate text-sm font-semibold">{mod.name}</h3>
-          <Badge className={sideBadgeClass(mod.side)} variant="outline">
-            {t(sideKey(mod.side))}
-          </Badge>
-        </div>
-        <p className="truncate text-xs text-muted-foreground">
-          {mod.author} — {mod.summary}
-        </p>
-        <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Download className="size-3" />
-            {mod.downloads.toLocaleString()}
-          </span>
-          <span className="flex items-center gap-1">
-            <Heart className="size-3" />
-            {mod.follows.toLocaleString()}
-          </span>
-          <span className="flex items-center gap-1">
-            <MessageSquare className="size-3" />
-            {mod.comments.toLocaleString()}
-          </span>
-          {mod.lastreleased && (
+      <div className="min-w-0 flex-1">
+        <button
+          className="w-full min-w-0 text-left"
+          data-slot="mod-row-summary"
+          onClick={onOpen}
+          type="button"
+        >
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-sm font-semibold">{mod.name}</span>
+            <Badge className={sideBadgeClass(mod.side)} variant="outline">
+              {t(sideKey(mod.side))}
+            </Badge>
+          </div>
+          <p className="truncate text-xs text-muted-foreground">
+            {mod.author} — {mod.summary}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1">
-              <CalendarDays className="size-3" />
-              {mod.lastreleased.slice(0, 10)}
+              <Download className="size-3" />
+              {mod.downloads.toLocaleString()}
             </span>
-          )}
-        </div>
+            <span className="flex items-center gap-1">
+              <Heart className="size-3" />
+              {mod.follows.toLocaleString()}
+            </span>
+            <span className="flex items-center gap-1">
+              <MessageSquare className="size-3" />
+              {mod.comments.toLocaleString()}
+            </span>
+            {mod.lastreleased && (
+              <span className="flex items-center gap-1">
+                <CalendarDays className="size-3" />
+                {mod.lastreleased.slice(0, 10)}
+              </span>
+            )}
+          </div>
+        </button>
         {mod.tags.length > 0 && (
           <div className="mt-1.5 flex flex-wrap items-center gap-1">
             {mod.tags.slice(0, MAX_VISIBLE_TAGS).map((tag) => (
@@ -205,7 +207,7 @@ export default function ModBrowseRow({
             )}
           </div>
         )}
-      </button>
+      </div>
 
       <div className="flex shrink-0 items-center gap-1.5 self-center">
         {confirming ? (

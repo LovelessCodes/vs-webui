@@ -37,7 +37,7 @@ export default function Login() {
   }
 
   return (
-    <div className="flex h-screen items-center justify-center bg-background p-6">
+    <main className="flex h-screen items-center justify-center bg-background p-6">
       <div className="w-full max-w-sm border border-border bg-card">
         <div className="flex flex-col items-center gap-2 border-b border-border px-6 py-8">
           <div className="flex size-10 items-center justify-center border border-accent-primary/40 bg-accent-primary/10">
@@ -105,6 +105,6 @@ export default function Login() {
           <p className="text-muted-foreground text-[11px] leading-relaxed">{t("login.hint")}</p>
         </form>
       </div>
-    </div>
+    </main>
   );
 }

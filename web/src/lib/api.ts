@@ -169,7 +169,7 @@ export interface StatusResponse {
   settings: Settings;
   install: InstallStatus | null;
   config: ConfigSummary | null;
-  updates?: { game?: string | null; stratum?: string | null };
+  updates?: { game?: string | null; stratum?: string | null; manager?: string | null };
   unread_notifications?: number;
   tasks?: TaskSummary[];
   manager: {
@@ -374,6 +374,19 @@ export interface RestoreProgress {
   total: number;
   entries: number;
   finished: boolean;
+}
+
+export interface LogMatch {
+  file: string;
+  line: number;
+  text: string;
+}
+
+export interface CrashReport {
+  ts: number;
+  exit_code: number | null;
+  uptime: number;
+  lines: string[];
 }
 
 export interface ChatEntry {
@@ -621,6 +634,11 @@ export const api = {
     request<{ lines: ConsoleLine[] }>(`/api/console/history?limit=${limit}`),
 
   logFiles: () => request<{ files: LogFileEntry[] }>("/api/logs"),
+  searchLogs: (q: string, limit = 100) =>
+    request<{ matches: LogMatch[] }>(
+      `/api/logs/search?q=${encodeURIComponent(q)}&limit=${limit}`,
+    ),
+  crashReport: () => request<{ report: CrashReport | null }>("/api/console/crash-report"),
   logTail: (name: string, tail = 2000) =>
     request<{ name: string; content: string; truncated: boolean }>(
       `/api/logs/${encodeURIComponent(name)}?tail=${tail}`,

@@ -9,6 +9,15 @@ import { router } from "@/router";
 import "@/index.css";
 import "@/lib/i18n";
 
+// PWA: register the pass-through service worker so the UI is installable.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    void navigator.serviceWorker.register("/sw.js").catch(() => {
+      // installability is best-effort; the UI works without it
+    });
+  });
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

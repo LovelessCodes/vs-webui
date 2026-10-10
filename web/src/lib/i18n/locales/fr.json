@@ -113,6 +113,10 @@
     "worlds": {
       "title": "Mondes",
       "description": "Sauvegardes et réglages du monde"
+    },
+    "chat": {
+      "title": "Chat",
+      "description": "Chat en jeu, connexions et annonces"
     }
   },
   "login": {
@@ -224,7 +228,15 @@
     "automationTimezone": "Fuseau horaire",
     "range15m": "15m",
     "range24h": "24h",
-    "range7d": "7j"
+    "range7d": "7j",
+    "onboardingTitle": "Configurer votre serveur",
+    "onboardingDescription": "Quelques étapes avant que les joueurs puissent rejoindre.",
+    "onboardingInstall": "Installer une version du jeu",
+    "onboardingSettings": "Vérifier la configuration du serveur",
+    "onboardingWorld": "Créer ou générer un monde",
+    "onboardingStart": "Démarrer le serveur",
+    "onboardingHint": "Le serveur crée sa configuration et un monde par défaut au premier démarrage ; tout est ajustable ensuite.",
+    "attentionManagerUpdate": "Mise à jour du gestionnaire disponible : {{version}}"
   },
   "console": {
     "live": "en direct",
@@ -244,7 +256,14 @@
     "viewingFile": "Affichage de {{name}}",
     "backToLive": "Retour au direct",
     "export": "Exporter",
-    "truncated": "lignes plus anciennes omises"
+    "truncated": "lignes plus anciennes omises",
+    "levelAll": "Tout",
+    "levelWarnings": "Avertissements",
+    "levelErrors": "Erreurs",
+    "searchLogsPlaceholder": "Rechercher dans tous les fichiers de log…",
+    "searchNoMatches": "Aucune correspondance dans les logs.",
+    "crashTitle": "Rapport de plantage — code {{code}}, durée {{uptime}}",
+    "crashCopy": "Copier le rapport"
   },
   "mods": {
     "updateAll": "Tout mettre à jour",
@@ -352,7 +371,11 @@
     "parseError": "Erreur d'analyse : {{message}}",
     "emptyArray": "Tableau vide",
     "rootPrimitive": "La valeur racine est un primitif.",
-    "autoSave": "Les modifications sont enregistrées automatiquement"
+    "autoSave": "Les modifications sont enregistrées automatiquement",
+    "expand": "Développer",
+    "collapse": "Réduire",
+    "decrement": "Diminuer",
+    "increment": "Augmenter"
   },
   "versions": {
     "flavor": "Variante du serveur",
@@ -602,7 +625,9 @@
     "offsiteTestOk": "Envoi de test réussi",
     "offsiteTestFailed": "Échec du test : {{message}}",
     "offsiteRemove": "Supprimer la cible",
-    "offsiteHint": "Les envois ont lieu après chaque sauvegarde ; les échecs apparaissent dans la cloche. Enregistrez d'abord — le test utilise la configuration enregistrée."
+    "offsiteHint": "Les envois ont lieu après chaque sauvegarde ; les échecs apparaissent dans la cloche. Enregistrez d'abord — le test utilise la configuration enregistrée.",
+    "taskEnabled": "Activer la tâche",
+    "roleLabel": "Rôle"
   },
   "players": {
     "notRunning": "Le serveur n'est pas en cours — les commandes de liste blanche et de modération l'exigent.",
@@ -650,7 +675,9 @@
     "sortPlaytime": "Tri : temps de jeu",
     "sortLastSeen": "Tri : dernière connexion",
     "sortFirstSeen": "Tri : première connexion",
-    "sortName": "Tri : nom"
+    "sortName": "Tri : nom",
+    "roleLabel": "Rôle",
+    "sortBy": "Trier les joueurs"
   },
   "backups": {
     "title": "Sauvegardes",

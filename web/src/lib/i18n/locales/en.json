@@ -113,6 +113,10 @@
     "worlds": {
       "title": "Worlds",
       "description": "Saves and world settings"
+    },
+    "chat": {
+      "title": "Chat",
+      "description": "In-game chat, joins and announcements"
     }
   },
   "login": {
@@ -224,7 +228,15 @@
     "automationTimezone": "Timezone",
     "range15m": "15m",
     "range24h": "24h",
-    "range7d": "7d"
+    "range7d": "7d",
+    "onboardingTitle": "Set up your server",
+    "onboardingDescription": "A few steps until players can join.",
+    "onboardingInstall": "Install a game version",
+    "onboardingSettings": "Review the server settings",
+    "onboardingWorld": "Create or generate a world",
+    "onboardingStart": "Start the server",
+    "onboardingHint": "The server creates its config and default world on the first start; everything can be adjusted later.",
+    "attentionManagerUpdate": "Manager update available: {{version}}"
   },
   "console": {
     "live": "live",
@@ -244,7 +256,14 @@
     "viewingFile": "Viewing {{name}}",
     "backToLive": "Back to live",
     "export": "Export",
-    "truncated": "older lines omitted"
+    "truncated": "older lines omitted",
+    "levelAll": "All",
+    "levelWarnings": "Warnings",
+    "levelErrors": "Errors",
+    "searchLogsPlaceholder": "Search all log files…",
+    "searchNoMatches": "No matches in the log files.",
+    "crashTitle": "Crash report — exit code {{code}}, uptime {{uptime}}",
+    "crashCopy": "Copy report"
   },
   "mods": {
     "updateAll": "Update all",
@@ -352,7 +371,11 @@
     "parseError": "Parse error: {{message}}",
     "emptyArray": "Empty array",
     "rootPrimitive": "The root value is a primitive.",
-    "autoSave": "Changes auto-save"
+    "autoSave": "Changes auto-save",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "decrement": "Decrease",
+    "increment": "Increase"
   },
   "versions": {
     "flavor": "Server flavor",
@@ -602,7 +625,9 @@
     "offsiteTestOk": "Test upload succeeded",
     "offsiteTestFailed": "Test failed: {{message}}",
     "offsiteRemove": "Remove target",
-    "offsiteHint": "Uploads run after every finished backup; failures appear in the notification bell. Save first — Test uses the saved configuration."
+    "offsiteHint": "Uploads run after every finished backup; failures appear in the notification bell. Save first — Test uses the saved configuration.",
+    "taskEnabled": "Enable task",
+    "roleLabel": "Role"
   },
   "players": {
     "notRunning": "The server is not running — whitelist and moderation commands need a running server.",
@@ -650,7 +675,9 @@
     "sortPlaytime": "Sort: playtime",
     "sortLastSeen": "Sort: last seen",
     "sortFirstSeen": "Sort: first seen",
-    "sortName": "Sort: name"
+    "sortName": "Sort: name",
+    "roleLabel": "Role",
+    "sortBy": "Sort players"
   },
   "backups": {
     "title": "Backups",

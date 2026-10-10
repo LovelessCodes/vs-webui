@@ -116,7 +116,7 @@ export default function ServerConfigForm() {
               className={cn(
                 "px-3 py-1.5 text-xs font-medium transition-colors",
                 mode === option
-                  ? "bg-accent-primary text-white"
+                  ? "bg-accent-strong text-white"
                   : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
               )}
               key={option}

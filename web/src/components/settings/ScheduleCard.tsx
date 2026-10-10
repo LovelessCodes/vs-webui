@@ -181,6 +181,7 @@ export default function ScheduleCard() {
               {tasks.map((task, index) => (
                 <div className="flex flex-wrap items-center gap-3 px-3 py-2.5" key={task.id}>
                   <Switch
+                    aria-label={t("settings.taskEnabled")}
                     checked={task.enabled}
                     onCheckedChange={(enabled) =>
                       setTasks((current) =>
@@ -351,7 +352,7 @@ function TaskSheet({
               }}
               value={kind}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger aria-label={t("settings.taskKindLabel")} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent alignItemWithTrigger={false}>
@@ -380,7 +381,12 @@ function TaskSheet({
               <Label htmlFor="task-once">{t("settings.taskRunOnce")}</Label>
               <p className="text-[11px] text-muted-foreground">{t("settings.taskRunOnceHint")}</p>
             </div>
-            <Switch checked={runOnce} id="task-once" onCheckedChange={setRunOnce} />
+            <Switch
+              aria-label={t("settings.taskRunOnce")}
+              checked={runOnce}
+              id="task-once"
+              onCheckedChange={setRunOnce}
+            />
           </div>
 
           {runOnce && (
@@ -478,6 +484,7 @@ function TaskSheet({
                 </p>
               </div>
               <Switch
+                aria-label={t("settings.taskBackupFirst")}
                 checked={backupBefore}
                 id="task-backup-before"
                 onCheckedChange={setBackupBefore}

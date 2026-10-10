@@ -78,6 +78,7 @@ export default function Sidebar() {
       <SidebarSeparator />
 
       <SidebarContent>
+        <nav aria-label={t("nav.navigation")}>
         <SidebarGroup>
           <SidebarGroupLabel>{t("nav.navigation")}</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -109,6 +110,7 @@ export default function Sidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        </nav>
       </SidebarContent>
 
       <SidebarFooter>

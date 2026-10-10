@@ -68,6 +68,7 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/server/version", post(set_active_version))
         .route("/api/console/history", get(console_history))
         .route("/api/console/stream", get(console_stream))
+        .route("/api/console/crash-report", get(crash_report))
         .route("/api/versions", get(list_versions))
         .route("/api/versions/install", post(install_version))
         .route("/api/versions/{version}", delete(delete_version))
@@ -134,6 +135,7 @@ pub fn router(state: SharedState) -> Router {
         .route("/api/backups/{name}/download", get(download_backup))
         .route("/api/backups/{name}", delete(delete_backup))
         .route("/api/logs", get(list_logs))
+        .route("/api/logs/search", get(search_logs))
         .route("/api/logs/{name}", get(read_log))
         .route("/api/logs/{name}/download", get(download_log))
         .fallback_service(ServeDir::new(&dist).fallback(ServeFile::new(&index)))
@@ -1052,6 +1054,7 @@ async fn status(State(state): State<SharedState>) -> Json<Value> {
         "updates": {
             "game": game_update,
             "stratum": stratum_update,
+            "manager": state.manager_update.lock().unwrap().clone(),
         },
         "unread_notifications": state.notifications.unread(),
         "tasks": crate::task_summaries(&state),
@@ -2940,6 +2943,36 @@ async fn list_logs(State(state): State<SharedState>, _authed: Authed) -> Json<Va
         .await
         .unwrap_or_default();
     Json(json!({ "files": files }))
+}
+
+#[derive(Deserialize)]
+struct LogSearchQuery {
+    #[serde(default)]
+    q: String,
+    #[serde(default)]
+    limit: Option<usize>,
+}
+
+/// Case-insensitive search across the newest log files.
+async fn search_logs(
+    State(state): State<SharedState>,
+    _authed: Authed,
+    Query(query): Query<LogSearchQuery>,
+) -> Json<Value> {
+    let limit = query.limit.unwrap_or(100).clamp(1, 500);
+    let layout = state.layout.clone();
+    let needle = query.q.clone();
+    let matches = tokio::task::spawn_blocking(move || {
+        crate::logfiles::search_logs(&layout, &needle, limit)
+    })
+    .await
+    .unwrap_or_default();
+    Json(json!({ "matches": matches }))
+}
+
+/// Diagnostics from the last unexpected exit.
+async fn crash_report(State(state): State<SharedState>, _authed: Authed) -> Json<Value> {
+    Json(json!({ "report": state.supervisor.crash_report() }))
 }
 
 #[derive(Deserialize)]

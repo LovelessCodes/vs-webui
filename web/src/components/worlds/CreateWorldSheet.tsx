@@ -220,7 +220,7 @@ export default function CreateWorldSheet({
                 }}
                 value={playStyle}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger aria-label={t("worlds.playStyleLabel")} className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent alignItemWithTrigger={false}>
@@ -242,7 +242,7 @@ export default function CreateWorldSheet({
                 }}
                 value={worldType}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger aria-label={t("worlds.worldTypeLabel")} className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent alignItemWithTrigger={false}>
@@ -284,7 +284,10 @@ export default function CreateWorldSheet({
                         }}
                         value={overrides[field.key] ?? DEFAULT}
                       >
-                        <SelectTrigger className="w-full capitalize">
+                        <SelectTrigger
+                          aria-label={t(field.labelKey)}
+                          className="w-full capitalize"
+                        >
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent alignItemWithTrigger={false}>

@@ -113,6 +113,10 @@
     "worlds": {
       "title": "Welten",
       "description": "Spielstände und Welt-Einstellungen"
+    },
+    "chat": {
+      "title": "Chat",
+      "description": "Ingame-Chat, Beitritte und Ankündigungen"
     }
   },
   "login": {
@@ -224,7 +228,15 @@
     "automationTimezone": "Zeitzone",
     "range15m": "15m",
     "range24h": "24h",
-    "range7d": "7d"
+    "range7d": "7d",
+    "onboardingTitle": "Server einrichten",
+    "onboardingDescription": "Ein paar Schritte, bis Spieler beitreten können.",
+    "onboardingInstall": "Spielversion installieren",
+    "onboardingSettings": "Servereinstellungen prüfen",
+    "onboardingWorld": "Welt erstellen oder generieren",
+    "onboardingStart": "Server starten",
+    "onboardingHint": "Beim ersten Start erzeugt der Server seine Konfiguration und eine Standardwelt; alles lässt sich später anpassen.",
+    "attentionManagerUpdate": "Manager-Update verfügbar: {{version}}"
   },
   "console": {
     "live": "live",
@@ -244,7 +256,14 @@
     "viewingFile": "Ansicht: {{name}}",
     "backToLive": "Zurück zu Live",
     "export": "Exportieren",
-    "truncated": "ältere Zeilen ausgelassen"
+    "truncated": "ältere Zeilen ausgelassen",
+    "levelAll": "Alle",
+    "levelWarnings": "Warnungen",
+    "levelErrors": "Fehler",
+    "searchLogsPlaceholder": "Alle Logdateien durchsuchen…",
+    "searchNoMatches": "Keine Treffer in den Logdateien.",
+    "crashTitle": "Absturzbericht — Exit-Code {{code}}, Laufzeit {{uptime}}",
+    "crashCopy": "Bericht kopieren"
   },
   "mods": {
     "updateAll": "Alle aktualisieren",
@@ -352,7 +371,11 @@
     "parseError": "Parse-Fehler: {{message}}",
     "emptyArray": "Leeres Array",
     "rootPrimitive": "Der Wurzelwert ist ein Primitiv.",
-    "autoSave": "Änderungen werden automatisch gespeichert"
+    "autoSave": "Änderungen werden automatisch gespeichert",
+    "expand": "Ausklappen",
+    "collapse": "Einklappen",
+    "decrement": "Verringern",
+    "increment": "Erhöhen"
   },
   "versions": {
     "flavor": "Server-Variante",
@@ -602,7 +625,9 @@
     "offsiteTestOk": "Test-Upload erfolgreich",
     "offsiteTestFailed": "Test fehlgeschlagen: {{message}}",
     "offsiteRemove": "Ziel entfernen",
-    "offsiteHint": "Uploads laufen nach jedem fertigen Backup; Fehler erscheinen in der Benachrichtigungsglocke. Erst speichern — der Test nutzt die gespeicherte Konfiguration."
+    "offsiteHint": "Uploads laufen nach jedem fertigen Backup; Fehler erscheinen in der Benachrichtigungsglocke. Erst speichern — der Test nutzt die gespeicherte Konfiguration.",
+    "taskEnabled": "Aufgabe aktivieren",
+    "roleLabel": "Rolle"
   },
   "players": {
     "notRunning": "Der Server läuft nicht — Whitelist- und Moderationsbefehle brauchen einen laufenden Server.",
@@ -650,7 +675,9 @@
     "sortPlaytime": "Sortierung: Spielzeit",
     "sortLastSeen": "Sortierung: zuletzt gesehen",
     "sortFirstSeen": "Sortierung: zuerst gesehen",
-    "sortName": "Sortierung: Name"
+    "sortName": "Sortierung: Name",
+    "roleLabel": "Rolle",
+    "sortBy": "Spieler sortieren"
   },
   "backups": {
     "title": "Backups",

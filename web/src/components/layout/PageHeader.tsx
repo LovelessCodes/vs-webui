@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 const pageMeta: Record<string, { titleKey: string; descriptionKey?: string }> = {
   "/": { titleKey: "pages.dashboard.title", descriptionKey: "pages.dashboard.description" },
   "/console": { titleKey: "pages.console.title", descriptionKey: "pages.console.description" },
+  "/chat": { titleKey: "pages.chat.title", descriptionKey: "pages.chat.description" },
   "/mods": { titleKey: "pages.mods.title", descriptionKey: "pages.mods.description" },
   "/config": { titleKey: "pages.configs.title", descriptionKey: "pages.configs.description" },
   "/players": { titleKey: "pages.players.title", descriptionKey: "pages.players.description" },
@@ -21,7 +22,7 @@ export default function PageHeader() {
 
   return (
     <header className="flex h-11 shrink-0 items-center gap-3 border-b border-border px-4">
-      <h2 className="text-sm font-semibold whitespace-nowrap">{t(meta.titleKey)}</h2>
+      <h1 className="text-sm font-semibold whitespace-nowrap">{t(meta.titleKey)}</h1>
       {meta.descriptionKey && (
         <p className="truncate text-xs text-muted-foreground">{t(meta.descriptionKey)}</p>
       )}

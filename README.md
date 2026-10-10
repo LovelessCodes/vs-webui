@@ -36,9 +36,10 @@ All captures in [`web/screenshots/`](web/screenshots/) (English + `de/`), regene
 ## Features
 
 - **Server control** — status chip, start/stop/restart and refresh in the app bar; live console
-  over SSE with ANSI colors, output filter, log-file browser/download, command autocomplete and
-  persistent history; **scheduled tasks** (cron-like restarts, backups and console commands with
-  weekday filters, one-off runs, pre-restart backups, an explicit timezone and
+  over SSE with ANSI colors, error/warn level presets, output filter, **log-file search across
+  all logs**, command autocomplete and persistent history, a **post-crash report** with the
+  extracted error block, and **scheduled tasks** (cron-like restarts, backups and console
+  commands with weekday filters, one-off runs, pre-restart backups, an explicit timezone and
   `5`/`1`-minute announcements).
 - **Versions & runtimes** — install or switch any vanilla build from the official manifests
   (streaming download, MD5 verified); one-click [Stratum](https://stratumvs.dev) install/update
@@ -73,7 +74,7 @@ All captures in [`web/screenshots/`](web/screenshots/) (English + `de/`), regene
   `GET /metrics` (players, world size, backup age, crashes; a Grafana dashboard ships in
   [`docker/grafana/`](docker/grafana/vs-webui-dashboard.json)).
 - **7 languages** — English, German, Spanish, French, Brazilian Portuguese, Russian, Simplified
-  Chinese, with a theme reveal transition and light/dark mode.
+  Chinese, with a theme reveal transition, light/dark mode and an installable PWA shell.
 
 ## Requirements
 
@@ -249,6 +250,7 @@ cd server && cargo run
 cd web && bun install && bun run dev
 
 # headless browser checks / screenshots (need web/dist + a manager binary)
+# `smoke` also runs an axe accessibility pass on every page
 cd web && bun run smoke && bun run screenshots
 ```
 

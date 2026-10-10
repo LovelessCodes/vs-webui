@@ -24,6 +24,7 @@ import AnnounceSheet from "@/components/dashboard/AnnounceSheet";
 import AttentionCard from "@/components/dashboard/AttentionCard";
 import AutomationCard from "@/components/dashboard/AutomationCard";
 import MetricTiles from "@/components/dashboard/MetricTiles";
+import OnboardingCard from "@/components/dashboard/OnboardingCard";
 import WorldCard from "@/components/dashboard/WorldCard";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -121,6 +122,7 @@ export default function Dashboard() {
   return (
     <ScrollArea className="h-full" scrollFade>
       <div className="space-y-4 pb-4 pr-1">
+      <OnboardingCard />
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>

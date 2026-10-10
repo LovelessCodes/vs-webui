@@ -46,9 +46,9 @@ export default function AppShell() {
           <Sidebar />
           <SidebarInset className="mt-11 min-w-0 overflow-hidden md:mt-11">
             <PageHeader />
-            <main className="min-h-0 flex-1 overflow-hidden p-6">
+            <div className="min-h-0 flex-1 overflow-hidden p-6">
               <Outlet />
-            </main>
+            </div>
           </SidebarInset>
           <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
         </DownloadsProvider>

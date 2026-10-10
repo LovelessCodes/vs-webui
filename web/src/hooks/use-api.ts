@@ -657,6 +657,24 @@ export function useLogFiles(enabled = true) {
   });
 }
 
+export function useLogSearch(q: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["log-search", q],
+    queryFn: () => api.searchLogs(q, 150),
+    retry: false,
+    enabled: enabled && q.trim().length >= 2,
+  });
+}
+
+export function useCrashReport(enabled: boolean) {
+  return useQuery({
+    queryKey: ["crash-report"],
+    queryFn: api.crashReport,
+    retry: false,
+    enabled,
+  });
+}
+
 export function useTestWebhook() {
   return useMutation({
     mutationFn: () => api.testWebhook(),

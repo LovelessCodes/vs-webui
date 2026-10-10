@@ -106,6 +106,59 @@ pub fn read_log_tail(
     Ok((lines[from..].join("\n"), truncated))
 }
 
+#[derive(Serialize)]
+pub struct LogMatch {
+    pub file: String,
+    /// 1-based line number within the tail that was scanned.
+    pub line: usize,
+    pub text: String,
+}
+
+/// Case-insensitive search across the newest log files, bounded by `limit`.
+/// Only the final `TAIL_BYTES` of each file are scanned.
+pub fn search_logs(layout: &Layout, query: &str, limit: usize) -> Vec<LogMatch> {
+    let query = query.trim().to_lowercase();
+    if query.len() < 2 {
+        return Vec::new();
+    }
+    let limit = limit.clamp(1, 500);
+    let mut matches = Vec::new();
+    for file in list_log_files(layout) {
+        let Ok(path) = log_path(layout, &file.name) else {
+            continue;
+        };
+        let Ok(mut handle) = File::open(&path) else {
+            continue;
+        };
+        let len = handle.metadata().map(|meta| meta.len()).unwrap_or(0);
+        let start = len.saturating_sub(TAIL_BYTES);
+        if handle.seek(SeekFrom::Start(start)).is_err() {
+            continue;
+        }
+        let mut bytes = Vec::new();
+        if handle.read_to_end(&mut bytes).is_err() {
+            continue;
+        }
+        let text = String::from_utf8_lossy(&bytes).into_owned();
+        for (index, line) in text.lines().enumerate() {
+            if start > 0 && index == 0 {
+                continue; // fragment of a line split by the tail start
+            }
+            if line.to_lowercase().contains(&query) {
+                matches.push(LogMatch {
+                    file: file.name.clone(),
+                    line: index + 1,
+                    text: line.chars().take(400).collect(),
+                });
+                if matches.len() >= limit {
+                    return matches;
+                }
+            }
+        }
+    }
+    matches
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -119,5 +172,35 @@ mod tests {
         assert!(log_path(&layout, "").is_err());
         assert!(log_path(&layout, "server-main.log").is_ok());
         assert!(log_path(&layout, "server-main.txt").is_ok());
+    }
+
+    #[test]
+    fn searches_log_files_newest_first() {
+        let dir = std::env::temp_dir().join(format!(
+            "vs-webui-logs-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&dir);
+        let layout = Layout::new(&dir);
+        std::fs::create_dir_all(logs_dir(&layout)).unwrap();
+        std::fs::write(
+            logs_dir(&layout).join("server-main.txt"),
+            "boot ok\nException: boom\nstack line\n",
+        )
+        .unwrap();
+        std::fs::write(
+            logs_dir(&layout).join("server-audit.txt"),
+            "audit clean\n",
+        )
+        .unwrap();
+
+        let hits = search_logs(&layout, "exception", 10);
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].file, "server-main.txt");
+        assert_eq!(hits[0].line, 2);
+        assert!(hits[0].text.contains("boom"));
+        assert!(search_logs(&layout, "x", 10).is_empty()); // too short
+        assert!(search_logs(&layout, "nothing-here", 10).is_empty());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

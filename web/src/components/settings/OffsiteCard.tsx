@@ -150,7 +150,7 @@ export default function OffsiteCard() {
             }}
             value={kind}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger aria-label={t("settings.offsiteKind")} className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent alignItemWithTrigger={false}>

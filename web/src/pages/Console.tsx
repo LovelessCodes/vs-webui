@@ -1,5 +1,8 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
+  AlertTriangle,
+  Check,
+  Copy,
   Download,
   Eraser,
   FileText,
@@ -32,15 +35,18 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
+  useCrashReport,
   useLogFiles,
+  useLogSearch,
   useServerCommand,
   useServerStart,
   useServerStop,
   useStatus,
 } from "@/hooks/use-api";
-import { api, consoleStream, type ConsoleLine, type LogFileEntry } from "@/lib/api";
-import { errorMessage, formatBytes } from "@/lib/format";
+import { api, consoleStream, type ConsoleLine } from "@/lib/api";
+import { errorMessage, formatBytes, formatDuration } from "@/lib/format";
 import { cn } from "cn";
 
 const MAX_LINES = 2000;
@@ -65,16 +71,37 @@ const COMMANDS = [
 ];
 
 function lineClass(line: string): string {
-  if (line.includes("[Error]") || line.includes(" ERROR") || line.startsWith("ERROR")) {
+  const lower = line.toLowerCase();
+  if (
+    line.includes("[Error]") ||
+    line.includes(" ERROR") ||
+    line.startsWith("ERROR") ||
+    lower.includes("[server error]") ||
+    lower.includes("[server fatal]") ||
+    lower.includes("exception")
+  ) {
     return "text-error";
   }
-  if (line.includes("[Warning]") || line.includes(" WARN") || line.startsWith("WARN")) {
+  if (
+    line.includes("[Warning]") ||
+    line.includes(" WARN") ||
+    line.startsWith("WARN") ||
+    lower.includes("[server warning]")
+  ) {
     return "text-warning";
   }
   if (line.startsWith("[manager]") || line.startsWith("»")) {
     return "text-info";
   }
   return "text-muted-foreground";
+}
+
+/** Error/warning classification shared by the level filter. */
+function lineLevel(line: string): "error" | "warning" | null {
+  const cls = lineClass(line);
+  if (cls === "text-error") return "error";
+  if (cls === "text-warning") return "warning";
+  return null;
 }
 
 const ANSI_PATTERN = /\u001b\[[0-9;]*m|\u001b\[[0-9;]*[A-Za-z]/g;
@@ -163,17 +190,22 @@ export default function Console() {
   });
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [query, setQuery] = useState("");
+  const [level, setLevel] = useState<"all" | "warning" | "error">("all");
   const [filesOpen, setFilesOpen] = useState(false);
+  const [logQuery, setLogQuery] = useState("");
+  const [reportCopied, setReportCopied] = useState(false);
   const [viewing, setViewing] = useState<{ name: string; truncated: boolean } | null>(null);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const modeRef = useRef<"live" | "file">("live");
 
   const status = useStatus();
   const logs = useLogFiles(filesOpen);
+  const logSearch = useLogSearch(logQuery, filesOpen);
   const start = useServerStart();
   const stop = useServerStop();
   const send = useServerCommand();
   const serverStatus = status.data?.status.status;
+  const crashReport = useCrashReport(serverStatus === "crashed");
   const canStart = serverStatus === "stopped" || serverStatus === "crashed";
   const canStop = serverStatus === "running" || serverStatus === "starting";
 
@@ -228,22 +260,32 @@ export default function Console() {
   }, [search.logs]);
 
   const q = query.trim().toLowerCase();
-  const visible = useMemo(
-    () => (q ? lines.filter((entry) => entry.line.toLowerCase().includes(q)) : lines),
-    [lines, q],
-  );
+  const visible = useMemo(() => {
+    let result = lines;
+    if (level !== "all") {
+      result = result.filter((entry) => {
+        const entryLevel = lineLevel(entry.line);
+        return level === "error" ? entryLevel === "error" : entryLevel !== null;
+      });
+    }
+    if (q) {
+      result = result.filter((entry) => entry.line.toLowerCase().includes(q));
+    }
+    return result;
+  }, [lines, q, level]);
 
   const suggestions = useMemo(() => {
     if (!input.startsWith("/")) return [];
     return COMMANDS.filter((command) => command.startsWith(input) && command !== input).slice(0, 6);
   }, [input]);
 
-  async function openFile(file: LogFileEntry) {
+  async function openFile(name: string, filterText?: string) {
     try {
-      const data = await api.logTail(file.name, 2000);
+      const data = await api.logTail(name, 2000);
       modeRef.current = "file";
       setViewing({ name: data.name, truncated: data.truncated });
       setLines(data.content.length > 0 ? data.content.split("\n").map((line) => ({ ts: "", line })) : []);
+      setQuery(filterText ?? "");
       setFollow(false);
       setFilesOpen(false);
     } catch {
@@ -328,6 +370,19 @@ export default function Console() {
           </span>
         </div>
         <div className="flex-1" />
+        <ToggleGroup
+          onValueChange={(value) => {
+            const next = value[0];
+            if (next === "all" || next === "warning" || next === "error") setLevel(next);
+          }}
+          size="sm"
+          value={[level]}
+          variant="outline"
+        >
+          <ToggleGroupItem value="all">{t("console.levelAll")}</ToggleGroupItem>
+          <ToggleGroupItem value="warning">{t("console.levelWarnings")}</ToggleGroupItem>
+          <ToggleGroupItem value="error">{t("console.levelErrors")}</ToggleGroupItem>
+        </ToggleGroup>
         <div className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -397,6 +452,38 @@ export default function Console() {
           <Button onClick={backToLive} size="sm" variant="outline">
             {t("console.backToLive")}
           </Button>
+        </div>
+      )}
+
+      {serverStatus === "crashed" && crashReport.data?.report && (
+        <div className="border border-error/40 bg-error/5 px-3 py-2">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <AlertTriangle className="size-3.5 text-error" />
+            <span className="font-medium text-error">
+              {t("console.crashTitle", {
+                code: crashReport.data.report.exit_code ?? "?",
+                uptime: formatDuration(crashReport.data.report.uptime),
+              })}
+            </span>
+            <div className="flex-1" />
+            <Button
+              onClick={() => {
+                const text = crashReport.data?.report?.lines.join("\n") ?? "";
+                void navigator.clipboard.writeText(text).then(() => {
+                  setReportCopied(true);
+                  window.setTimeout(() => setReportCopied(false), 2000);
+                });
+              }}
+              size="sm"
+              variant="outline"
+            >
+              {reportCopied ? <Check /> : <Copy />}
+              {t("console.crashCopy")}
+            </Button>
+          </div>
+          <pre className="mt-2 max-h-48 overflow-auto font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-muted-foreground">
+            {crashReport.data.report.lines.join("\n")}
+          </pre>
         </div>
       )}
 
@@ -473,6 +560,43 @@ export default function Console() {
             <SheetTitle>{t("console.logFiles")}</SheetTitle>
             <SheetDescription>{t("console.logFilesDescription")}</SheetDescription>
           </SheetHeader>
+          <div className="border-b border-border p-3">
+            <Input
+              onChange={(event) => setLogQuery(event.target.value)}
+              placeholder={t("console.searchLogsPlaceholder")}
+              value={logQuery}
+            />
+            {logQuery.trim().length >= 2 && (
+              <div className="mt-2 max-h-64 overflow-y-auto border border-border">
+                {logSearch.isFetching && (
+                  <div className="flex items-center gap-2 p-2 text-xs text-muted-foreground">
+                    <Loader2 className="size-3.5 animate-spin" />
+                    {t("common.loading")}
+                  </div>
+                )}
+                {logSearch.data?.matches.map((match, index) => (
+                  <button
+                    className="block w-full border-b border-border px-2 py-1.5 text-left last:border-b-0 hover:bg-muted"
+                    key={`${match.file}-${match.line}-${index}`}
+                    onClick={() => void openFile(match.file, logQuery.trim())}
+                    type="button"
+                  >
+                    <span className="font-mono text-[10px] text-muted-foreground">
+                      {match.file}:{match.line}
+                    </span>
+                    <p className="truncate font-mono text-[11px]">{match.text}</p>
+                  </button>
+                ))}
+                {logSearch.data &&
+                  logSearch.data.matches.length === 0 &&
+                  !logSearch.isFetching && (
+                    <p className="p-2 text-xs text-muted-foreground">
+                      {t("console.searchNoMatches")}
+                    </p>
+                  )}
+              </div>
+            )}
+          </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-3">
             {logs.isLoading && !logs.data && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -491,7 +615,7 @@ export default function Console() {
                     {formatBytes(file.size)} · {new Date(file.modified * 1000).toLocaleString()}
                   </p>
                 </div>
-                <Button onClick={() => void openFile(file)} size="sm" variant="outline">
+                <Button onClick={() => void openFile(file.name)} size="sm" variant="outline">
                   {t("console.open")}
                 </Button>
                 <a

@@ -364,13 +364,16 @@ at the bottom of this file.
 
 #### Console & diagnostics
 
-- [ ] **Log-file search** — server-side search across `Logs/*.txt` with match navigation.
-- [ ] **Level presets & highlighting** — one-click error/warn filters and rule-based
-      highlighting in the console.
-- [ ] **Post-crash report** — after a crash, automatically surface the first stack trace / last
-      error block from the log.
-- [ ] **Manager self-update notice** — check GitHub/GHCR for a newer vs-webui image and show an
-      update-available notice on the dashboard.
+- [x] **Log-file search** — server-side search across `Logs/*.txt` with match navigation; results
+      open the file with the filter prefilled.
+- [x] **Level presets & highlighting** — one-click error/warn filters and rule-based
+      highlighting in the console (VS `[Server Error]`/`[Server Warning]`/`[Server Fatal]` and
+      generic exception patterns).
+- [x] **Post-crash report** — after a crash, the manager extracts the error block from the
+      console tail (from the last error/exception marker) and surfaces it in the console page
+      with exit code, uptime and a copy button; the webhook tail uses the same block.
+- [x] **Manager self-update notice** — checks GitHub releases (env `VS_UPDATE_URL` overrides
+      the endpoint) every six hours and shows an update-available notice on the dashboard.
 
 #### Distribution
 
@@ -380,11 +383,18 @@ at the bottom of this file.
 
 #### Polish
 
-- [ ] **First-run onboarding** — checklist wizard: set password → install version → world
-      defaults → start; replaces the "install a version" empty state.
-- [ ] **PWA + web push** — installable UI and push notifications for lifecycle/threshold events.
-- [ ] **Accessibility audit** — keyboard/focus order, labels, contrast, reduced-motion pass.
-- [ ] **Mobile pass** — layout tuning and screenshot coverage below the current 1200×800.
+- [x] **First-run onboarding** — checklist wizard: set password → install version → world
+      defaults → start; replaces the "install a version" empty state. Shown until every step is
+      done.
+- [x] **PWA** — installable UI: manifest, generated icons and a pass-through service worker.
+- [ ] **Web push notifications** — deferred: needs VAPID keys and a real push service to verify
+      the RFC 8291 encryption path; the notification bell covers in-app delivery meanwhile.
+- [x] **Accessibility audit** — axe runs on every page in the smoke suite (critical/serious
+      violations fail CI); the sweep fixed unnamed controls, nested interactive elements,
+      landmark/heading structure and split the accent/success tokens so text and solid buttons
+      both pass contrast.
+- [x] **Mobile pass** — phone-portrait screenshots (390×844) for the main pages in the
+      screenshot pipeline; layouts verified and fixed where needed.
 
 **Suggested first three:** world creation wizard → users/roles + audit log → threshold alerts +
 notification history.

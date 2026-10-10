@@ -113,6 +113,10 @@
     "worlds": {
       "title": "Mundos",
       "description": "Partidas guardadas y ajustes del mundo"
+    },
+    "chat": {
+      "title": "Chat",
+      "description": "Chat del juego, entradas y anuncios"
     }
   },
   "login": {
@@ -224,7 +228,15 @@
     "automationTimezone": "Zona horaria",
     "range15m": "15m",
     "range24h": "24h",
-    "range7d": "7d"
+    "range7d": "7d",
+    "onboardingTitle": "Configura tu servidor",
+    "onboardingDescription": "Unos pasos para que los jugadores puedan entrar.",
+    "onboardingInstall": "Instalar una versión del juego",
+    "onboardingSettings": "Revisar la configuración del servidor",
+    "onboardingWorld": "Crear o generar un mundo",
+    "onboardingStart": "Iniciar el servidor",
+    "onboardingHint": "El servidor crea su configuración y un mundo por defecto en el primer arranque; todo se puede ajustar después.",
+    "attentionManagerUpdate": "Actualización del gestor disponible: {{version}}"
   },
   "console": {
     "live": "en vivo",
@@ -244,7 +256,14 @@
     "viewingFile": "Viendo {{name}}",
     "backToLive": "Volver en vivo",
     "export": "Exportar",
-    "truncated": "se omitieron líneas anteriores"
+    "truncated": "se omitieron líneas anteriores",
+    "levelAll": "Todo",
+    "levelWarnings": "Avisos",
+    "levelErrors": "Errores",
+    "searchLogsPlaceholder": "Buscar en todos los archivos de registro…",
+    "searchNoMatches": "Sin coincidencias en los registros.",
+    "crashTitle": "Informe de caída — código {{code}}, actividad {{uptime}}",
+    "crashCopy": "Copiar informe"
   },
   "mods": {
     "updateAll": "Actualizar todo",
@@ -352,7 +371,11 @@
     "parseError": "Error de parseo: {{message}}",
     "emptyArray": "Array vacío",
     "rootPrimitive": "El valor raíz es un primitivo.",
-    "autoSave": "Los cambios se guardan automáticamente"
+    "autoSave": "Los cambios se guardan automáticamente",
+    "expand": "Expandir",
+    "collapse": "Contraer",
+    "decrement": "Reducir",
+    "increment": "Aumentar"
   },
   "versions": {
     "flavor": "Variante del servidor",
@@ -602,7 +625,9 @@
     "offsiteTestOk": "Subida de prueba correcta",
     "offsiteTestFailed": "Prueba fallida: {{message}}",
     "offsiteRemove": "Quitar destino",
-    "offsiteHint": "Las subidas se ejecutan tras cada copia; los fallos aparecen en la campana. Guarda primero: la prueba usa la configuración guardada."
+    "offsiteHint": "Las subidas se ejecutan tras cada copia; los fallos aparecen en la campana. Guarda primero: la prueba usa la configuración guardada.",
+    "taskEnabled": "Activar tarea",
+    "roleLabel": "Rol"
   },
   "players": {
     "notRunning": "El servidor no está en ejecución — los comandos de lista blanca y moderación lo requieren.",
@@ -650,7 +675,9 @@
     "sortPlaytime": "Orden: tiempo jugado",
     "sortLastSeen": "Orden: último visto",
     "sortFirstSeen": "Orden: primero visto",
-    "sortName": "Orden: nombre"
+    "sortName": "Orden: nombre",
+    "roleLabel": "Rol",
+    "sortBy": "Ordenar jugadores"
   },
   "backups": {
     "title": "Copias de seguridad",

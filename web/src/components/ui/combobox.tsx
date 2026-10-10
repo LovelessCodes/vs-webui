@@ -45,6 +45,7 @@ function ComboboxChip({ className, children, ...props }: ComboboxPrimitive.Chip.
       <ComboboxPrimitive.ChipRemove
         data-slot="combobox-chip-remove"
         className="text-muted-foreground hover:text-foreground -mr-0.5 cursor-default"
+        aria-label="Clear"
       >
         <XIcon className="size-3" />
       </ComboboxPrimitive.ChipRemove>

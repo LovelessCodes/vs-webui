@@ -96,7 +96,7 @@ export default function UsersCard() {
               }}
               value={role}
             >
-              <SelectTrigger className="w-32">
+              <SelectTrigger aria-label={t("settings.roleLabel")} className="w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent alignItemWithTrigger={false}>
@@ -150,7 +150,11 @@ export default function UsersCard() {
                       }}
                       value={user.role}
                     >
-                      <SelectTrigger size="sm" className="w-full">
+                      <SelectTrigger
+                        aria-label={`${t("settings.roleLabel")}: ${user.name}`}
+                        size="sm"
+                        className="w-full"
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent alignItemWithTrigger={false}>
@@ -169,6 +173,7 @@ export default function UsersCard() {
                     {passwordFor === user.id ? (
                       <>
                         <Input
+                          aria-label={t("settings.userNewPassword")}
                           autoFocus
                           className="w-40"
                           onChange={(event) => setNewPassword(event.target.value)}

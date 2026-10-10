@@ -222,6 +222,7 @@ export default function Players() {
                 <label className="flex items-center gap-2 text-xs text-muted-foreground">
                   {enabled ? t("players.whitelistOnly") : t("players.openServer")}
                   <Switch
+                    aria-label={enabled ? t("players.whitelistOnly") : t("players.openServer")}
                     checked={enabled}
                     disabled={mode.isPending}
                     onCheckedChange={(checked) => mode.mutate(checked)}
@@ -325,7 +326,7 @@ export default function Players() {
                 }}
                 value={sortBy}
               >
-                <SelectTrigger size="sm" className="w-44">
+                <SelectTrigger aria-label={t("players.sortBy")} size="sm" className="w-44">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent alignItemWithTrigger={false}>
@@ -390,7 +391,11 @@ export default function Players() {
                             }}
                             value={roles.data?.assignments[record.name] ?? ""}
                           >
-                            <SelectTrigger size="sm" className="w-36">
+                            <SelectTrigger
+                              aria-label={t("players.roleLabel")}
+                              size="sm"
+                              className="w-36"
+                            >
                               <SelectValue placeholder={t("players.roleNone")} />
                             </SelectTrigger>
                             <SelectContent alignItemWithTrigger={false}>

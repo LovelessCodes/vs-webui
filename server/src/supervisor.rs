@@ -64,6 +64,44 @@ pub struct Supervisor {
     /// While this instant is in the future, server output is treated as
     /// manager telemetry (`/stats` probes) and hidden from the web console.
     internal_window: Arc<Mutex<Option<Instant>>>,
+    /// Diagnostics captured at the last unexpected exit.
+    crash_report: Arc<Mutex<Option<CrashReport>>>,
+}
+
+/// Post-crash diagnostics: exit code, uptime and the extracted error block.
+#[derive(Clone, Debug, Serialize)]
+pub struct CrashReport {
+    pub ts: u64,
+    pub exit_code: Option<i32>,
+    pub uptime: u64,
+    pub lines: Vec<String>,
+}
+
+/// Extracts the most useful block from the console tail: from the last line
+/// that looks like an error/exception to the end (capped). Falls back to the
+/// plain tail when nothing matches.
+fn extract_crash_block(lines: &[String]) -> Vec<String> {
+    const MARKERS: [&str; 6] = [
+        "unhandled exception",
+        "exception",
+        "[server fatal]",
+        "[server error]",
+        "error:",
+        "crash",
+    ];
+    const MAX_LINES: usize = 60;
+    let start = lines
+        .iter()
+        .rposition(|line| {
+            let lower = line.to_lowercase();
+            MARKERS.iter().any(|marker| lower.contains(marker))
+        })
+        .unwrap_or_else(|| lines.len().saturating_sub(20));
+    lines[start.min(lines.len())..]
+        .iter()
+        .take(MAX_LINES)
+        .map(|line| line.chars().take(500).collect())
+        .collect()
 }
 
 /// How long `/stats` probe output is considered internal after the probe starts.
@@ -82,6 +120,7 @@ impl Supervisor {
         let online: Arc<Mutex<HashMap<String, u64>>> = Arc::new(Mutex::new(HashMap::new()));
         let internal_window: Arc<Mutex<Option<Instant>>> = Arc::new(Mutex::new(None));
         let generations: Arc<AtomicU64> = Arc::new(AtomicU64::new(0));
+        let crash_report: Arc<Mutex<Option<CrashReport>>> = Arc::new(Mutex::new(None));
 
         {
             let status = status.clone();
@@ -89,6 +128,7 @@ impl Supervisor {
             let online = online.clone();
             let internal_window = internal_window.clone();
             let generations = generations.clone();
+            let crash_report = crash_report.clone();
             tokio::spawn(async move {
                 run(
                     rx,
@@ -101,6 +141,7 @@ impl Supervisor {
                     events,
                     internal_window,
                     generations,
+                    crash_report,
                 )
                 .await;
             });
@@ -112,7 +153,13 @@ impl Supervisor {
             console,
             online,
             internal_window,
+            crash_report,
         }
+    }
+
+    /// Diagnostics from the last unexpected exit (cleared on the next start).
+    pub fn crash_report(&self) -> Option<CrashReport> {
+        self.crash_report.lock().unwrap().clone()
     }
 
     /// Best-effort online player list from console join/leave events.
@@ -241,6 +288,7 @@ async fn run(
     events: mpsc::UnboundedSender<ServerEvent>,
     internal_window: Arc<Mutex<Option<Instant>>>,
     generations: Arc<AtomicU64>,
+    crash_report: Arc<Mutex<Option<CrashReport>>>,
 ) {
     let mut running: Option<Running> = None;
     let mut failures: u32 = 0;
@@ -263,6 +311,7 @@ async fn run(
                     &events,
                     &internal_window,
                     &generations,
+                    &crash_report,
                 )
                 .await
                 {
@@ -301,6 +350,7 @@ async fn run(
                         &events,
                         &internal_window,
                         &generations,
+                        &crash_report,
                     )
                     .await
                     {
@@ -358,17 +408,30 @@ async fn run(
                     text: if clean {
                         format!("Server stopped (uptime {uptime}s)")
                     } else {
+                        // Extract the error block for the report and the alert.
+                        let history: Vec<String> = console
+                            .history(400)
+                            .into_iter()
+                            .filter(|entry| !entry.internal)
+                            .map(|entry| entry.line)
+                            .collect();
+                        let block = extract_crash_block(&history);
+                        *crash_report.lock().unwrap() = Some(CrashReport {
+                            ts: now_unix(),
+                            exit_code: code,
+                            uptime,
+                            lines: block.clone(),
+                        });
                         let mut text = format!(
                             "Server crashed (code {}, uptime {uptime}s)",
                             code.map(|c| c.to_string()).unwrap_or_else(|| "unknown".into())
                         );
-                        // Append the console tail so the alert/webhook carries
-                        // a first clue without opening the log viewer.
-                        let tail: Vec<String> = console
-                            .history(12)
-                            .into_iter()
-                            .filter(|entry| !entry.internal)
-                            .map(|entry| entry.line.chars().take(200).collect())
+                        let tail: Vec<String> = block
+                            .iter()
+                            .rev()
+                            .take(12)
+                            .rev()
+                            .map(|line| line.chars().take(200).collect())
                             .collect();
                         if !tail.is_empty() {
                             text.push('\n');
@@ -415,6 +478,7 @@ async fn run(
                     &events,
                     &internal_window,
                     &generations,
+                    &crash_report,
                 )
                 .await
                 {
@@ -441,8 +505,10 @@ async fn start_server(
     events: &mpsc::UnboundedSender<ServerEvent>,
     internal_window: &Arc<Mutex<Option<Instant>>>,
     generations: &Arc<AtomicU64>,
+    crash_report: &Arc<Mutex<Option<CrashReport>>>,
 ) -> Result<(), String> {
     online.lock().unwrap().clear();
+    *crash_report.lock().unwrap() = None;
     let (flavor, version, tag, params) = {
         let guard = settings.lock().unwrap();
         (
@@ -777,6 +843,30 @@ pub fn parse_params(input: &str) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn extracts_error_blocks_from_console_tails() {
+        let lines: Vec<String> = [
+            "boot line 1",
+            "boot line 2",
+            "info: something",
+            "Exception: boom",
+            "   at Foo.Bar()",
+            "   at Baz.Qux()",
+        ]
+        .iter()
+        .map(|line| line.to_string())
+        .collect();
+        let block = extract_crash_block(&lines);
+        assert_eq!(block[0], "Exception: boom");
+        assert_eq!(block.len(), 3);
+
+        // No marker: fall back to the last lines.
+        let plain: Vec<String> = (0..30).map(|index| format!("line {index}")).collect();
+        let block = extract_crash_block(&plain);
+        assert_eq!(block.len(), 20);
+        assert_eq!(block[0], "line 10");
+    }
 
     #[test]
     fn splits_plain_args() {

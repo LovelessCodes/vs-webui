@@ -7,6 +7,7 @@
  */
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import AxeBuilder from "@axe-core/playwright";
 import { chromium } from "playwright";
 
 import { PASSWORD, seedData, startManager, stopManager, waitForHealth } from "./harness";
@@ -16,6 +17,25 @@ const DATA_DIR = join(tmpdir(), "vs-webui-smoke");
 
 const ROUTES = ["/", "/console", "/chat", "/mods", "/config", "/players", "/backups", "/worlds", "/versions", "/settings"];
 
+/** Runs axe on the current page: critical violations fail the smoke run,
+ * everything else is reported for review. */
+async function audit(
+  page: import("playwright").Page,
+  label: string,
+  errors: string[],
+): Promise<void> {
+  const results = await new AxeBuilder({ page }).analyze();
+  for (const violation of results.violations) {
+    const targets = violation.nodes
+      .slice(0, 4)
+      .map((node) => `${node.target.join(" ")} :: ${node.html.slice(0, 260)}`)
+      .join(" | ");
+    const line = `a11y(${label}/${violation.impact}): ${violation.id} — ${violation.help} (${violation.nodes.length}) [${targets}]`;
+    console.log(line);
+    if (violation.impact === "critical" || violation.impact === "serious") errors.push(line);
+  }
+}
+
 async function main() {
   seedData(DATA_DIR);
   const child = startManager(PORT, DATA_DIR);
@@ -24,13 +44,15 @@ async function main() {
   try {
     await waitForHealth(PORT);
     const browser = await chromium.launch();
-    const page = await browser.newPage({ viewport: { width: 1200, height: 800 } });
+    const context = await browser.newContext({ viewport: { width: 1200, height: 800 } });
+    const page = await context.newPage();
 
     page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
     page.on("console", (message) => {
       if (message.type() === "error") errors.push(`console: ${message.text()}`);
     });
     await page.goto(`http://localhost:${PORT}/`);
+    await audit(page, "login", errors);
     await page.fill("#password", PASSWORD);
     await page.click('button[type="submit"]');
     await page.waitForSelector('[data-slot="sidebar"]', { timeout: 10_000 });
@@ -38,6 +60,7 @@ async function main() {
     for (const route of ROUTES) {
       await page.goto(`http://localhost:${PORT}${route}`);
       await page.waitForTimeout(900);
+      await audit(page, route, errors);
       console.log(`visited ${route}`);
     }
 

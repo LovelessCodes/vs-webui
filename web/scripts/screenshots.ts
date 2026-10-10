@@ -22,12 +22,23 @@ const OUT_DIR = join(WEB_DIR, "screenshots");
 const ROUTES: Array<{ path: string; name: string }> = [
   { path: "/", name: "dashboard" },
   { path: "/console", name: "console" },
+  { path: "/chat", name: "chat" },
   { path: "/mods", name: "mods" },
   { path: "/config", name: "mod-configs" },
   { path: "/players", name: "players" },
   { path: "/backups", name: "backups" },
   { path: "/worlds", name: "worlds" },
   { path: "/versions", name: "versions" },
+  { path: "/settings", name: "settings" },
+];
+
+/** Narrow-screen pass (phone portrait) into screenshots/mobile/. */
+const MOBILE_ROUTES: Array<{ path: string; name: string }> = [
+  { path: "/", name: "dashboard" },
+  { path: "/console", name: "console" },
+  { path: "/chat", name: "chat" },
+  { path: "/players", name: "players" },
+  { path: "/worlds", name: "worlds" },
   { path: "/settings", name: "settings" },
 ];
 
@@ -66,6 +77,18 @@ async function main() {
         await page.screenshot({ path: file });
         console.log(`${pass}: ${route.path} -> ${file}`);
       }
+    }
+
+    // Phone-portrait pass (English) for layout review.
+    await page.evaluate(() => localStorage.setItem("vs-webui-language", "en"));
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const route of MOBILE_ROUTES) {
+      await page.goto(`http://localhost:${PORT}${route.path}`);
+      await page.waitForTimeout(1200);
+      const file = join(OUT_DIR, "mobile", `${route.name}.png`);
+      mkdirSync(dirname(file), { recursive: true });
+      await page.screenshot({ path: file });
+      console.log(`mobile: ${route.path} -> ${file}`);
     }
 
     await browser.close();

@@ -125,7 +125,7 @@ export default function Versions() {
       <section className="grid gap-2">
         <div className="flex items-center gap-2">
           <Zap className="size-3.5 text-accent-amber" />
-          <h3 className="text-xs font-semibold">{t("versions.stratumRuntime")}</h3>
+          <h2 className="text-xs font-semibold">{t("versions.stratumRuntime")}</h2>
           <p className="text-[11px] text-muted-foreground">{t("versions.stratumDescription")}</p>
         </div>
 
@@ -268,7 +268,7 @@ export default function Versions() {
       <section className="grid gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Boxes className="size-3.5 text-muted-foreground" />
-          <h3 className="text-xs font-semibold">{t("versions.vanillaBuilds")}</h3>
+          <h2 className="text-xs font-semibold">{t("versions.vanillaBuilds")}</h2>
           <ToggleGroup
             onValueChange={(value) => {
               const next = value[0];

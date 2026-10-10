@@ -31,6 +31,7 @@ pub struct AppState {
     pub player_history: PlayerHistory,
     pub chat: ChatLog,
     pub profiles: ProfilesStore,
+    pub manager_update: Mutex<Option<String>>,
     pub restore: RestoreProgressHandle,
     pub install: Mutex<Option<InstallStatus>>,
     pub started: Instant,

@@ -213,7 +213,8 @@ function Sidebar({
             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)",
         )}
       />
-      <div
+      <aside
+        aria-label={t("nav.navigation")}
         data-slot="sidebar-container"
         data-side={side}
         className={cn(
@@ -224,7 +225,7 @@ function Sidebar({
             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=right]:border-l",
           className,
         )}
-        {...props}
+        {...(props as React.ComponentProps<"aside">)}
       >
         <div
           data-sidebar="sidebar"
@@ -233,7 +234,7 @@ function Sidebar({
         >
           {children}
         </div>
-      </div>
+      </aside>
     </div>
   );
 }

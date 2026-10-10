@@ -18,12 +18,12 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         success:
-          "bg-success text-white hover:bg-success/80 focus-visible:border-success/40 focus-visible:ring-success/30",
+          "bg-success-strong text-white hover:bg-success-strong/80 focus-visible:border-success/40 focus-visible:ring-success/30",
         warning:
           "bg-warning text-bg-primary hover:bg-warning/80 focus-visible:border-warning/40 focus-visible:ring-warning/30",
         info: "bg-info text-bg-primary hover:bg-info/80 focus-visible:border-info/40 focus-visible:ring-info/30",
         "accent-primary":
-          "bg-accent-primary text-white hover:bg-accent-primary-hover focus-visible:border-accent-primary/40 focus-visible:ring-accent-primary/30",
+          "bg-accent-strong text-white hover:bg-accent-strong-hover focus-visible:border-accent-primary/40 focus-visible:ring-accent-primary/30",
         amber:
           "bg-accent-amber text-bg-primary hover:bg-accent-amber-hover focus-visible:border-accent-amber/40 focus-visible:ring-accent-amber/30",
         "outline-success":

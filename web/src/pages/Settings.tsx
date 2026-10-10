@@ -195,7 +195,7 @@ export default function Settings() {
               <Label htmlFor="auto-start">{t("settings.autoStart")}</Label>
               <p className="text-muted-foreground text-[11px]">{t("settings.autoStartHint")}</p>
             </div>
-            <Switch checked={autoStart} id="auto-start" onCheckedChange={setAutoStart} />
+            <Switch aria-label={t("settings.autoStart")} checked={autoStart} id="auto-start" onCheckedChange={setAutoStart} />
           </div>
 
           <div className="flex items-center justify-between gap-4">
@@ -203,7 +203,7 @@ export default function Settings() {
               <Label htmlFor="auto-restart">{t("settings.autoRestart")}</Label>
               <p className="text-muted-foreground text-[11px]">{t("settings.autoRestartHint")}</p>
             </div>
-            <Switch checked={autoRestart} id="auto-restart" onCheckedChange={setAutoRestart} />
+            <Switch aria-label={t("settings.autoRestart")} checked={autoRestart} id="auto-restart" onCheckedChange={setAutoRestart} />
           </div>
 
           <div className="grid gap-1.5">
@@ -257,7 +257,7 @@ export default function Settings() {
               <Label htmlFor="collect-tps">{t("settings.collectTps")}</Label>
               <p className="text-muted-foreground text-[11px]">{t("settings.collectTpsHint")}</p>
             </div>
-            <Switch checked={collectTps} id="collect-tps" onCheckedChange={setCollectTps} />
+            <Switch aria-label={t("settings.collectTps")} checked={collectTps} id="collect-tps" onCheckedChange={setCollectTps} />
           </div>
 
           {saveSettings.isError && (
@@ -361,7 +361,7 @@ export default function Settings() {
                   value={alertTpsMin}
                 />
                 <span className="text-[11px] text-muted-foreground">TPS</span>
-                <Switch checked={alertTps} id="alert-tps" onCheckedChange={setAlertTps} />
+                <Switch aria-label={t("settings.alertTps")} checked={alertTps} id="alert-tps" onCheckedChange={setAlertTps} />
               </div>
             </div>
 
@@ -386,7 +386,7 @@ export default function Settings() {
                   value={alertDiskPercent}
                 />
                 <span className="text-[11px] text-muted-foreground">%</span>
-                <Switch checked={alertDisk} id="alert-disk" onCheckedChange={setAlertDisk} />
+                <Switch aria-label={t("settings.alertDisk")} checked={alertDisk} id="alert-disk" onCheckedChange={setAlertDisk} />
               </div>
             </div>
 
@@ -397,7 +397,7 @@ export default function Settings() {
                   {t("settings.alertBackupHint")}
                 </p>
               </div>
-              <Switch checked={alertBackup} id="alert-backup" onCheckedChange={setAlertBackup} />
+              <Switch aria-label={t("settings.alertBackup")} checked={alertBackup} id="alert-backup" onCheckedChange={setAlertBackup} />
             </div>
           </div>
 
@@ -430,7 +430,7 @@ export default function Settings() {
               <Label htmlFor="public-view">{t("settings.publicEnable")}</Label>
               <p className="text-muted-foreground text-[11px]">{t("settings.publicEnableHint")}</p>
             </div>
-            <Switch checked={publicView} id="public-view" onCheckedChange={setPublicView} />
+            <Switch aria-label={t("settings.publicEnable")} checked={publicView} id="public-view" onCheckedChange={setPublicView} />
           </div>
 
           {publicView && (
@@ -595,7 +595,7 @@ export default function Settings() {
                 }}
                 value={tokenScope}
               >
-                <SelectTrigger className="w-40" size="sm">
+                <SelectTrigger aria-label={t("settings.tokenScopeFull")} className="w-40" size="sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent alignItemWithTrigger={false}>

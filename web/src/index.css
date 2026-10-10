@@ -39,12 +39,18 @@
   --color-text-secondary: #8b949e;
   --color-text-muted: #6e7681;
 
-  --color-accent-primary: #8b5cf6;
+  /* Light enough for text/links to pass contrast on the dark background. */
+  --color-accent-primary: #a78bfa;
   --color-accent-primary-hover: #7c3aed;
+  /* Solid surfaces carrying white text (primary buttons, active controls). */
+  --color-accent-strong: #7c3aed;
+  --color-accent-strong-hover: #6d28d9;
   --color-accent-amber: #f59e0b;
   --color-accent-amber-hover: #d97706;
 
   --color-success: #2ea043;
+  /* Solid surfaces carrying white text. */
+  --color-success-strong: #1a7f37;
   --color-error: #f85149;
   --color-warning: #d29922;
   --color-info: #58a6ff;
